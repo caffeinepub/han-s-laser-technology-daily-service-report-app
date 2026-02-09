@@ -53,6 +53,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
+    purgeLegacyReportsAndUsers(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     signupWithCode(profile: UserProfile, accessCode: string): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;

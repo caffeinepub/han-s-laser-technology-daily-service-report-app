@@ -1,7 +1,7 @@
 {
   "frontend/src/index.css": "Global styles with industrial-themed OKLCH color system featuring neutral grays with safety orange/green accents for light and dark modes, avoiding blue/purple dominance.",
   "frontend/tailwind.config.js": "Tailwind configuration extended with custom industrial color tokens (success, warning) and design system variables mapped to OKLCH values.",
-  "frontend/src/hooks/useQueries.ts": "React Query hooks for backend integration including new useSignupWithCode mutation for first-time profile creation with access code validation, plus existing profile/user/report management hooks.",
+  "frontend/src/hooks/useQueries.ts": "React Query hooks for backend integration including profile management, user/report CRUD operations, and new usePurgeLegacyReportsAndUsers mutation for admin-only bulk data deletion with cache invalidation.",
   "frontend/src/components/AppHeader.tsx": "Application header with HAN'S LASER TECH INDIA wordmark, navigation menu including admin-only Users link for admins, and logout button.",
   "frontend/src/components/AppLayout.tsx": "Main layout wrapper providing consistent header, content area, and footer structure with caffeine.ai attribution across all pages.",
   "frontend/src/components/LoginScreen.tsx": "Internet Identity login screen with updated copy explaining sign up/log in flow and note about completing signup form after authentication.",
@@ -11,6 +11,6 @@
   "frontend/src/pages/ReportDetailPage.tsx": "Detailed view of a single service report showing all fields in organized sections with clear visual hierarchy and status indicators.",
   "frontend/src/App.tsx": "Main application component with TanStack Router setup, authentication flow, profile setup guard, and role-based route protection for admin users page.",
   "frontend/src/components/AccessDeniedScreen.tsx": "Reusable access denied component displaying unauthorized message with return-to-home action for blocked admin routes.",
-  "frontend/src/pages/AdminUsersPage.tsx": "Admin-only user management page listing all users with their roles and principals, providing delete functionality with confirmation dialog.",
+  "frontend/src/pages/AdminUsersPage.tsx": "Admin-only user management page with user list, individual delete actions, and new \"Delete all old data\" destructive action that purges all reports and non-admin users with confirmation dialog and error handling.",
   "frontend/src/utils/signupValidation.ts": "Reusable validation helper functions for signup form fields including email format, mobile number length, required field checks, and new 6-digit admin access code validation requiring exact match to \"646151\"."
 }

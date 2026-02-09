@@ -99,6 +99,23 @@ export function useDeleteUser() {
   });
 }
 
+export function usePurgeLegacyReportsAndUsers() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.purgeLegacyReportsAndUsers();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
 // Report Queries
 export function useListReports() {
   const { actor, isFetching: actorFetching } = useActor();

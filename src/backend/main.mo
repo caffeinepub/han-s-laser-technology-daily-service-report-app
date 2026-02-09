@@ -207,6 +207,25 @@ actor {
     );
   };
 
+  public shared ({ caller }) func purgeLegacyReportsAndUsers() : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can delete users");
+    };
+    reports.clear();
+    let filteredUser = Map.empty<Principal, UserProfile>();
+    for ((principal, user_profile) in userProfiles.entries()) {
+      if (principal == caller) {
+        filteredUser.add(principal, user_profile);
+      } else {
+        AccessControl.assignRole(accessControlState, caller, principal, #guest);
+      };
+    };
+    userProfiles.clear();
+    for ((principal, user_profile) in filteredUser.entries()) {
+      userProfiles.add(principal, user_profile);
+    };
+  };
+
   let userProfiles = Map.empty<Principal, UserProfile>();
   let reports = Map.empty<Text, DailyServiceReport>();
 };

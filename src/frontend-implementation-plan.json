@@ -1,6 +1,30 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Tighten backend authorization and data integrity rules (frontend-only plan)",
-  "requirements": []
+  "title": "Expose admin-only purge action in Admin Users UI",
+  "requirements": [
+    {
+      "id": "REQ-2",
+      "summary": "Add an admin-only destructive purge action on the Admin Users page, backed by a React Query mutation that calls the backend purge function and refreshes cached admin/report data.",
+      "acceptanceCriteria": [
+        "The Admin Users page shows a destructive action labeled \"Delete all old data\" that is only reachable/usable by admins (consistent with existing admin gating).",
+        "Clicking the action opens a confirmation dialog that clearly states all reports and all users except the current admin will be deleted, and that the action cannot be undone.",
+        "Confirming successfully triggers the backend purge call and shows an in-progress state while the mutation is pending.",
+        "On success, the UI refreshes such that the users list shows only the current admin and report history shows no reports.",
+        "On error, the UI displays a readable error message (English) without crashing."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a new React Query mutation hook (e.g., usePurgeLegacyReportsAndUsers) that calls the backend purgeLegacyReportsAndUsers() capability and invalidates relevant caches: ['users'], ['reports'], and ['currentUserProfile']. Use the authorization component’s role-based access control assumptions for error handling (admin-only traps should be surfaced as readable UI errors). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminUsersPage.tsx",
+          "operation": "modify",
+          "description": "Expose a destructive \"Delete all old data\" admin-only action on the Admin Users page. Use existing admin gating (currentProfile.role) from the authorization component to ensure only admins can reach/use it. Add an explicit confirmation dialog (use existing shadcn/ui AlertDialog components already used on the page) describing that all reports and all users except the current admin will be deleted and cannot be undone; wire confirm to the new purge mutation, show pending/in-progress state while running, and render a readable English error message on failure without crashing. Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
 }

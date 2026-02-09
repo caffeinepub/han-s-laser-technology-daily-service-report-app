@@ -136,6 +136,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
+    purgeLegacyReportsAndUsers(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     signupWithCode(profile: UserProfile, accessCode: string): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;
@@ -295,6 +296,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.listUsers();
             return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async purgeLegacyReportsAndUsers(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.purgeLegacyReportsAndUsers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.purgeLegacyReportsAndUsers();
+            return result;
         }
     }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {

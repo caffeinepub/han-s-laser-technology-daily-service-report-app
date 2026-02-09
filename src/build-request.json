@@ -1,91 +1,71 @@
 {
   "kind": "build_request",
-  "title": "Tighten backend authorization and data integrity rules",
+  "title": "Add admin-only purge to delete all old system data",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Require that the caller has an existing user profile (not just an AccessControl #user permission) to use user/report endpoints: getCallerUserProfile, saveCallerUserProfile, createReport, listReports, and getReportById. If the profile does not exist, reject the call with a clear trap message instructing the user to sign up first.",
+      "text": "Add an admin-only backend function to purge old/legacy data by deleting all DailyServiceReport records and deleting all user profiles except the calling admin user (to avoid locking the system), and ensure authorization roles are revoked for any deleted users.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "tighten backend rules next."
+          "delete all old data"
         ]
       },
       "acceptanceCriteria": [
-        "A principal that has no entry in userProfiles cannot create/list/fetch reports and cannot save a profile; each affected method traps with an English message indicating signup is required.",
-        "Existing signed-up users can still use all endpoints as before."
+        "Calling the purge function as a non-admin traps with an authorization error.",
+        "Calling the purge function as an admin deletes all entries from the reports map.",
+        "Calling the purge function as an admin deletes all userProfiles entries for principals other than the caller.",
+        "After purge, listReports returns an empty array for admin and non-admin callers (non-admin may still be denied if they no longer have a profile).",
+        "After purge, listUsers returns an array containing only the caller's (Principal, UserProfile) entry.",
+        "Deleted users can no longer pass permission checks after purge (their AccessControl role is revoked/removed)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Harden signup and report creation against client-supplied privileged fields by enforcing server authority: during signupWithCode, ignore any incoming profile.role value and always store role = #engineer for new signups; during createReport, ignore any incoming report.createdBy value and always store createdBy = caller (current behavior) and ensure this is the only persisted creator value.",
-      "target": "backend",
+      "text": "Expose the purge operation in the frontend admin area by adding a destructive \"Delete all old data\" action on the Admin Users page with an explicit confirmation dialog, and wire it to a new React Query mutation that calls the backend purge function and invalidates relevant cached queries (users, reports, currentUserProfile).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "tighten backend rules next."
+          "delete all old data"
         ]
       },
       "acceptanceCriteria": [
-        "New signups always persist with role = #engineer regardless of what the frontend sends.",
-        "Reports always persist with createdBy = caller regardless of what the frontend sends.",
-        "No endpoint allows a non-admin to set themselves (or anyone else) to #admin."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Prevent report overwrites by enforcing report ID uniqueness in createReport: if a report with the same id already exists, reject the call with a clear trap message rather than overwriting the existing report.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "tighten backend rules next."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Calling createReport with an id that already exists traps with an English error message indicating the id already exists.",
-        "Calling createReport with a new id succeeds and the report is stored."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "When an admin deletes a user via deleteUser, also remove/revoke that user's authorization role(s) in AccessControl so the deleted principal cannot continue to pass permission checks after deletion.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "tighten backend rules next."
-        ]
-      },
-      "acceptanceCriteria": [
-        "After deleteUser completes, the deleted principal can no longer pass backend permission checks as a #user/#admin (i.e., they must sign up again to regain access).",
-        "deleteUser continues to remove the user profile and all reports createdBy that user as it does today.",
-        "Admins still cannot delete their own account (existing behavior remains)."
+        "The Admin Users page shows a destructive action labeled \"Delete all old data\" that is only reachable/usable by admins (consistent with existing admin gating).",
+        "Clicking the action opens a confirmation dialog that clearly states all reports and all users except the current admin will be deleted, and that the action cannot be undone.",
+        "Confirming successfully triggers the backend purge call and shows an in-progress state while the mutation is pending.",
+        "On success, the UI refreshes such that the users list shows only the current admin and report history shows no reports.",
+        "On error, the UI displays a readable error message (English) without crashing."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional canisters/services).",
-    "Use English for any user-facing trap/error messages.",
-    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui."
   ],
   "nonGoals": [
-    "Changing the access code value (must remain exactly \"646151\").",
-    "Adding third-party authentication or any non-Internet-Identity auth provider.",
-    "Adding real-time features (WebSockets/push) or external database integration."
+    "Adding an audit log of purge actions.",
+    "Adding scheduled/automatic data retention policies.",
+    "Supporting selective purges (e.g., by date range) unless explicitly requested later."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

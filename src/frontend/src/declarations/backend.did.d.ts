@@ -53,6 +53,7 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listReports' : ActorMethod<[], Array<DailyServiceReport>>,
   'listUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
+  'purgeLegacyReportsAndUsers' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'signupWithCode' : ActorMethod<[UserProfile, string], undefined>,
   'updateUserRole' : ActorMethod<[Principal, Role], undefined>,

@@ -1,14 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Tighten backend authorization and data integrity rules for user profiles and reports.
+**Goal:** Add an admin-only “purge old data” operation that deletes all legacy reports and all user profiles except the calling admin, and expose it as a destructive action in the admin UI.
 
 **Planned changes:**
-- Require an existing user profile for access to user/report endpoints (getCallerUserProfile, saveCallerUserProfile, createReport, listReports, getReportById); if missing, trap with an English message instructing the caller to sign up first.
-- Enforce server authority over privileged fields:
-  - During signupWithCode, ignore any client-supplied profile.role and always persist role = #engineer for new signups.
-  - During createReport, ignore any client-supplied report.createdBy and always persist createdBy = caller as the only stored creator value.
-- Prevent report overwrites by rejecting createReport when the provided report id already exists, with a clear English trap message.
-- On admin deleteUser, also revoke/remove the deleted principal’s authorization role(s) in AccessControl so they can’t continue passing permission checks post-deletion (while keeping existing delete behavior and self-delete prevention intact).
+- Backend: Add an admin-only purge function that deletes all `DailyServiceReport` records, deletes all `userProfiles` entries except the calling admin, and revokes/removes authorization roles for deleted users.
+- Frontend: Add a destructive “Delete all old data” action on the Admin Users page with an explicit confirmation dialog and pending/error states.
+- Frontend: Wire the action to a new React Query mutation calling the backend purge function and invalidate relevant cached queries (users, reports, currentUserProfile) on success.
 
-**User-visible outcome:** Users must sign up before they can create or access reports; signup/report creation can’t be used to set privileged fields; duplicate report IDs are rejected instead of overwriting; deleted users immediately lose backend permissions and must sign up again to regain access.
+**User-visible outcome:** Admins can permanently delete all reports and all users except themselves via the Admin Users page, with clear confirmation and UI refreshing to show only the remaining admin user and no report history.
