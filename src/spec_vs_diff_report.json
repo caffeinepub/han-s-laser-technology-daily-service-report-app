@@ -1,23 +1,22 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T19:17:29.060Z",
-  "summary": "Diff removes the admin/access-code gate from both frontend signup flow and backend signupWithRole checks, and removes related error-translation/validation logic. However, the diff also introduces new, unrequested signup requirements (a password field/validation) and adds a name-based admin allowlist that can elevate users to admin outside the requested scope.",
+  "generatedAt": "2026-02-09T19:29:48.562Z",
+  "summary": "Diff implements backend change to make getCallerUserProfile return null for new users, updates frontend gating to route new authenticated users to ProfileSetup instead of SessionInvalidScreen, and adds sanitized console logging for signup/profile flow diagnostics.",
   "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Added a \"Password\" field to the signup completion form, with frontend-only validation (required + min length), even though the BuildRequest explicitly targets removing admin/access-code mechanisms and lists password-based authentication as a non-goal.",
-      "reason": "BuildRequest did not request adding any password field/validation to signup; it only requested removal of Admin Special Password/Access Code mechanisms.",
+      "description": "Backend behavior change: saveCallerUserProfile now traps if the caller lacks #user permission and also traps when no existing profile exists (\"Please complete sign up first.\"), which is not part of the requested gating fix and may alter profile-update semantics.",
+      "reason": "BuildRequest only specifies changing getCallerUserProfile() behavior for new users; it does not request tightening/altering saveCallerUserProfile authorization or adding a prerequisite that a profile must already exist.",
       "evidence": [
-        "frontend/src/components/ProfileSetup.tsx (adds password state, validation, and UI references: `const [password, setPassword] = useState('')`, `validateRequired(password, 'Password')`, `Password must be at least 6 characters`)",
-        "frontend/src/hooks/useQueries.ts (comment: \"Ensure only UserProfile fields are sent to backend (no password field)\")"
+        "backend/main.mo"
       ]
     },
     {
-      "description": "Introduced a hardcoded name-based admin allowlist that can assign admin privileges regardless of the requested role.",
-      "reason": "BuildRequest did not request any new admin allowlisting logic; it explicitly stated non-goals include changing role concepts beyond removing the secret-code gate.",
+      "description": "Backend behavior change: signupWithRole explicitly removes authorization checks to allow any authenticated principal (including guests) to sign up.",
+      "reason": "While possibly related to improving signup flow, the BuildRequest did not explicitly request changing authorization behavior of signupWithRole; it only required getCallerUserProfile not to trap and frontend routing changes.",
       "evidence": [
-        "backend/main.mo (`isAdminAllowlisted` hardcodes names; `determineAccessControlRole` elevates to `#admin` when allowlisted; `ensureAllowlistedAdminStatus` assigns admin role)"
+        "backend/main.mo"
       ]
     }
   ],
@@ -25,10 +24,10 @@
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/ProfileSetup.tsx",
+    "frontend/src/App.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/signupErrorMessaging.ts",
-    "frontend/src/utils/signupValidation.ts",
+    "frontend/src/utils/authErrorDetection.ts",
+    "frontend/src/utils/signupFlowDebug.ts",
     "project_state.json"
   ]
 }

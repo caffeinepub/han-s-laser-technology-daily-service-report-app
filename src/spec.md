@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Remove the Admin/Engineer access-code (admin special password) gate from signup so users can complete signup after selecting a role without entering any extra code.
+**Goal:** Fix new-user signup gating so authenticated principals without profiles can reach ProfileSetup, and add targeted frontend logging to diagnose persistent signup issues without misrouting to session recovery.
 
 **Planned changes:**
-- Remove the “Admin Special Password” / “Access Code” field and all related UI copy from the “Complete Your Signup” form for Admin and Engineer roles.
-- Remove any frontend validation and error messaging/translation logic related to access-code requirements (including 6-digit code validation and code-specific error translations).
-- Update the signup mutation call to stop reading/sending any access code value (send null/omit per generated candid bindings).
-- Update the backend signup flow in `backend/main.mo` to eliminate Admin/Engineer secret code checks and remove any hardcoded code values, allowing `signupWithRole` to succeed without an adminCode for Admin/Engineer.
+- Backend: Update `getCallerUserProfile()` to return `null` (not trap) when the authenticated caller has no profile yet, preserving existing behavior for users who do have profiles.
+- Frontend: Adjust session-invalid detection/routing so the expected “no profile yet” state leads to ProfileSetup rather than SessionInvalidScreen, and avoid any login/profile-fetch/ProfileSetup looping.
+- Frontend: Add sanitized console logging for authentication/identity presence, profile fetch status, and any profile-fetch error message (without logging secrets or PII inputs).
 
-**User-visible outcome:** Users can choose Admin or Engineer on the “Complete Your Signup” screen and successfully submit signup without seeing or entering any access code.
+**User-visible outcome:** Brand-new authenticated users are taken to the ProfileSetup form (not SessionInvalidScreen), existing users continue to load normally, and developers can see clear console logs to debug signup/profile flow issues.

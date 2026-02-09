@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { DailyServiceReport, UserProfile, Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
+import { logSignupFlow, sanitizeErrorMessage } from '../utils/signupFlowDebug';
 
 // User Profile Queries
 export function useGetCallerUserProfile() {
@@ -10,8 +11,22 @@ export function useGetCallerUserProfile() {
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
+      logSignupFlow('Profile query starting', { actorAvailable: !!actor });
+      
       if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
+      
+      try {
+        const profile = await actor.getCallerUserProfile();
+        logSignupFlow('Profile query success', { 
+          hasProfile: profile !== null,
+        });
+        return profile;
+      } catch (error) {
+        logSignupFlow('Profile query error', {
+          error: sanitizeErrorMessage(error),
+        });
+        throw error;
+      }
     },
     enabled: !!actor && !actorFetching,
     retry: false,
@@ -56,7 +71,13 @@ export function useSignupWithRole() {
       profile: UserProfile; 
       requestedRole: Role; 
     }) => {
+      logSignupFlow('Signup mutation starting', { 
+        actorAvailable: !!actor,
+        requestedRole,
+      });
+      
       if (!actor) throw new Error('Actor not available');
+      
       const backendProfile: UserProfile = {
         name: profile.name,
         username: profile.username,
@@ -64,9 +85,20 @@ export function useSignupWithRole() {
         email: profile.email,
         role: profile.role,
       };
-      return actor.signupWithRole(backendProfile, requestedRole);
+      
+      try {
+        const result = await actor.signupWithRole(backendProfile, requestedRole);
+        logSignupFlow('Signup mutation success');
+        return result;
+      } catch (error) {
+        logSignupFlow('Signup mutation error', {
+          error: sanitizeErrorMessage(error),
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
+      logSignupFlow('Invalidating queries after signup');
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
       queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
     },

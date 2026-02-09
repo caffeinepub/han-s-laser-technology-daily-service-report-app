@@ -2,13 +2,46 @@
  * Utility to detect errors that indicate a stale or invalid authentication session.
  * These errors typically occur when the frontend thinks the user is authenticated
  * but the backend rejects the credentials.
+ * 
+ * Distinguishes between genuine auth errors and expected "missing profile" states.
  */
-export function isAuthError(error: unknown): boolean {
+
+/**
+ * Checks if an error indicates a missing profile for a new user.
+ * This is an expected state, not an authentication failure.
+ */
+export function isMissingProfileError(error: unknown): boolean {
   if (!error) return false;
   
   const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
   
-  // Check for common auth-related error patterns
+  // Backend returns null for getCallerUserProfile when no profile exists
+  // This is not an error condition, but we check for related error patterns
+  const missingProfilePatterns = [
+    'profile does not exist',
+    'please complete sign up',
+    'user profile not found',
+    'no profile',
+  ];
+  
+  return missingProfilePatterns.some(pattern => errorMessage.includes(pattern));
+}
+
+/**
+ * Checks if an error indicates a genuine authentication/session failure.
+ * Returns false for missing profile errors (which are expected for new users).
+ */
+export function isAuthError(error: unknown): boolean {
+  if (!error) return false;
+  
+  // First check if this is just a missing profile (not an auth error)
+  if (isMissingProfileError(error)) {
+    return false;
+  }
+  
+  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  
+  // Check for genuine auth-related error patterns
   const authErrorPatterns = [
     'unauthorized',
     'forbidden',

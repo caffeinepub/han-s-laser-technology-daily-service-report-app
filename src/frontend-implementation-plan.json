@@ -1,67 +1,61 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove admin/access code from signup (frontend-only)",
+  "title": "Fix frontend signup gating vs session-invalid routing and add production-safe debug logging",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Remove the Admin Special Password/Access Code field and all related UI copy from the signup completion form so role selection requires no extra code.",
-      "acceptanceCriteria": [
-        "On the \"Complete Your Signup\" screen, selecting Admin or Engineer does not reveal any additional code input field.",
-        "No user-facing text mentions \"Admin Special Password\", \"special password\", or \"Access Code\" during signup.",
-        "Signup can be submitted successfully for both Admin and Engineer roles without entering any code."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/ProfileSetup.tsx",
-          "operation": "modify",
-          "description": "Remove access-code state, conditional access-code UI block, and any related helper text/copy; ensure role selection does not reveal any additional input and the form can submit without an access code. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
       "id": "REQ-2",
-      "summary": "Remove frontend validation and signup error-message translation that enforces or references any admin/engineer access-code requirement.",
+      "summary": "Treat authenticated “no profile yet” as an expected state (route to ProfileSetup) and reserve SessionInvalidScreen for genuine auth/session failures.",
       "acceptanceCriteria": [
-        "The signup form no longer calls any access-code validation (e.g., no validation errors requiring a 6-digit code).",
-        "The signup error translation utility no longer returns messages prompting for an admin/access code or indicating an invalid admin/access code.",
-        "No unused access-code validation helpers remain referenced by the signup form."
+        "When authenticated and the backend indicates the user has no profile yet, the app renders ProfileSetup instead of SessionInvalidScreen.",
+        "SessionInvalidScreen is shown only for genuine authentication/session failures (e.g., invalid/expired delegation), not for expected new-user states.",
+        "No infinite loading loop occurs between login, profile fetch, and ProfileSetup."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/signupValidation.ts",
+          "path": "frontend/src/utils/authErrorDetection.ts",
           "operation": "modify",
-          "description": "Remove the 6-digit access-code validation helper and any access-code-specific validation messages so the validation module no longer contains code-gate logic."
+          "description": "Refine auth/session error classification by introducing a distinct detection for “missing signup/profile” errors (based on known backend error strings for new principals) so they are not treated as stale/invalid sessions. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/utils/signupErrorMessaging.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Remove translations for backend errors related to missing/invalid admin/access codes so the utility no longer produces user prompts referencing special passwords/access codes."
-        },
-        {
-          "path": "frontend/src/components/ProfileSetup.tsx",
-          "operation": "modify",
-          "description": "Update imports and validation logic to stop referencing removed access-code validators and to eliminate access-code-specific error state handling. Verify the component's usage instructions before implementing."
+          "description": "Update RootComponent gating logic to: (1) show SessionInvalidScreen only when isAuthError(profileError) AND NOT a detected new-user/missing-profile error; (2) route authenticated callers with userProfile === null OR a detected missing-profile error into ProfileSetup; (3) keep existing loading gating to avoid loops (use isInitializing/profileLoading/isFetched consistently). Use the authorization component’s frontend guidance for Profile Setup gating (getCallerUserProfile returning null) to align behavior. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Update the frontend signup mutation call so it no longer sends any access code value during signup, consistent with removing the access-code UI.",
+      "id": "REQ-3",
+      "summary": "Add targeted, sanitized console logging for authentication and profile-fetch state to debug persistent signup issues in production.",
       "acceptanceCriteria": [
-        "The signup mutation no longer reads from an access-code input state variable.",
-        "The request to signupWithRole does not include any user-entered code value."
+        "When running the app and reproducing the signup flow, the browser console includes clear logs for: authentication state, profile fetch state, and any encountered error message.",
+        "The logs do not include secrets (e.g., URL secret parameters such as `caffeineAdminToken`) or personally identifying form inputs (name/email/mobile/password)."
       ],
       "file_operations": [
+        {
+          "path": "frontend/src/utils/signupFlowDebug.ts",
+          "operation": "create",
+          "description": "Create a small debug utility that emits consistent console logs for the signup/profile flow and sanitizes error messages (e.g., strip/replace sensitive URL secret parameter names like caffeineAdminToken and avoid logging principals or any form-input values). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add signup/profile-flow console logging at key decision points (initialization, authenticated vs not, profile query loading/fetched, gating decisions, and any profileError message via sanitizer). Ensure logs are present in production builds and do not include secrets/PII. Verify the component's usage instructions before implementing."
+        },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update the signup mutation helper (currently useSignupWithCode) to remove the adminCode argument and call signupWithRole using only the candid-supported parameters (profile and requestedRole)."
+          "description": "Add targeted logs (via the shared debug utility) around the current-user profile query lifecycle: actor availability, query start/success (null vs profile), and sanitized error. Avoid logging any user-entered fields and avoid logging principals. Use the authorization component’s recommended pattern for getCallerUserProfile query state to ensure logging matches isLoading/isFetched semantics. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/ProfileSetup.tsx",
+          "path": "frontend/src/hooks/useActor.ts",
           "operation": "modify",
-          "description": "Update the submit handler to stop providing any admin/access code value to the signup mutation payload and to stop reading from any access-code state. Verify the component's usage instructions before implementing."
+          "description": "Add minimal, sanitized logs (via the shared debug utility) indicating whether an identity is present and whether an actor was created/refreshed. Do not log the caffeineAdminToken or any URL parameter values. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
+          "operation": "modify",
+          "description": "Add minimal logs for loginStatus transitions and whether identity is present after initialization/login success, using the shared debug utility and avoiding principal strings or any secrets. Verify the component's usage instructions before implementing."
         }
       ]
     }

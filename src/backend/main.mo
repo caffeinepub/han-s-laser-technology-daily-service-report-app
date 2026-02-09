@@ -49,7 +49,7 @@ actor {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admin can perform a full system reset");
     };
-    
+
     reports.clear();
     let allUsers = userProfiles.keys().toArray();
     userProfiles.clear();
@@ -59,9 +59,8 @@ actor {
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
-    };
+    // No authorization check - allow any caller (including guests/new users) to check their profile status
+    // Returns null if no profile exists, enabling new-user signup flow
     userProfiles.get(caller);
   };
 
@@ -97,12 +96,12 @@ actor {
   };
 
   public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role) : async () {
+    // No authorization check - allow any authenticated principal (including guests) to sign up
     if (userProfiles.containsKey(caller)) {
       Runtime.trap("Profile already exists. Use \"update profile\" instead.");
     };
 
     let assignedRole = requestedRole;
-
     let sanitizedProfile : UserProfile = {
       name = profile.name;
       username = profile.username;

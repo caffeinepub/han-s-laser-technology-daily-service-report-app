@@ -1,92 +1,88 @@
 {
   "kind": "build_request",
-  "title": "Remove Admin Special Password and Access Code from signup",
-  "priority": "normal",
+  "title": "Fix signup flow gating and debug persistent signup issue",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the \"Admin Special Password\" / \"Access Code\" field and all related UI copy from the signup completion form, so users can complete signup after selecting a role without entering any extra code.",
-      "target": "frontend",
+      "text": "Fix the new-user signup gating by ensuring that an authenticated principal without an existing profile can reach the ProfileSetup screen (i.e., profile lookup must not trap/throw for new users). Update the backend so `getCallerUserProfile()` returns `null` when the caller has no profile yet, instead of trapping due to missing `#user` permission.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "Remove \" Admin special Password\" and \"Access code\""
+          "still signup issue",
+          "debug app"
         ]
       },
       "acceptanceCriteria": [
-        "On the \"Complete Your Signup\" screen, selecting Admin or Engineer does not reveal any additional code input field.",
-        "No user-facing text mentions \"Admin Special Password\", \"special password\", or \"Access Code\" during signup.",
-        "Signup can be submitted successfully for both Admin and Engineer roles without entering any code."
+        "After authenticating with Internet Identity as a brand-new principal (no stored profile), the app loads the ProfileSetup form (not SessionInvalidScreen).",
+        "`getCallerUserProfile()` does not trap for an authenticated caller who has not signed up yet; it returns `null`.",
+        "Existing behavior remains unchanged for users with profiles: `getCallerUserProfile()` returns the stored profile."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Remove frontend validation and error messaging logic that enforces or references the admin/engineer code requirement (including the 6-digit code validation and any translated backend error messages specific to invalid/missing codes).",
+      "text": "Harden the frontend session-invalid detection so that failures during profile fetch that indicate a missing signup/profile do not route the user to SessionInvalidScreen. Ensure the UI treats the “no profile yet” condition as expected and continues into ProfileSetup rather than showing a stale-session recovery flow.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-1",
+          "msg-2"
         ],
         "quotes": [
-          "Remove \" Admin special Password\" and \"Access code\""
+          "still signup issue",
+          "debug app"
         ]
       },
       "acceptanceCriteria": [
-        "The signup form no longer calls any access-code validation (e.g., no validation errors requiring a 6-digit code).",
-        "The signup error translation utility no longer returns messages prompting for an admin/access code or indicating an invalid admin/access code.",
-        "No unused access-code validation helpers remain referenced by the signup form."
+        "When authenticated and the backend indicates the user has no profile yet, the app renders ProfileSetup instead of SessionInvalidScreen.",
+        "SessionInvalidScreen is shown only for genuine authentication/session failures (e.g., invalid/expired delegation), not for expected new-user states.",
+        "No infinite loading loop occurs between login, profile fetch, and ProfileSetup."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the backend signup flow to eliminate the Admin/Engineer secret code checks, so signupWithRole no longer traps for missing/invalid adminCode and does not compare against any hardcoded code values.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Remove \" Admin special Password\" and \"Access code\""
-        ]
-      },
-      "acceptanceCriteria": [
-        "backend/main.mo no longer traps with messages about \"Admin role requires a secret code\", \"Engineer role requires authorization\", \"Invalid Admin Code\", or \"Invalid Access Code\" during signup.",
-        "backend/main.mo no longer contains hardcoded access-code values (e.g., \"646151\") for signup authorization.",
-        "Calling signupWithRole with adminCode = null succeeds for both requestedRole = #admin and requestedRole = #engineer (assuming the caller does not already have a profile)."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Update the frontend signup mutation call to stop sending any access code value during signup (send null/omit according to the generated candid bindings), consistent with removing the access-code UI.",
+      "text": "Add targeted signup/profile-flow debugging output (console logging) in the frontend to make the persistent signup issue diagnosable in production builds: log the login status, whether identity is present, profile query status (loading/fetched), and any profile-fetch error message (sanitized to avoid leaking sensitive data).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-2"
         ],
         "quotes": [
-          "Remove \" Admin special Password\" and \"Access code\""
+          "debug app"
         ]
       },
       "acceptanceCriteria": [
-        "The signup mutation no longer reads from an access-code input state variable.",
-        "The request to signupWithRole does not include any user-entered code value."
+        "When running the app and reproducing the signup flow, the browser console includes clear logs for: authentication state, profile fetch state, and any encountered error message.",
+        "The logs do not include secrets (e.g., URL secret parameters such as `caffeineAdminToken`) or personally identifying form inputs (name/email/mobile/password)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or anything in frontend/src/components/ui (compose them instead).",
-    "Backend must remain single-actor with all Motoko logic in backend/main.mo; add backend/migration.mo only if required for an upgrade (this change should not require a state migration).",
-    "Use English for any user-facing text."
+    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if an upgrade of stable state is required.",
+    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Removing Internet Identity login/sign-in requirements or the broader authorization system (this request is only to remove the admin/access code mechanisms).",
-    "Changing role concepts (Admin vs Engineer) beyond removing the secret-code gate.",
-    "Adding new authentication providers or password-based authentication."
+    "Adding third-party authentication providers (only Internet Identity is supported).",
+    "Adding a password-based authentication system (the password field in the signup form remains frontend-only unless separately requested).",
+    "Changing report creation/history/admin features unrelated to the signup gating issue."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

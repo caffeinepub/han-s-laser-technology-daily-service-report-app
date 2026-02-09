@@ -10,8 +10,10 @@ import { ReportHistoryPage } from './pages/ReportHistoryPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AccessDeniedScreen } from './components/AccessDeniedScreen';
-import { isAuthError } from './utils/authErrorDetection';
+import { isAuthError, isMissingProfileError } from './utils/authErrorDetection';
+import { logSignupFlow, sanitizeErrorMessage } from './utils/signupFlowDebug';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 function RootComponent() {
   const { identity, isInitializing } = useInternetIdentity();
@@ -19,8 +21,32 @@ function RootComponent() {
 
   const isAuthenticated = !!identity;
 
+  // Debug logging for authentication state
+  useEffect(() => {
+    logSignupFlow('Auth state changed', {
+      isAuthenticated,
+      isInitializing,
+      profileLoading,
+      isFetched,
+      hasProfile: userProfile !== null && userProfile !== undefined,
+      hasError: !!profileError,
+    });
+  }, [isAuthenticated, isInitializing, profileLoading, isFetched, userProfile, profileError]);
+
+  // Log profile errors with sanitization
+  useEffect(() => {
+    if (profileError) {
+      logSignupFlow('Profile fetch error', {
+        error: sanitizeErrorMessage(profileError),
+        isAuthError: isAuthError(profileError),
+        isMissingProfile: isMissingProfileError(profileError),
+      });
+    }
+  }, [profileError]);
+
   // Show loading during initialization
   if (isInitializing || (isAuthenticated && profileLoading)) {
+    logSignupFlow('Showing loading state', { isInitializing, profileLoading });
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -30,8 +56,12 @@ function RootComponent() {
     );
   }
 
-  // Detect stale/invalid session: authenticated but profile fetch fails with auth error
-  if (isAuthenticated && isFetched && profileError && isAuthError(profileError)) {
+  // Detect stale/invalid session: authenticated but profile fetch fails with genuine auth error
+  // (NOT a missing profile error, which is expected for new users)
+  if (isAuthenticated && isFetched && profileError && isAuthError(profileError) && !isMissingProfileError(profileError)) {
+    logSignupFlow('Showing session invalid screen', {
+      error: sanitizeErrorMessage(profileError),
+    });
     return (
       <AppLayout>
         <SessionInvalidScreen />
@@ -41,6 +71,7 @@ function RootComponent() {
 
   // Show login if not authenticated
   if (!isAuthenticated) {
+    logSignupFlow('Showing login screen', { isAuthenticated: false });
     return (
       <AppLayout>
         <LoginScreen />
@@ -48,9 +79,19 @@ function RootComponent() {
     );
   }
 
-  // Show profile setup if authenticated but no profile
-  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
+  // Show profile setup if authenticated but no profile exists
+  // This includes both: userProfile === null (backend returned null) OR missing profile error
+  const showProfileSetup = 
+    isAuthenticated && 
+    !profileLoading && 
+    isFetched && 
+    (userProfile === null || (profileError && isMissingProfileError(profileError)));
+    
   if (showProfileSetup) {
+    logSignupFlow('Showing profile setup', {
+      userProfileIsNull: userProfile === null,
+      hasMissingProfileError: profileError && isMissingProfileError(profileError),
+    });
     return (
       <AppLayout>
         <ProfileSetup />
@@ -59,6 +100,7 @@ function RootComponent() {
   }
 
   // Show main app
+  logSignupFlow('Showing main app', { hasProfile: !!userProfile });
   return (
     <AppLayout>
       <Outlet />

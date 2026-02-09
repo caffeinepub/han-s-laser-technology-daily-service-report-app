@@ -3,30 +3,24 @@
   "projectStateVersion": 3,
   "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Signup flow still has an issue (user reports problem persists after v15 deploy); needs debugging."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-the-admin-special-password-access-code-field-and-all-related-ui-copy-from-the-signup-completion-form-so-users-can-complete-signup-after-selecting-a-role-without-entering-any-extra-code",
-      "title": "Remove the \"Admin Special Password\" / \"Access Code\" field and all related UI copy from the signup completion form, so users can complete signup after selecting a role without entering any extra code.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-remove-frontend-validation-and-error-messaging-logic-that-enforces-or-references-the-admin-engineer-code-requirement-including-the-6-digit-code-validation-and-any-translated-backend-error-messages-specific-to-invalid-missing-codes",
-      "title": "Remove frontend validation and error messaging logic that enforces or references the admin/engineer code requirement (including the 6-digit code validation and any translated backend error messages specific to invalid/missing codes).",
+      "id": "feature-harden-the-frontend-session-invalid-detection-so-that-failures-during-profile-fetch-that-indicate-a-missing-signup-profile-do-not-route-the-user-to-sessioninvalidscreen-ensure-the-ui-treats-the-no-profile-yet-condition-as-expected-and-continues-into-profilesetup-rather-than-showing-a-stale-session-recovery-flow",
+      "title": "Harden the frontend session-invalid detection so that failures during profile fetch that indicate a missing signup/profile do not route the user to SessionInvalidScreen. Ensure the UI treats the “no profile yet” condition as expected and continues into ProfileSetup rather than showing a stale-session recovery flow.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-frontend-signup-mutation-call-to-stop-sending-any-access-code-value-during-signup-send-null-omit-according-to-the-generated-candid-bindings-consistent-with-removing-the-access-code-ui",
-      "title": "Update the frontend signup mutation call to stop sending any access code value during signup (send null/omit according to the generated candid bindings), consistent with removing the access-code UI.",
+      "id": "feature-add-targeted-signup-profile-flow-debugging-output-console-logging-in-the-frontend-to-make-the-persistent-signup-issue-diagnosable-in-production-builds-log-the-login-status-whether-identity-is-present-profile-query-status-loading-fetched-and-any-profile-fetch-error-message-sanitized-to-avoid-leaking-sensitive-data",
+      "title": "Add targeted signup/profile-flow debugging output (console logging) in the frontend to make the persistent signup issue diagnosable in production builds: log the login status, whether identity is present, profile query status (loading/fetched), and any profile-fetch error message (sanitized to avoid leaking sensitive data).",
       "reqIds": [
-        "REQ-4"
+        "REQ-3"
       ],
       "version": 1
     }
@@ -34,26 +28,14 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove authorization system (no Internet Identity requirement / disable sign-in gating)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Remove \"Admin special Password\" and \"Access code\" mechanisms",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Update the backend signup flow to eliminate the Admin/Engineer secret code checks, so signupWithRole no longer traps for missing/invalid adminCode and does not compare against any hardcoded code values.",
+      "summary": "Fix the new-user signup gating by ensuring that an authenticated principal without an existing profile can reach the ProfileSetup screen (i.e., profile lookup must not trap/throw for new users). Update the backend so `getCallerUserProfile()` returns `null` when the caller has no profile yet, instead of trapping due to missing `#user` permission.",
       "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Remove Admin Special Password and Access Code from signup",
+  "projectName": "Fix signup flow gating and debug persistent signup issue",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

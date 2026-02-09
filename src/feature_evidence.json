@@ -2,31 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-the-admin-special-password-access-code-field-and-all-related-ui-copy-from-the-signup-completion-form-so-users-can-complete-signup-after-selecting-a-role-without-entering-any-extra-code",
-      "featureTitle": "Remove the \"Admin Special Password\" / \"Access Code\" field and all related UI copy from the signup completion form, so users can complete signup after selecting a role without entering any extra code.",
+      "featureId": "feature-harden-the-frontend-session-invalid-detection-so-that-failures-during-profile-fetch-that-indicate-a-missing-signup-profile-do-not-route-the-user-to-sessioninvalidscreen-ensure-the-ui-treats-the-no-profile-yet-condition-as-expected-and-continues-into-profilesetup-rather-than-showing-a-stale-session-recovery-flow",
+      "featureTitle": "Harden the frontend session-invalid detection so that failures during profile fetch that indicate a missing signup/profile do not route the user to SessionInvalidScreen. Ensure the UI treats the “no profile yet” condition as expected and continues into ProfileSetup rather than showing a stale-session recovery flow.",
       "files": [
-        "frontend/src/components/ProfileSetup.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-remove-frontend-validation-and-error-messaging-logic-that-enforces-or-references-the-admin-engineer-code-requirement-including-the-6-digit-code-validation-and-any-translated-backend-error-messages-specific-to-invalid-missing-codes",
-      "featureTitle": "Remove frontend validation and error messaging logic that enforces or references the admin/engineer code requirement (including the 6-digit code validation and any translated backend error messages specific to invalid/missing codes).",
-      "files": [
-        "frontend/src/components/ProfileSetup.tsx",
-        "frontend/src/utils/signupErrorMessaging.ts",
-        "frontend/src/utils/signupValidation.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/utils/authErrorDetection.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,11 +22,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-frontend-signup-mutation-call-to-stop-sending-any-access-code-value-during-signup-send-null-omit-according-to-the-generated-candid-bindings-consistent-with-removing-the-access-code-ui",
-      "featureTitle": "Update the frontend signup mutation call to stop sending any access code value during signup (send null/omit according to the generated candid bindings), consistent with removing the access-code UI.",
+      "featureId": "feature-add-targeted-signup-profile-flow-debugging-output-console-logging-in-the-frontend-to-make-the-persistent-signup-issue-diagnosable-in-production-builds-log-the-login-status-whether-identity-is-present-profile-query-status-loading-fetched-and-any-profile-fetch-error-message-sanitized-to-avoid-leaking-sensitive-data",
+      "featureTitle": "Add targeted signup/profile-flow debugging output (console logging) in the frontend to make the persistent signup issue diagnosable in production builds: log the login status, whether identity is present, profile query status (loading/fetched), and any profile-fetch error message (sanitized to avoid leaking sensitive data).",
       "files": [
-        "frontend/src/components/ProfileSetup.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/signupFlowDebug.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -57,7 +38,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-4"
+        "REQ-3"
       ],
       "confidence": "high"
     }
