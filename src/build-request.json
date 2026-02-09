@@ -1,71 +1,55 @@
 {
   "kind": "build_request",
-  "title": "Add admin-only purge to delete all old system data",
+  "title": "Separate Sign Up and Log In buttons on the authentication screen",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add an admin-only backend function to purge old/legacy data by deleting all DailyServiceReport records and deleting all user profiles except the calling admin user (to avoid locking the system), and ensure authorization roles are revoked for any deleted users.",
-      "target": "backend",
+      "text": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-user-1"
         ],
         "quotes": [
-          "delete all old data"
+          "there should be different button for signup and login."
         ]
       },
       "acceptanceCriteria": [
-        "Calling the purge function as a non-admin traps with an authorization error.",
-        "Calling the purge function as an admin deletes all entries from the reports map.",
-        "Calling the purge function as an admin deletes all userProfiles entries for principals other than the caller.",
-        "After purge, listReports returns an empty array for admin and non-admin callers (non-admin may still be denied if they no longer have a profile).",
-        "After purge, listUsers returns an array containing only the caller's (Principal, UserProfile) entry.",
-        "Deleted users can no longer pass permission checks after purge (their AccessControl role is revoked/removed)."
+        "On the LoginScreen, two separate buttons are visible: \"Sign Up\" and \"Log In\".",
+        "The previous combined button label \"Sign Up / Log In\" is no longer shown.",
+        "Both buttons initiate the existing Internet Identity authentication flow (no backend changes required)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Expose the purge operation in the frontend admin area by adding a destructive \"Delete all old data\" action on the Admin Users page with an explicit confirmation dialog, and wire it to a new React Query mutation that calls the backend purge function and invalidates relevant cached queries (users, reports, currentUserProfile).",
+      "text": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-user-1"
         ],
         "quotes": [
-          "delete all old data"
+          "there should be different button for signup and login."
         ]
       },
       "acceptanceCriteria": [
-        "The Admin Users page shows a destructive action labeled \"Delete all old data\" that is only reachable/usable by admins (consistent with existing admin gating).",
-        "Clicking the action opens a confirmation dialog that clearly states all reports and all users except the current admin will be deleted, and that the action cannot be undone.",
-        "Confirming successfully triggers the backend purge call and shows an in-progress state while the mutation is pending.",
-        "On success, the UI refreshes such that the users list shows only the current admin and report history shows no reports.",
-        "On error, the UI displays a readable error message (English) without crashing."
+        "While `loginStatus === 'logging-in'`, both buttons are disabled to prevent duplicate login attempts.",
+        "During the logging-in state, the UI shows a \"Connecting...\" loading state (spinner + text) on the auth CTA area.",
+        "When login completes or errors, buttons return to enabled state accordingly."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui."
+    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts or other frontend immutablePaths.",
+    "Keep the existing Internet Identity authentication mechanism; do not introduce third-party auth providers."
   ],
   "nonGoals": [
-    "Adding an audit log of purge actions.",
-    "Adding scheduled/automatic data retention policies.",
-    "Supporting selective purges (e.g., by date range) unless explicitly requested later."
+    "Changing backend signup/login logic or adding separate backend endpoints for signup vs login.",
+    "Adding username/password authentication (the app continues to use Internet Identity)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

@@ -67,7 +67,7 @@ export const idlService = IDL.Service({
     ),
   'purgeLegacyReportsAndUsers' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'signupWithCode' : IDL.Func([UserProfile, IDL.Text], [], []),
+  'signupWithRole' : IDL.Func([UserProfile, Role, IDL.Opt(IDL.Text)], [], []),
   'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
 });
 
@@ -133,7 +133,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'purgeLegacyReportsAndUsers' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'signupWithCode' : IDL.Func([UserProfile, IDL.Text], [], []),
+    'signupWithRole' : IDL.Func([UserProfile, Role, IDL.Opt(IDL.Text)], [], []),
     'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
   });
 };

@@ -2,11 +2,29 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-expose-the-purge-operation-in-the-frontend-admin-area-by-adding-a-destructive-delete-all-old-data-action-on-the-admin-users-page-with-an-explicit-confirmation-dialog-and-wire-it-to-a-new-react-query-mutation-that-calls-the-backend-purge-function-and-invalidates-relevant-cached-queries-users-reports-currentuserprofile",
-      "featureTitle": "Expose the purge operation in the frontend admin area by adding a destructive \"Delete all old data\" action on the Admin Users page with an explicit confirmation dialog, and wire it to a new React Query mutation that calls the backend purge function and invalidates relevant cached queries (users, reports, currentUserProfile).",
+      "featureId": "feature-update-the-unauthenticated-landing-screen-ui-to-show-two-distinct-primary-actions-one-button-labeled-sign-up-and-a-second-button-labeled-log-in-instead-of-the-single-combined-sign-up-log-in-button",
+      "featureTitle": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminUsersPage.tsx"
+        "frontend/src/components/LoginScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-loading-disabled-behavior-is-correct-when-authentication-is-in-progress-when-a-user-clicks-either-sign-up-or-log-in-both-buttons-are-disabled-while-loginstatus-logging-in-and-the-ui-provides-clear-feedback-that-a-connection-is-in-progress",
+      "featureTitle": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
+      "files": [
+        "frontend/src/components/LoginScreen.tsx"
       ],
       "components": [
         "authorization@4.0.0",

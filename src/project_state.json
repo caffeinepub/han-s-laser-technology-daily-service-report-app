@@ -7,8 +7,16 @@
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-expose-the-purge-operation-in-the-frontend-admin-area-by-adding-a-destructive-delete-all-old-data-action-on-the-admin-users-page-with-an-explicit-confirmation-dialog-and-wire-it-to-a-new-react-query-mutation-that-calls-the-backend-purge-function-and-invalidates-relevant-cached-queries-users-reports-currentuserprofile",
-      "title": "Expose the purge operation in the frontend admin area by adding a destructive \"Delete all old data\" action on the Admin Users page with an explicit confirmation dialog, and wire it to a new React Query mutation that calls the backend purge function and invalidates relevant cached queries (users, reports, currentUserProfile).",
+      "id": "feature-update-the-unauthenticated-landing-screen-ui-to-show-two-distinct-primary-actions-one-button-labeled-sign-up-and-a-second-button-labeled-log-in-instead-of-the-single-combined-sign-up-log-in-button",
+      "title": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-loading-disabled-behavior-is-correct-when-authentication-is-in-progress-when-a-user-clicks-either-sign-up-or-log-in-both-buttons-are-disabled-while-loginstatus-logging-in-and-the-ui-provides-clear-feedback-that-a-connection-is-in-progress",
+      "title": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
       "reqIds": [
         "REQ-2"
       ],
@@ -18,20 +26,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Purge legacy/old data from the system (delete existing old records)",
+      "summary": "Update auth UI to have separate buttons for Sign up and Log in (instead of a combined button).",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Add an admin-only backend function to purge old/legacy data by deleting all DailyServiceReport records and deleting all user profiles except the calling admin user (to avoid locking the system), and ensure authorization roles are revoked for any deleted users.",
-      "reqIds": [
-        "REQ-1"
-      ],
       "status": "pending"
     }
   ],
-  "projectName": "Add admin-only purge to delete all old system data",
+  "projectName": "Separate Sign Up and Log In buttons on the authentication screen",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

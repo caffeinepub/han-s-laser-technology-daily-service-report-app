@@ -1,6 +1,6 @@
 import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from './hooks/useQueries';
+import { useGetCallerUserProfile, useIsCallerAdmin } from './hooks/useQueries';
 import { AppLayout } from './components/AppLayout';
 import { LoginScreen } from './components/LoginScreen';
 import { ProfileSetup } from './components/ProfileSetup';
@@ -10,7 +10,6 @@ import { ReportDetailPage } from './pages/ReportDetailPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AccessDeniedScreen } from './components/AccessDeniedScreen';
 import { Loader2 } from 'lucide-react';
-import { Role } from './backend';
 
 function RootComponent() {
   const { identity, isInitializing } = useInternetIdentity();
@@ -79,7 +78,7 @@ const reportDetailRoute = createRoute({
 });
 
 function AdminUsersRouteComponent() {
-  const { data: userProfile, isLoading } = useGetCallerUserProfile();
+  const { data: isAdmin, isLoading } = useIsCallerAdmin();
 
   if (isLoading) {
     return (
@@ -88,8 +87,6 @@ function AdminUsersRouteComponent() {
       </div>
     );
   }
-
-  const isAdmin = userProfile?.role === Role.admin;
 
   if (!isAdmin) {
     return <AccessDeniedScreen />;

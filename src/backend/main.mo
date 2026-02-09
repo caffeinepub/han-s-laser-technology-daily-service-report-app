@@ -23,21 +23,57 @@ actor {
     role : Role;
   };
 
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let reports = Map.empty<Text, DailyServiceReport>();
+
+  func isAdminAllowlisted(profile : UserProfile) : Bool {
+    let trimmedName = profile.name.trim(#text(" "));
+    trimmedName == "sayed baquar" or trimmedName == "Bharat Nikam";
+  };
+
+  func determineAccessControlRole(profile : UserProfile) : AccessControl.UserRole {
+    if (profile.role == #admin or isAdminAllowlisted(profile)) {
+      #admin;
+    } else {
+      #user;
+    };
+  };
+
+  func ensureAllowlistedAdminStatus(caller : Principal, profile : UserProfile) : () {
+    if (isAdminAllowlisted(profile)) {
+      AccessControl.assignRole(accessControlState, caller, caller, #admin);
+    };
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    verifyUserHasProfile(caller, "access your profile");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
     userProfiles.get(caller);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    verifyUserHasProfile(caller, "update profile");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+
+    let existingProfile = switch (userProfiles.get(caller)) {
+      case (null) {
+        Runtime.trap("User profile does not exist. Please complete sign up first.");
+      };
+      case (?p) { p };
+    };
+
     let updatedProfile = {
       name = profile.name;
       username = profile.username;
       mobileNumber = profile.mobileNumber;
       email = profile.email;
-      role = #engineer; // Engineers can only update their own profile, role is not changed here.
+      role = existingProfile.role;
     };
     userProfiles.add(caller, updatedProfile);
+
+    ensureAllowlistedAdminStatus(caller, updatedProfile);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
@@ -47,27 +83,54 @@ actor {
     userProfiles.get(user);
   };
 
-  public shared ({ caller }) func signupWithCode(profile : UserProfile, accessCode : Text) : async () {
-    if (accessCode != "646151") {
-      Runtime.trap("Invalid Access Code. Contact Admin for support.");
-    };
-
+  public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role, adminCode : ?Text) : async () {
     switch (userProfiles.get(caller)) {
-      case (null) {
-        let sanitizedProfile = {
-          name = profile.name;
-          username = profile.username;
-          mobileNumber = profile.mobileNumber;
-          email = profile.email;
-          role = #engineer; // All new signups are engineers
-        };
-        AccessControl.assignRole(accessControlState, caller, caller, #user);
-        userProfiles.add(caller, sanitizedProfile);
-      };
       case (?_) {
         Runtime.trap("Profile already exists. Use \"update profile\" instead.");
       };
+      case (null) {};
     };
+
+    switch (requestedRole) {
+      case (#admin) {
+        switch (adminCode) {
+          case (null) {
+            Runtime.trap("Admin role requires a secret code. Please provide the admin code.");
+          };
+          case (?code) {
+            if (code != "646151") {
+              Runtime.trap("Invalid Admin Code. Please contact your main admin for support.");
+            };
+          };
+        };
+      };
+      case (#engineer) {
+        switch (adminCode) {
+          case (null) {
+            Runtime.trap("Engineer role requires authorization. Please provide the access code.");
+          };
+          case (?code) {
+            if (code != "646151") {
+              Runtime.trap("Invalid Access Code. Please contact your admin for support.");
+            };
+          };
+        };
+      };
+    };
+
+    let sanitizedProfile : UserProfile = {
+      name = profile.name;
+      username = profile.username;
+      mobileNumber = profile.mobileNumber;
+      email = profile.email;
+      role = requestedRole;
+    };
+
+    userProfiles.add(caller, sanitizedProfile);
+
+    let accessControlRole = determineAccessControlRole(sanitizedProfile);
+
+    AccessControl.assignRole(accessControlState, caller, caller, accessControlRole);
   };
 
   public shared ({ caller }) func updateUserRole(user : Principal, newRole : Role) : async () {
@@ -88,10 +151,7 @@ actor {
           role = newRole;
         };
 
-        let accessControlRole : AccessControl.UserRole = switch (newRole) {
-          case (#admin) { #admin };
-          case (#engineer) { #user };
-        };
+        let accessControlRole = determineAccessControlRole(updatedProfile);
 
         AccessControl.assignRole(accessControlState, caller, user, accessControlRole);
         userProfiles.add(user, updatedProfile);
@@ -115,9 +175,17 @@ actor {
       Runtime.trap("Cannot delete your own account");
     };
 
-    AccessControl.assignRole(accessControlState, caller, user, #guest); // Remove authorization role first
+    switch (userProfiles.get(user)) {
+      case (null) {
+        Runtime.trap("User profile not found");
+      };
+      case (?_) {
+        userProfiles.remove(user);
+      };
+    };
 
-    userProfiles.remove(user);
+    AccessControl.assignRole(accessControlState, caller, user, #guest);
+
     let reportsToRemove = reports.entries().filter(
       func(entry : (Text, DailyServiceReport)) : Bool {
         entry.1.createdBy == user;
@@ -125,20 +193,6 @@ actor {
     );
     for ((id, _) in reportsToRemove) {
       reports.remove(id);
-    };
-  };
-
-  func verifyUserHasProfile(userId : Principal, action : Text) {
-    if (not AccessControl.hasPermission(accessControlState, userId, #user)) {
-      Runtime.trap("You do not have sufficient permissions to " # action # ". " #
-      "Please contact the admin for assistance.");
-    };
-
-    switch (userProfiles.get(userId)) {
-      case (null) {
-        Runtime.trap("User profile does not exist. Please complete sign up first.");
-      };
-      case (?_) {};
     };
   };
 
@@ -163,11 +217,13 @@ actor {
   };
 
   public shared ({ caller }) func createReport(report : DailyServiceReport) : async Text {
-    verifyUserHasProfile(caller, "create reports");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create reports");
+    };
 
     if (reports.containsKey(report.id)) {
       Runtime.trap("Report with ID " # report.id # " already exists. " #
-      "Choose a unique ID for the new report. ");
+      "Choose a unique ID for the new report.");
     };
 
     let reportWithCaller = { report with createdBy = caller };
@@ -176,7 +232,9 @@ actor {
   };
 
   public query ({ caller }) func listReports() : async [DailyServiceReport] {
-    verifyUserHasProfile(caller, "access reports");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access reports");
+    };
 
     if (AccessControl.isAdmin(accessControlState, caller)) {
       return reports.values().toArray();
@@ -188,7 +246,9 @@ actor {
   };
 
   public query ({ caller }) func getReportById(id : Text) : async ?DailyServiceReport {
-    verifyUserHasProfile(caller, "get reports");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can get reports");
+    };
 
     let report = switch (reports.get(id)) {
       case (null) {
@@ -209,9 +269,11 @@ actor {
 
   public shared ({ caller }) func purgeLegacyReportsAndUsers() : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admin can delete users");
+      Runtime.trap("Unauthorized: Only admin can purge data");
     };
+
     reports.clear();
+
     let filteredUser = Map.empty<Principal, UserProfile>();
     for ((principal, user_profile) in userProfiles.entries()) {
       if (principal == caller) {
@@ -220,12 +282,10 @@ actor {
         AccessControl.assignRole(accessControlState, caller, principal, #guest);
       };
     };
+
     userProfiles.clear();
     for ((principal, user_profile) in filteredUser.entries()) {
       userProfiles.add(principal, user_profile);
     };
   };
-
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let reports = Map.empty<Text, DailyServiceReport>();
 };

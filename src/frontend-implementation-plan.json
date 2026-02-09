@@ -1,28 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Expose admin-only purge action in Admin Users UI",
+  "title": "Separate Sign Up and Log In buttons on the authentication screen",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Add an admin-only destructive purge action on the Admin Users page, backed by a React Query mutation that calls the backend purge function and refreshes cached admin/report data.",
+      "id": "REQ-1",
+      "summary": "Update the unauthenticated LoginScreen to display two distinct primary actions: “Sign Up” and “Log In”, replacing the single combined CTA while keeping the existing Internet Identity flow.",
       "acceptanceCriteria": [
-        "The Admin Users page shows a destructive action labeled \"Delete all old data\" that is only reachable/usable by admins (consistent with existing admin gating).",
-        "Clicking the action opens a confirmation dialog that clearly states all reports and all users except the current admin will be deleted, and that the action cannot be undone.",
-        "Confirming successfully triggers the backend purge call and shows an in-progress state while the mutation is pending.",
-        "On success, the UI refreshes such that the users list shows only the current admin and report history shows no reports.",
-        "On error, the UI displays a readable error message (English) without crashing."
+        "On the LoginScreen, two separate buttons are visible: \"Sign Up\" and \"Log In\".",
+        "The previous combined button label \"Sign Up / Log In\" is no longer shown.",
+        "Both buttons initiate the existing Internet Identity authentication flow (no backend changes required)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/LoginScreen.tsx",
           "operation": "modify",
-          "description": "Add a new React Query mutation hook (e.g., usePurgeLegacyReportsAndUsers) that calls the backend purgeLegacyReportsAndUsers() capability and invalidates relevant caches: ['users'], ['reports'], and ['currentUserProfile']. Use the authorization component’s role-based access control assumptions for error handling (admin-only traps should be surfaced as readable UI errors). Verify the component's usage instructions before implementing."
-        },
+          "description": "Replace the single \"Sign Up / Log In\" CTA with two distinct shadcn-ui Button components labeled \"Sign Up\" and \"Log In\", each triggering the existing `login()` action from `useInternetIdentity` (no auth mechanism changes). Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Ensure correct disabled/loading behavior during authentication: clicking either CTA disables both buttons while logging in and shows clear “Connecting…” feedback in the auth CTA area.",
+      "acceptanceCriteria": [
+        "While `loginStatus === 'logging-in'`, both buttons are disabled to prevent duplicate login attempts.",
+        "During the logging-in state, the UI shows a \"Connecting...\" loading state (spinner + text) on the auth CTA area.",
+        "When login completes or errors, buttons return to enabled state accordingly."
+      ],
+      "file_operations": [
         {
-          "path": "frontend/src/pages/AdminUsersPage.tsx",
+          "path": "frontend/src/components/LoginScreen.tsx",
           "operation": "modify",
-          "description": "Expose a destructive \"Delete all old data\" admin-only action on the Admin Users page. Use existing admin gating (currentProfile.role) from the authorization component to ensure only admins can reach/use it. Add an explicit confirmation dialog (use existing shadcn/ui AlertDialog components already used on the page) describing that all reports and all users except the current admin will be deleted and cannot be undone; wire confirm to the new purge mutation, show pending/in-progress state while running, and render a readable English error message on failure without crashing. Verify the component's usage instructions before implementing."
+          "description": "Use `loginStatus` from `useInternetIdentity` to (1) disable both \"Sign Up\" and \"Log In\" buttons when `loginStatus === 'logging-in'`, and (2) render a clear CTA-area loading state (e.g., lucide-react Loader2 + \"Connecting...\") during the logging-in state while ensuring normal button content returns after success/error. Verify the component's usage instructions before implementing."
         }
       ]
     }

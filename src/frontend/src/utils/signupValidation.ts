@@ -40,20 +40,17 @@ export function validateMobileNumber(mobile: string): string | null {
   return null;
 }
 
-export function validateAccessCode(accessCode: string): string | null {
+export function validateAdminAccessCode(accessCode: string): string | null {
   if (!accessCode || !accessCode.trim()) {
-    return 'Admin access code is required';
+    return 'Admin special password is required';
   }
   
   const cleanCode = accessCode.trim();
   
   if (!/^\d{6}$/.test(cleanCode)) {
-    return 'Access code must be exactly 6 digits';
+    return 'Special password must be exactly 6 digits';
   }
   
-  if (cleanCode !== '646151') {
-    return 'Invalid access code. Contact Admin for support.';
-  }
-  
+  // Note: Frontend validation is for UX only; backend enforces the actual check
   return null;
 }

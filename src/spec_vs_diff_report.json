@@ -1,50 +1,45 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T17:18:13.166Z",
-  "summary": "REQ-2 appears mostly implemented in the frontend (new purge mutation hook, admin-gated destructive action with dialog scaffolding, cache invalidation). REQ-1 backend purge function is not evidenced in the provided backend diff snippet (truncated), and several REQ-2 acceptance details (exact label text, confirmation dialog copy, and error rendering) cannot be confirmed from the truncated AdminUsersPage diff.",
+  "generatedAt": "2026-02-09T18:22:04.097Z",
+  "summary": "LoginScreen was updated to show separate “Sign Up” and “Log In” buttons that both trigger the existing Internet Identity login flow, and a “Connecting...” spinner state is shown during login. However, during `loginStatus === 'logging-in'` the buttons are not shown (replaced by the loader) rather than being visible-but-disabled as specified. Additional non-requested updates were made to metadata/documentation summary files.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Add an admin-only backend function to purge old/legacy data by deleting all DailyServiceReport records and deleting all user profiles except the calling admin user, and ensure authorization roles are revoked for any deleted users.",
-      "reason": "The frontend calls `actor.purgeLegacyReportsAndUsers()`, but the backend diff excerpt does not show any definition/implementation of `purgeLegacyReportsAndUsers` nor the required behavior (admin-only trap, clearing all reports, deleting all non-caller profiles, revoking roles). Because `backend/main.mo` is truncated, this cannot be verified as implemented.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useQueries.ts (calls actor.purgeLegacyReportsAndUsers)"
-      ]
-    },
-    {
       "id": "REQ-2",
-      "requirement": "Admin Users page shows a destructive action labeled \"Delete all old data\" with explicit confirmation dialog text describing deletion of all reports and all users except current admin and that it cannot be undone.",
-      "reason": "The Admin Users page code is truncated at the button label (showing `Delete all old dat...`), and the confirmation dialog content/copy is not visible. Therefore the exact label and required explicit dialog messaging cannot be confirmed from the diff provided.",
+      "requirement": "While `loginStatus === 'logging-in'`, both \"Sign Up\" and \"Log In\" buttons are disabled (to prevent duplicate login attempts) while showing clear connecting feedback.",
+      "reason": "The implementation conditionally replaces the entire CTA button area with a loader when `isLoggingIn` is true, so the buttons are not present to be disabled as the acceptance criteria states.",
       "evidence": [
-        "frontend/src/pages/AdminUsersPage.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "On error, the UI displays a readable error message (English) without crashing.",
-      "reason": "State `purgeError` is set in the catch handler, but the truncated diff does not show it being rendered in the UI, so the visible error message requirement cannot be verified.",
-      "evidence": [
-        "frontend/src/pages/AdminUsersPage.tsx (truncated)"
+        "frontend/src/components/LoginScreen.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Hardcoded signup access code check (`accessCode != \"646151\"`) and related access-code-based signup behavior.",
-      "reason": "The BuildRequest is about adding an admin-only purge for old system data and exposing it in the admin UI. It does not request introducing or modifying signup access code logic.",
+      "description": "Updated/added broad frontend file summaries content unrelated to separating auth buttons.",
+      "reason": "The BuildRequest only asks for a UI change on the authentication screen; updating a repository-wide summary file is not requested.",
       "evidence": [
-        "backend/main.mo (signupWithCode checks \"646151\")"
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Modified project tracking/state entries (new_feature_requests list/status) unrelated to implementing the UI change itself.",
+      "reason": "The BuildRequest does not request updating `project_state.json` metadata.",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "description": "Added extra explanatory copy under the auth buttons: “New users will complete a signup form after authentication”.",
+      "reason": "The BuildRequest does not request adding additional explanatory text; it only specifies button separation and loading/disabled behavior.",
+      "evidence": [
+        "frontend/src/components/LoginScreen.tsx"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.68,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AdminUsersPage.tsx",
+    "frontend/src/components/LoginScreen.tsx",
     "project_state.json"
   ]
 }

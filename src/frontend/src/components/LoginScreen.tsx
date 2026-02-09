@@ -1,7 +1,7 @@
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 export function LoginScreen() {
   const { login, loginStatus } = useInternetIdentity();
@@ -33,24 +33,34 @@ export function LoginScreen() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            onClick={handleLogin}
-            disabled={isLoggingIn}
-            className="w-full"
-            size="lg"
-          >
-            {isLoggingIn ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
+          {isLoggingIn ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span className="text-lg font-medium">Connecting...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={handleLogin}
+                disabled={isLoggingIn}
+                className="w-full"
+                size="lg"
+              >
+                <UserPlus className="mr-2 h-5 w-5" />
+                Sign Up
+              </Button>
+              <Button
+                onClick={handleLogin}
+                disabled={isLoggingIn}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
                 <LogIn className="mr-2 h-5 w-5" />
-                Sign Up / Log In
-              </>
-            )}
-          </Button>
+                Log In
+              </Button>
+            </div>
+          )}
           <p className="text-sm text-muted-foreground text-center mt-4">
             New users will complete a signup form after authentication
           </p>

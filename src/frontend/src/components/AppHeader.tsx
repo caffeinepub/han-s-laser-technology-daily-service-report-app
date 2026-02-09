@@ -1,20 +1,19 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from '../hooks/useQueries';
+import { useGetCallerUserProfile, useIsCallerAdmin } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { FileText, LogOut, Users } from 'lucide-react';
-import { Role } from '../backend';
 
 export function AppHeader() {
   const navigate = useNavigate();
   const { identity, clear, loginStatus } = useInternetIdentity();
   const { data: userProfile } = useGetCallerUserProfile();
+  const { data: isAdmin } = useIsCallerAdmin();
   const queryClient = useQueryClient();
 
   const isAuthenticated = !!identity;
   const isLoggingOut = loginStatus === 'logging-in';
-  const isAdmin = userProfile?.role === Role.admin;
 
   const handleLogout = async () => {
     await clear();

@@ -1,16 +1,17 @@
 {
   "frontend/src/index.css": "Global styles with industrial-themed OKLCH color system featuring neutral grays with safety orange/green accents for light and dark modes, avoiding blue/purple dominance.",
   "frontend/tailwind.config.js": "Tailwind configuration extended with custom industrial color tokens (success, warning) and design system variables mapped to OKLCH values.",
-  "frontend/src/hooks/useQueries.ts": "React Query hooks for backend integration including profile management, user/report CRUD operations, and new usePurgeLegacyReportsAndUsers mutation for admin-only bulk data deletion with cache invalidation.",
-  "frontend/src/components/AppHeader.tsx": "Application header with HAN'S LASER TECH INDIA wordmark, navigation menu including admin-only Users link for admins, and logout button.",
+  "frontend/src/hooks/useQueries.ts": "React Query hooks for backend integration including new useIsCallerAdmin hook that fetches backend-derived admin status, plus profile and report management with proper cache invalidation.",
+  "frontend/src/components/AppHeader.tsx": "Application header with HAN'S LASER TECH INDIA wordmark, navigation menu including admin-only Users link based on backend-derived admin status, and logout button.",
   "frontend/src/components/AppLayout.tsx": "Main layout wrapper providing consistent header, content area, and footer structure with caffeine.ai attribution across all pages.",
-  "frontend/src/components/LoginScreen.tsx": "Internet Identity login screen with updated copy explaining sign up/log in flow and note about completing signup form after authentication.",
-  "frontend/src/components/ProfileSetup.tsx": "Extended signup form collecting name, username, mobile number, email, password (frontend-only), 6-digit admin access code, and role with client-side validation, backend error display, and submission via signupWithCode mutation.",
+  "frontend/src/components/LoginScreen.tsx": "Internet Identity login screen with separate \"Sign Up\" and \"Log In\" buttons that both trigger the same authentication flow; displays centered loading state with spinner during authentication and disables both buttons while logging in.",
+  "frontend/src/components/ProfileSetup.tsx": "Signup form collecting user details with conditional admin special password field that only appears and validates when Admin role is selected; Engineer signup does not require the special password.",
   "frontend/src/pages/ReportEntryPage.tsx": "Comprehensive service report entry form with validation, conditional fields, and all 14 required data fields organized into logical sections; includes placeholder Principal for createdBy field that backend overwrites with actual caller.",
   "frontend/src/pages/ReportHistoryPage.tsx": "Service report history list with client-side filtering by date range and text search, displaying report cards with key information and resolution status badges (fixed Tailwind v3 compatibility).",
   "frontend/src/pages/ReportDetailPage.tsx": "Detailed view of a single service report showing all fields in organized sections with clear visual hierarchy and status indicators.",
-  "frontend/src/App.tsx": "Main application component with TanStack Router setup, authentication flow, profile setup guard, and role-based route protection for admin users page.",
+  "frontend/src/App.tsx": "Main application component with TanStack Router setup, authentication flow, profile setup guard, and admin route protection using backend-derived admin status from useIsCallerAdmin hook.",
   "frontend/src/components/AccessDeniedScreen.tsx": "Reusable access denied component displaying unauthorized message with return-to-home action for blocked admin routes.",
-  "frontend/src/pages/AdminUsersPage.tsx": "Admin-only user management page with user list, individual delete actions, and new \"Delete all old data\" destructive action that purges all reports and non-admin users with confirmation dialog and error handling.",
-  "frontend/src/utils/signupValidation.ts": "Reusable validation helper functions for signup form fields including email format, mobile number length, required field checks, and new 6-digit admin access code validation requiring exact match to \"646151\"."
+  "frontend/src/pages/AdminUsersPage.tsx": "Admin-only user management page with backend-derived admin check, user list display, individual delete actions, and destructive purge action with confirmation dialog and error handling.",
+  "frontend/src/utils/signupValidation.ts": "Validation helper functions for signup form fields including renamed validateAdminAccessCode that validates 6-digit format without hardcoded secret comparison (backend enforces actual validation).",
+  "frontend/DEPLOYMENT.md": "Deployment and retry runbook documentation explaining how to trigger redeployments, identify failing steps, capture logs, and troubleshoot common deployment issues without changing application functionality."
 }

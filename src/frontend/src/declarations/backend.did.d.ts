@@ -55,7 +55,7 @@ export interface _SERVICE {
   'listUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
   'purgeLegacyReportsAndUsers' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'signupWithCode' : ActorMethod<[UserProfile, string], undefined>,
+  'signupWithRole' : ActorMethod<[UserProfile, Role, [] | [string]], undefined>,
   'updateUserRole' : ActorMethod<[Principal, Role], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

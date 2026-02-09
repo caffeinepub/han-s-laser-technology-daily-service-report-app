@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, User, AlertCircle } from 'lucide-react';
 import { Role } from '../backend';
-import { validateEmail, validateMobileNumber, validateRequired, validateAccessCode } from '../utils/signupValidation';
+import { validateEmail, validateMobileNumber, validateRequired, validateAdminAccessCode } from '../utils/signupValidation';
 
 export function ProfileSetup() {
   const [name, setName] = useState('');
@@ -45,8 +45,11 @@ export function ProfileSetup() {
       newErrors.password = 'Password must be at least 6 characters';
     }
     
-    const accessCodeError = validateAccessCode(accessCode);
-    if (accessCodeError) newErrors.accessCode = accessCodeError;
+    // Only validate access code if role is Admin
+    if (role === Role.admin) {
+      const accessCodeError = validateAdminAccessCode(accessCode);
+      if (accessCodeError) newErrors.accessCode = accessCodeError;
+    }
     
     if (!role) newErrors.role = 'Please select a role';
     
@@ -72,11 +75,22 @@ export function ProfileSetup() {
           email: email.trim(),
           role: role as Role,
         },
-        accessCode: accessCode.trim(),
+        requestedRole: role as Role,
+        adminCode: role === Role.admin ? accessCode.trim() : null,
       });
     } catch (error: any) {
       const errorMessage = error?.message || 'Signup failed. Please try again.';
       setBackendError(errorMessage);
+    }
+  };
+
+  const handleRoleChange = (value: string) => {
+    setRole(value as Role);
+    if (errors.role) setErrors({ ...errors, role: '' });
+    // Clear admin code errors when switching away from Admin
+    if (value !== Role.admin && errors.accessCode) {
+      setErrors({ ...errors, accessCode: '' });
+      setAccessCode('');
     }
   };
 
@@ -196,35 +210,11 @@ export function ProfileSetup() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="accessCode">Admin access code *</Label>
-              <Input
-                id="accessCode"
-                type="text"
-                placeholder="Enter 6-digit access code"
-                value={accessCode}
-                onChange={(e) => {
-                  setAccessCode(e.target.value);
-                  if (errors.accessCode) setErrors({ ...errors, accessCode: '' });
-                  if (backendError) setBackendError('');
-                }}
-                required
-                maxLength={6}
-                disabled={signupMutation.isPending}
-              />
-              {errors.accessCode && (
-                <p className="text-sm text-destructive">{errors.accessCode}</p>
-              )}
-            </div>
-
             <div className="space-y-3">
               <Label>Role *</Label>
               <RadioGroup
                 value={role}
-                onValueChange={(value) => {
-                  setRole(value as Role);
-                  if (errors.role) setErrors({ ...errors, role: '' });
-                }}
+                onValueChange={handleRoleChange}
                 disabled={signupMutation.isPending}
                 required
               >
@@ -245,6 +235,32 @@ export function ProfileSetup() {
                 <p className="text-sm text-destructive">{errors.role}</p>
               )}
             </div>
+
+            {role === Role.admin && (
+              <div className="space-y-2">
+                <Label htmlFor="accessCode">Admin Special Password *</Label>
+                <Input
+                  id="accessCode"
+                  type="text"
+                  placeholder="Enter 6-digit admin code"
+                  value={accessCode}
+                  onChange={(e) => {
+                    setAccessCode(e.target.value);
+                    if (errors.accessCode) setErrors({ ...errors, accessCode: '' });
+                    if (backendError) setBackendError('');
+                  }}
+                  required
+                  maxLength={6}
+                  disabled={signupMutation.isPending}
+                />
+                {errors.accessCode && (
+                  <p className="text-sm text-destructive">{errors.accessCode}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Contact your main admin for the special password
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit"

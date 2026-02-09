@@ -1,49 +1,45 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T17:18:13.168Z",
+  "generatedAt": "2026-02-09T18:22:04.099Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 2,
-    "implemented": 1,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add an admin-only backend function to purge old/legacy data by deleting all DailyServiceReport records and deleting all user profiles except the calling admin user (to avoid locking the system), and ensure authorization roles are revoked for any deleted users.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/LoginScreen.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/LoginScreen.tsx"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Expose the purge operation in the frontend admin area by adding a destructive \"Delete all old data\" action on the Admin Users page with an explicit confirmation dialog, and wire it to a new React Query mutation that calls the backend purge function and invalidates relevant cached queries (users, reports, currentUserProfile).",
+        "summary": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminUsersPage.tsx"
+          "frontend/src/components/LoginScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/AdminUsersPage.tsx"
+          "frontend/src/components/LoginScreen.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AdminUsersPage.tsx",
+    "frontend/src/components/LoginScreen.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

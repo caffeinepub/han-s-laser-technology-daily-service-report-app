@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useListUsers, useDeleteUser, useGetCallerUserProfile, usePurgeLegacyReportsAndUsers } from '../hooks/useQueries';
+import { useListUsers, useDeleteUser, useIsCallerAdmin, usePurgeLegacyReportsAndUsers } from '../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,7 @@ import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export function AdminUsersPage() {
-  const { data: currentProfile, isLoading: profileLoading } = useGetCallerUserProfile();
+  const { data: isAdmin, isLoading: adminCheckLoading } = useIsCallerAdmin();
   const { data: users, isLoading: usersLoading, error } = useListUsers();
   const deleteUser = useDeleteUser();
   const purgeLegacyData = usePurgeLegacyReportsAndUsers();
@@ -27,10 +27,7 @@ export function AdminUsersPage() {
   const [showPurgeDialog, setShowPurgeDialog] = useState(false);
   const [purgeError, setPurgeError] = useState<string | null>(null);
 
-  // Check if current user is admin
-  const isAdmin = currentProfile?.role === Role.admin;
-
-  if (profileLoading) {
+  if (adminCheckLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
@@ -203,26 +200,14 @@ export function AdminUsersPage() {
       }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Delete All Old Data
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p className="font-semibold">
-                This will permanently delete:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>All service reports</li>
-                <li>All users except your admin account</li>
-              </ul>
-              <p className="font-semibold text-destructive mt-4">
-                This action cannot be undone.
-              </p>
+            <AlertDialogTitle>Delete All Old Data</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all service reports and all users except yourself. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {purgeError && (
-            <div className="bg-destructive/10 border border-destructive rounded-md p-3">
-              <p className="text-sm text-destructive">{purgeError}</p>
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {purgeError}
             </div>
           )}
           <AlertDialogFooter>
@@ -234,7 +219,7 @@ export function AdminUsersPage() {
             >
               {purgeLegacyData.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Deleting...
                 </>
               ) : (

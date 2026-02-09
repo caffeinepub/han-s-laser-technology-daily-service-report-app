@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { DailyServiceReport, UserProfile } from '../backend';
+import type { DailyServiceReport, UserProfile, Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
 
 // User Profile Queries
@@ -24,12 +24,40 @@ export function useGetCallerUserProfile() {
   };
 }
 
+export function useIsCallerAdmin() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  const query = useQuery<boolean>({
+    queryKey: ['isCallerAdmin'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !actorFetching,
+    retry: false,
+  });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+    isFetched: !!actor && query.isFetched,
+  };
+}
+
 export function useSignupWithCode() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ profile, accessCode }: { profile: UserProfile; accessCode: string }) => {
+    mutationFn: async ({ 
+      profile, 
+      requestedRole, 
+      adminCode 
+    }: { 
+      profile: UserProfile; 
+      requestedRole: Role; 
+      adminCode: string | null;
+    }) => {
       if (!actor) throw new Error('Actor not available');
       const backendProfile: UserProfile = {
         name: profile.name,
@@ -38,10 +66,11 @@ export function useSignupWithCode() {
         email: profile.email,
         role: profile.role,
       };
-      return actor.signupWithCode(backendProfile, accessCode);
+      return actor.signupWithRole(backendProfile, requestedRole, adminCode);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
     },
   });
 }
@@ -65,6 +94,7 @@ export function useSaveCallerUserProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
     },
   });
 }

@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Add an admin-only “purge old data” operation that deletes all legacy reports and all user profiles except the calling admin, and expose it as a destructive action in the admin UI.
+**Goal:** Update the unauthenticated authentication screen to provide separate “Sign Up” and “Log In” actions with correct connecting/disabled feedback during Internet Identity authentication.
 
 **Planned changes:**
-- Backend: Add an admin-only purge function that deletes all `DailyServiceReport` records, deletes all `userProfiles` entries except the calling admin, and revokes/removes authorization roles for deleted users.
-- Frontend: Add a destructive “Delete all old data” action on the Admin Users page with an explicit confirmation dialog and pending/error states.
-- Frontend: Wire the action to a new React Query mutation calling the backend purge function and invalidate relevant cached queries (users, reports, currentUserProfile) on success.
+- Replace the single combined “Sign Up / Log In” button on the LoginScreen with two distinct buttons: “Sign Up” and “Log In”.
+- Wire both buttons to trigger the existing Internet Identity authentication flow (no backend changes).
+- During `loginStatus === 'logging-in'`, disable both buttons and show a clear “Connecting...” loading state (spinner + text) in the auth call-to-action area; restore enabled state on success/error.
 
-**User-visible outcome:** Admins can permanently delete all reports and all users except themselves via the Admin Users page, with clear confirmation and UI refreshing to show only the remaining admin user and no report history.
+**User-visible outcome:** Users see separate “Sign Up” and “Log In” buttons on the authentication screen, and when either is pressed they get clear “Connecting...” feedback while both buttons are temporarily disabled to prevent duplicate attempts.
