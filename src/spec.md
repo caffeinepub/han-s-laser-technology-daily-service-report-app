@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Update the unauthenticated authentication screen to provide separate “Sign Up” and “Log In” actions with correct connecting/disabled feedback during Internet Identity authentication.
+**Goal:** Remove the Admin/Engineer access-code (admin special password) gate from signup so users can complete signup after selecting a role without entering any extra code.
 
 **Planned changes:**
-- Replace the single combined “Sign Up / Log In” button on the LoginScreen with two distinct buttons: “Sign Up” and “Log In”.
-- Wire both buttons to trigger the existing Internet Identity authentication flow (no backend changes).
-- During `loginStatus === 'logging-in'`, disable both buttons and show a clear “Connecting...” loading state (spinner + text) in the auth call-to-action area; restore enabled state on success/error.
+- Remove the “Admin Special Password” / “Access Code” field and all related UI copy from the “Complete Your Signup” form for Admin and Engineer roles.
+- Remove any frontend validation and error messaging/translation logic related to access-code requirements (including 6-digit code validation and code-specific error translations).
+- Update the signup mutation call to stop reading/sending any access code value (send null/omit per generated candid bindings).
+- Update the backend signup flow in `backend/main.mo` to eliminate Admin/Engineer secret code checks and remove any hardcoded code values, allowing `signupWithRole` to succeed without an adminCode for Admin/Engineer.
 
-**User-visible outcome:** Users see separate “Sign Up” and “Log In” buttons on the authentication screen, and when either is pressed they get clear “Connecting...” feedback while both buttons are temporarily disabled to prevent duplicate attempts.
+**User-visible outcome:** Users can choose Admin or Engineer on the “Complete Your Signup” screen and successfully submit signup without seeing or entering any access code.

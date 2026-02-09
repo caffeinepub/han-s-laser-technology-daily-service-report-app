@@ -54,7 +54,8 @@ export interface backendInterface {
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
     purgeLegacyReportsAndUsers(): Promise<void>;
+    resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    signupWithRole(profile: UserProfile, requestedRole: Role, adminCode: string | null): Promise<void>;
+    signupWithRole(profile: UserProfile, requestedRole: Role): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;
 }

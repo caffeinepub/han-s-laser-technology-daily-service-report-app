@@ -1,12 +1,15 @@
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useFullLogout } from '../hooks/useFullLogout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2, RefreshCw } from 'lucide-react';
 
 export function LoginScreen() {
-  const { login, loginStatus } = useInternetIdentity();
+  const { login, loginStatus, identity } = useInternetIdentity();
+  const { fullLogout } = useFullLogout();
 
   const isLoggingIn = loginStatus === 'logging-in';
+  const hasStaleSession = !!identity; // If identity exists but we're on login screen, it's stale
 
   const handleLogin = async () => {
     try {
@@ -14,6 +17,10 @@ export function LoginScreen() {
     } catch (error: any) {
       console.error('Login error:', error);
     }
+  };
+
+  const handleSwitchAccount = async () => {
+    await fullLogout();
   };
 
   return (
@@ -39,31 +46,51 @@ export function LoginScreen() {
               <span className="text-lg font-medium">Connecting...</span>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={handleLogin}
-                disabled={isLoggingIn}
-                className="w-full"
-                size="lg"
-              >
-                <UserPlus className="mr-2 h-5 w-5" />
-                Sign Up
-              </Button>
-              <Button
-                onClick={handleLogin}
-                disabled={isLoggingIn}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                <LogIn className="mr-2 h-5 w-5" />
-                Log In
-              </Button>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={handleLogin}
+                  disabled={isLoggingIn}
+                  className="w-full"
+                  size="lg"
+                >
+                  <UserPlus className="mr-2 h-5 w-5" />
+                  Sign Up
+                </Button>
+                <Button
+                  onClick={handleLogin}
+                  disabled={isLoggingIn}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Log In
+                </Button>
+              </div>
+              
+              {hasStaleSession && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground text-center mb-2">
+                    Having trouble logging in?
+                  </p>
+                  <Button
+                    onClick={handleSwitchAccount}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Switch Account / Log Out Completely
+                  </Button>
+                </div>
+              )}
+              
+              <p className="text-sm text-muted-foreground text-center">
+                New users will complete a signup form after authentication
+              </p>
             </div>
           )}
-          <p className="text-sm text-muted-foreground text-center mt-4">
-            New users will complete a signup form after authentication
-          </p>
         </CardContent>
       </Card>
     </div>

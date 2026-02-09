@@ -1,45 +1,77 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T18:22:04.099Z",
+  "generatedAt": "2026-02-09T19:17:29.063Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
+        "summary": "Remove the \"Admin Special Password\" / \"Access Code\" field and all related UI copy from the signup completion form, so users can complete signup after selecting a role without entering any extra code.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/LoginScreen.tsx"
+          "frontend/src/components/ProfileSetup.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/LoginScreen.tsx"
+          "frontend/src/components/ProfileSetup.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
+        "summary": "Remove frontend validation and error messaging logic that enforces or references the admin/engineer code requirement (including the 6-digit code validation and any translated backend error messages specific to invalid/missing codes).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/LoginScreen.tsx"
+          "frontend/src/utils/signupValidation.ts",
+          "frontend/src/utils/signupErrorMessaging.ts",
+          "frontend/src/components/ProfileSetup.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/LoginScreen.tsx"
+          "frontend/src/utils/signupValidation.ts",
+          "frontend/src/utils/signupErrorMessaging.ts",
+          "frontend/src/components/ProfileSetup.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Update the backend signup flow to eliminate the Admin/Engineer secret code checks, so signupWithRole no longer traps for missing/invalid adminCode and does not compare against any hardcoded code values.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Update the frontend signup mutation call to stop sending any access code value during signup (send null/omit according to the generated candid bindings), consistent with removing the access-code UI.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/ProfileSetup.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/ProfileSetup.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/LoginScreen.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/ProfileSetup.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/signupErrorMessaging.ts",
+    "frontend/src/utils/signupValidation.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

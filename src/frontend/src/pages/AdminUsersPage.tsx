@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useListUsers, useDeleteUser, useIsCallerAdmin, usePurgeLegacyReportsAndUsers } from '../hooks/useQueries';
+import { useListUsers, useDeleteUser, useIsCallerAdmin, usePurgeLegacyReportsAndUsers, useResetToFreshApp } from '../hooks/useQueries';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle } from 'lucide-react';
+import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle, XCircle } from 'lucide-react';
 import { AccessDeniedScreen } from '../components/AccessDeniedScreen';
 import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
@@ -23,9 +24,13 @@ export function AdminUsersPage() {
   const { data: users, isLoading: usersLoading, error } = useListUsers();
   const deleteUser = useDeleteUser();
   const purgeLegacyData = usePurgeLegacyReportsAndUsers();
+  const resetToFreshApp = useResetToFreshApp();
+  const { clear } = useInternetIdentity();
   const [userToDelete, setUserToDelete] = useState<Principal | null>(null);
   const [showPurgeDialog, setShowPurgeDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const [purgeError, setPurgeError] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   if (adminCheckLoading) {
     return (
@@ -62,6 +67,20 @@ export function AdminUsersPage() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete all old data. Please try again.';
       setPurgeError(errorMessage);
+    }
+  };
+
+  const handleResetConfirm = async () => {
+    setResetError(null);
+    try {
+      await resetToFreshApp.mutateAsync();
+      // Force logout and clear all cached data
+      await clear();
+      setShowResetDialog(false);
+      // The app will automatically redirect to login screen
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reset application. Please try again.';
+      setResetError(errorMessage);
     }
   };
 
@@ -102,24 +121,44 @@ export function AdminUsersPage() {
             Manage system users and their access permissions
           </p>
         </div>
-        <Button
-          variant="destructive"
-          onClick={() => setShowPurgeDialog(true)}
-          disabled={purgeLegacyData.isPending}
-          className="flex items-center gap-2"
-        >
-          {purgeLegacyData.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Deleting...
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="h-4 w-4" />
-              Delete all old data
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="destructive"
+            onClick={() => setShowPurgeDialog(true)}
+            disabled={purgeLegacyData.isPending}
+            className="flex items-center gap-2"
+          >
+            {purgeLegacyData.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-4 w-4" />
+                Delete all old data
+              </>
+            )}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setShowResetDialog(true)}
+            disabled={resetToFreshApp.isPending}
+            className="flex items-center gap-2 bg-destructive/90 hover:bg-destructive"
+          >
+            {resetToFreshApp.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Resetting...
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4" />
+                Full System Reset
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {!users || users.length === 0 ? (
@@ -224,6 +263,53 @@ export function AdminUsersPage() {
                 </>
               ) : (
                 'Delete All Old Data'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Full system reset dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={(open) => {
+        setShowResetDialog(open);
+        if (!open) setResetError(null);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Full System Reset</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p className="font-semibold">
+                WARNING: This will permanently delete ALL data from the application:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All user accounts (including your current admin account)</li>
+                <li>All service reports</li>
+                <li>All access permissions</li>
+              </ul>
+              <p className="font-semibold text-destructive">
+                This action cannot be undone. You will be logged out and must sign up again to use the application.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {resetError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {resetError}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetToFreshApp.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetConfirm}
+              disabled={resetToFreshApp.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {resetToFreshApp.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                'Reset Everything'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

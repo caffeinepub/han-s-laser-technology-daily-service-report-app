@@ -44,7 +44,7 @@ export function useIsCallerAdmin() {
   };
 }
 
-export function useSignupWithCode() {
+export function useSignupWithRole() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
@@ -52,11 +52,9 @@ export function useSignupWithCode() {
     mutationFn: async ({ 
       profile, 
       requestedRole, 
-      adminCode 
     }: { 
       profile: UserProfile; 
       requestedRole: Role; 
-      adminCode: string | null;
     }) => {
       if (!actor) throw new Error('Actor not available');
       const backendProfile: UserProfile = {
@@ -66,7 +64,7 @@ export function useSignupWithCode() {
         email: profile.email,
         role: profile.role,
       };
-      return actor.signupWithRole(backendProfile, requestedRole, adminCode);
+      return actor.signupWithRole(backendProfile, requestedRole);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -146,6 +144,21 @@ export function usePurgeLegacyReportsAndUsers() {
   });
 }
 
+export function useResetToFreshApp() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.resetToFreshApp();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+}
+
 // Report Queries
 export function useListReports() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -160,13 +173,13 @@ export function useListReports() {
   });
 }
 
-export function useGetReportById(id: string | undefined) {
+export function useGetReportById(id: string) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<DailyServiceReport | null>({
     queryKey: ['report', id],
     queryFn: async () => {
-      if (!actor || !id) return null;
+      if (!actor) return null;
       return actor.getReportById(id);
     },
     enabled: !!actor && !actorFetching && !!id,

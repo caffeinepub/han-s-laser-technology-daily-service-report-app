@@ -137,8 +137,9 @@ export interface backendInterface {
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
     purgeLegacyReportsAndUsers(): Promise<void>;
+    resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    signupWithRole(profile: UserProfile, requestedRole: Role, adminCode: string | null): Promise<void>;
+    signupWithRole(profile: UserProfile, requestedRole: Role): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;
 }
 import type { DailyServiceReport as _DailyServiceReport, Role as _Role, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
@@ -312,6 +313,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async resetToFreshApp(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.resetToFreshApp();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.resetToFreshApp();
+            return result;
+        }
+    }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
@@ -326,17 +341,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async signupWithRole(arg0: UserProfile, arg1: Role, arg2: string | null): Promise<void> {
+    async signupWithRole(arg0: UserProfile, arg1: Role): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.signupWithRole(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0), to_candid_Role_n21(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n23(this._uploadFile, this._downloadFile, arg2));
+                const result = await this.actor.signupWithRole(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0), to_candid_Role_n21(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.signupWithRole(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0), to_candid_Role_n21(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n23(this._uploadFile, this._downloadFile, arg2));
+            const result = await this.actor.signupWithRole(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0), to_candid_Role_n21(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -493,9 +508,6 @@ function to_candid_UserProfile_n19(_uploadFile: (file: ExternalBlob) => Promise<
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
-}
-function to_candid_opt_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
-    return value === null ? candid_none() : candid_some(value);
 }
 function to_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     username: string;

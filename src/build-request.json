@@ -1,52 +1,89 @@
 {
   "kind": "build_request",
-  "title": "Separate Sign Up and Log In buttons on the authentication screen",
+  "title": "Remove Admin Special Password and Access Code from signup",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
+      "text": "Remove the \"Admin Special Password\" / \"Access Code\" field and all related UI copy from the signup completion form, so users can complete signup after selecting a role without entering any extra code.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-1"
         ],
         "quotes": [
-          "there should be different button for signup and login."
+          "Remove \" Admin special Password\" and \"Access code\""
         ]
       },
       "acceptanceCriteria": [
-        "On the LoginScreen, two separate buttons are visible: \"Sign Up\" and \"Log In\".",
-        "The previous combined button label \"Sign Up / Log In\" is no longer shown.",
-        "Both buttons initiate the existing Internet Identity authentication flow (no backend changes required)."
+        "On the \"Complete Your Signup\" screen, selecting Admin or Engineer does not reveal any additional code input field.",
+        "No user-facing text mentions \"Admin Special Password\", \"special password\", or \"Access Code\" during signup.",
+        "Signup can be submitted successfully for both Admin and Engineer roles without entering any code."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
+      "text": "Remove frontend validation and error messaging logic that enforces or references the admin/engineer code requirement (including the 6-digit code validation and any translated backend error messages specific to invalid/missing codes).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-1"
         ],
         "quotes": [
-          "there should be different button for signup and login."
+          "Remove \" Admin special Password\" and \"Access code\""
         ]
       },
       "acceptanceCriteria": [
-        "While `loginStatus === 'logging-in'`, both buttons are disabled to prevent duplicate login attempts.",
-        "During the logging-in state, the UI shows a \"Connecting...\" loading state (spinner + text) on the auth CTA area.",
-        "When login completes or errors, buttons return to enabled state accordingly."
+        "The signup form no longer calls any access-code validation (e.g., no validation errors requiring a 6-digit code).",
+        "The signup error translation utility no longer returns messages prompting for an admin/access code or indicating an invalid admin/access code.",
+        "No unused access-code validation helpers remain referenced by the signup form."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update the backend signup flow to eliminate the Admin/Engineer secret code checks, so signupWithRole no longer traps for missing/invalid adminCode and does not compare against any hardcoded code values.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Remove \" Admin special Password\" and \"Access code\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "backend/main.mo no longer traps with messages about \"Admin role requires a secret code\", \"Engineer role requires authorization\", \"Invalid Admin Code\", or \"Invalid Access Code\" during signup.",
+        "backend/main.mo no longer contains hardcoded access-code values (e.g., \"646151\") for signup authorization.",
+        "Calling signupWithRole with adminCode = null succeeds for both requestedRole = #admin and requestedRole = #engineer (assuming the caller does not already have a profile)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Update the frontend signup mutation call to stop sending any access code value during signup (send null/omit according to the generated candid bindings), consistent with removing the access-code UI.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Remove \" Admin special Password\" and \"Access code\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "The signup mutation no longer reads from an access-code input state variable.",
+        "The request to signupWithRole does not include any user-entered code value."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts or other frontend immutablePaths.",
-    "Keep the existing Internet Identity authentication mechanism; do not introduce third-party auth providers."
+    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or anything in frontend/src/components/ui (compose them instead).",
+    "Backend must remain single-actor with all Motoko logic in backend/main.mo; add backend/migration.mo only if required for an upgrade (this change should not require a state migration).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Changing backend signup/login logic or adding separate backend endpoints for signup vs login.",
-    "Adding username/password authentication (the app continues to use Internet Identity)."
+    "Removing Internet Identity login/sign-in requirements or the broader authorization system (this request is only to remove the admin/access code mechanisms).",
+    "Changing role concepts (Admin vs Engineer) beyond removing the secret-code gate.",
+    "Adding new authentication providers or password-based authentication."
   ],
   "imageRequirements": {
     "required": [],

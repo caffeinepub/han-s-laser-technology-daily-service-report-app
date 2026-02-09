@@ -1,23 +1,21 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useIsCallerAdmin } from '../hooks/useQueries';
-import { useQueryClient } from '@tanstack/react-query';
+import { useFullLogout } from '../hooks/useFullLogout';
 import { Button } from '@/components/ui/button';
 import { FileText, LogOut, Users } from 'lucide-react';
 
 export function AppHeader() {
   const navigate = useNavigate();
-  const { identity, clear, loginStatus } = useInternetIdentity();
+  const { identity } = useInternetIdentity();
   const { data: userProfile } = useGetCallerUserProfile();
   const { data: isAdmin } = useIsCallerAdmin();
-  const queryClient = useQueryClient();
+  const { fullLogout } = useFullLogout();
 
   const isAuthenticated = !!identity;
-  const isLoggingOut = loginStatus === 'logging-in';
 
   const handleLogout = async () => {
-    await clear();
-    queryClient.clear();
+    await fullLogout();
   };
 
   return (
@@ -67,7 +65,6 @@ export function AppHeader() {
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                disabled={isLoggingOut}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout

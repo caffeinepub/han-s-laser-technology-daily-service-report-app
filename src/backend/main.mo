@@ -45,6 +45,19 @@ actor {
     };
   };
 
+  public shared ({ caller }) func resetToFreshApp() : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can perform a full system reset");
+    };
+    
+    reports.clear();
+    let allUsers = userProfiles.keys().toArray();
+    userProfiles.clear();
+    for (user in allUsers.vals()) {
+      AccessControl.assignRole(accessControlState, caller, user, #guest);
+    };
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -83,53 +96,23 @@ actor {
     userProfiles.get(user);
   };
 
-  public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role, adminCode : ?Text) : async () {
-    switch (userProfiles.get(caller)) {
-      case (?_) {
-        Runtime.trap("Profile already exists. Use \"update profile\" instead.");
-      };
-      case (null) {};
+  public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role) : async () {
+    if (userProfiles.containsKey(caller)) {
+      Runtime.trap("Profile already exists. Use \"update profile\" instead.");
     };
 
-    switch (requestedRole) {
-      case (#admin) {
-        switch (adminCode) {
-          case (null) {
-            Runtime.trap("Admin role requires a secret code. Please provide the admin code.");
-          };
-          case (?code) {
-            if (code != "646151") {
-              Runtime.trap("Invalid Admin Code. Please contact your main admin for support.");
-            };
-          };
-        };
-      };
-      case (#engineer) {
-        switch (adminCode) {
-          case (null) {
-            Runtime.trap("Engineer role requires authorization. Please provide the access code.");
-          };
-          case (?code) {
-            if (code != "646151") {
-              Runtime.trap("Invalid Access Code. Please contact your admin for support.");
-            };
-          };
-        };
-      };
-    };
+    let assignedRole = requestedRole;
 
     let sanitizedProfile : UserProfile = {
       name = profile.name;
       username = profile.username;
       mobileNumber = profile.mobileNumber;
       email = profile.email;
-      role = requestedRole;
+      role = assignedRole;
     };
 
     userProfiles.add(caller, sanitizedProfile);
-
     let accessControlRole = determineAccessControlRole(sanitizedProfile);
-
     AccessControl.assignRole(accessControlState, caller, caller, accessControlRole);
   };
 
@@ -152,7 +135,6 @@ actor {
         };
 
         let accessControlRole = determineAccessControlRole(updatedProfile);
-
         AccessControl.assignRole(accessControlState, caller, user, accessControlRole);
         userProfiles.add(user, updatedProfile);
       };

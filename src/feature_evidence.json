@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-unauthenticated-landing-screen-ui-to-show-two-distinct-primary-actions-one-button-labeled-sign-up-and-a-second-button-labeled-log-in-instead-of-the-single-combined-sign-up-log-in-button",
-      "featureTitle": "Update the unauthenticated landing screen UI to show two distinct primary actions—one button labeled \"Sign Up\" and a second button labeled \"Log In\"—instead of the single combined \"Sign Up / Log In\" button.",
+      "featureId": "feature-remove-the-admin-special-password-access-code-field-and-all-related-ui-copy-from-the-signup-completion-form-so-users-can-complete-signup-after-selecting-a-role-without-entering-any-extra-code",
+      "featureTitle": "Remove the \"Admin Special Password\" / \"Access Code\" field and all related UI copy from the signup completion form, so users can complete signup after selecting a role without entering any extra code.",
       "files": [
-        "frontend/src/components/LoginScreen.tsx"
+        "frontend/src/components/ProfileSetup.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -21,10 +21,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-loading-disabled-behavior-is-correct-when-authentication-is-in-progress-when-a-user-clicks-either-sign-up-or-log-in-both-buttons-are-disabled-while-loginstatus-logging-in-and-the-ui-provides-clear-feedback-that-a-connection-is-in-progress",
-      "featureTitle": "Ensure loading/disabled behavior is correct when authentication is in progress: when a user clicks either \"Sign Up\" or \"Log In\", both buttons are disabled while `loginStatus === 'logging-in'`, and the UI provides clear feedback that a connection is in progress.",
+      "featureId": "feature-remove-frontend-validation-and-error-messaging-logic-that-enforces-or-references-the-admin-engineer-code-requirement-including-the-6-digit-code-validation-and-any-translated-backend-error-messages-specific-to-invalid-missing-codes",
+      "featureTitle": "Remove frontend validation and error messaging logic that enforces or references the admin/engineer code requirement (including the 6-digit code validation and any translated backend error messages specific to invalid/missing codes).",
       "files": [
-        "frontend/src/components/LoginScreen.tsx"
+        "frontend/src/components/ProfileSetup.tsx",
+        "frontend/src/utils/signupErrorMessaging.ts",
+        "frontend/src/utils/signupValidation.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -36,6 +38,26 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-frontend-signup-mutation-call-to-stop-sending-any-access-code-value-during-signup-send-null-omit-according-to-the-generated-candid-bindings-consistent-with-removing-the-access-code-ui",
+      "featureTitle": "Update the frontend signup mutation call to stop sending any access code value during signup (send null/omit according to the generated candid bindings), consistent with removing the access-code UI.",
+      "files": [
+        "frontend/src/components/ProfileSetup.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

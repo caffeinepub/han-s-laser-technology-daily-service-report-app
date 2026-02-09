@@ -4,16 +4,18 @@ import { useGetCallerUserProfile, useIsCallerAdmin } from './hooks/useQueries';
 import { AppLayout } from './components/AppLayout';
 import { LoginScreen } from './components/LoginScreen';
 import { ProfileSetup } from './components/ProfileSetup';
+import { SessionInvalidScreen } from './components/SessionInvalidScreen';
 import { ReportEntryPage } from './pages/ReportEntryPage';
 import { ReportHistoryPage } from './pages/ReportHistoryPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AccessDeniedScreen } from './components/AccessDeniedScreen';
+import { isAuthError } from './utils/authErrorDetection';
 import { Loader2 } from 'lucide-react';
 
 function RootComponent() {
   const { identity, isInitializing } = useInternetIdentity();
-  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const { data: userProfile, isLoading: profileLoading, isFetched, error: profileError } = useGetCallerUserProfile();
 
   const isAuthenticated = !!identity;
 
@@ -24,6 +26,15 @@ function RootComponent() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
+      </AppLayout>
+    );
+  }
+
+  // Detect stale/invalid session: authenticated but profile fetch fails with auth error
+  if (isAuthenticated && isFetched && profileError && isAuthError(profileError)) {
+    return (
+      <AppLayout>
+        <SessionInvalidScreen />
       </AppLayout>
     );
   }
