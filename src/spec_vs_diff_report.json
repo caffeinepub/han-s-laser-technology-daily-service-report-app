@@ -1,0 +1,38 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-09T17:11:11.816Z",
+  "summary": "Backend changes show new server-side sanitization for signup role and profile update role, plus a new profile-existence gate for getCallerUserProfile/saveCallerUserProfile, and deleteUser now attempts to revoke AccessControl role by assigning #guest. However, due to truncation of backend/main.mo, there is no visible evidence that the same profile-existence gate, createdBy sanitization, and report-id uniqueness protections were implemented for the report endpoints (createReport/listReports/getReportById).",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Require that the caller has an existing user profile to use createReport, listReports, and getReportById, trapping with an English signup-required message if missing.",
+      "reason": "The diff shows verifyUserHasProfile being called in getCallerUserProfile and saveCallerUserProfile, but the sections containing createReport/listReports/getReportById are not shown in the truncated backend/main.mo diff, so there is no evidence these endpoints were updated.",
+      "evidence": [
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "During createReport, ignore any incoming report.createdBy value and always persist createdBy = caller as the only creator value stored.",
+      "reason": "The diff explicitly sanitizes role during signupWithCode, but no createReport implementation is visible in the truncated diff to confirm createdBy is being server-enforced and client-supplied createdBy is ignored.",
+      "evidence": [
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Prevent report overwrites by enforcing report ID uniqueness in createReport and trap with an English message if the id already exists.",
+      "reason": "No createReport logic is shown in the truncated diff, and there is no visible check for an existing report id prior to insertion.",
+      "evidence": [
+        "backend/main.mo (truncated)"
+      ]
+    }
+  ],
+  "hallucinated_features": [],
+  "confidence": 0.56,
+  "changed_files": [
+    "backend/main.mo",
+    "project_state.json"
+  ]
+}

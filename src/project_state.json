@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "App with signup flow (including an access code step); next planned work is tightening backend rules.",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Tighten backend rules (security/authorization) after the new access-code signup step",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Require that the caller has an existing user profile (not just an AccessControl #user permission) to use user/report endpoints: getCallerUserProfile, saveCallerUserProfile, createReport, listReports, and getReportById. If the profile does not exist, reject the call with a clear trap message instructing the user to sign up first.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Harden signup and report creation against client-supplied privileged fields by enforcing server authority: during signupWithCode, ignore any incoming profile.role value and always store role = #engineer for new signups; during createReport, ignore any incoming report.createdBy value and always store createdBy = caller (current behavior) and ensure this is the only persisted creator value.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Prevent report overwrites by enforcing report ID uniqueness in createReport: if a report with the same id already exists, reject the call with a clear trap message rather than overwriting the existing report.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "When an admin deletes a user via deleteUser, also remove/revoke that user's authorization role(s) in AccessControl so the deleted principal cannot continue to pass permission checks after deletion.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Tighten backend authorization and data integrity rules",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

@@ -1,0 +1,91 @@
+{
+  "kind": "build_request",
+  "title": "Tighten backend authorization and data integrity rules",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Require that the caller has an existing user profile (not just an AccessControl #user permission) to use user/report endpoints: getCallerUserProfile, saveCallerUserProfile, createReport, listReports, and getReportById. If the profile does not exist, reject the call with a clear trap message instructing the user to sign up first.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "tighten backend rules next."
+        ]
+      },
+      "acceptanceCriteria": [
+        "A principal that has no entry in userProfiles cannot create/list/fetch reports and cannot save a profile; each affected method traps with an English message indicating signup is required.",
+        "Existing signed-up users can still use all endpoints as before."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Harden signup and report creation against client-supplied privileged fields by enforcing server authority: during signupWithCode, ignore any incoming profile.role value and always store role = #engineer for new signups; during createReport, ignore any incoming report.createdBy value and always store createdBy = caller (current behavior) and ensure this is the only persisted creator value.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "tighten backend rules next."
+        ]
+      },
+      "acceptanceCriteria": [
+        "New signups always persist with role = #engineer regardless of what the frontend sends.",
+        "Reports always persist with createdBy = caller regardless of what the frontend sends.",
+        "No endpoint allows a non-admin to set themselves (or anyone else) to #admin."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Prevent report overwrites by enforcing report ID uniqueness in createReport: if a report with the same id already exists, reject the call with a clear trap message rather than overwriting the existing report.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "tighten backend rules next."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Calling createReport with an id that already exists traps with an English error message indicating the id already exists.",
+        "Calling createReport with a new id succeeds and the report is stored."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "When an admin deletes a user via deleteUser, also remove/revoke that user's authorization role(s) in AccessControl so the deleted principal cannot continue to pass permission checks after deletion.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "tighten backend rules next."
+        ]
+      },
+      "acceptanceCriteria": [
+        "After deleteUser completes, the deleted principal can no longer pass backend permission checks as a #user/#admin (i.e., they must sign up again to regain access).",
+        "deleteUser continues to remove the user profile and all reports createdBy that user as it does today.",
+        "Admins still cannot delete their own account (existing behavior remains)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional canisters/services).",
+    "Use English for any user-facing trap/error messages.",
+    "Do not edit files under frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui."
+  ],
+  "nonGoals": [
+    "Changing the access code value (must remain exactly \"646151\").",
+    "Adding third-party authentication or any non-Internet-Identity auth provider.",
+    "Adding real-time features (WebSockets/push) or external database integration."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

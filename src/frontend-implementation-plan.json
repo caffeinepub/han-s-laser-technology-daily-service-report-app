@@ -1,0 +1,6 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Tighten backend authorization and data integrity rules (frontend-only plan)",
+  "requirements": []
+}

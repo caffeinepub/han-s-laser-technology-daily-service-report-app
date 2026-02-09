@@ -1,0 +1,57 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-09T17:11:11.818Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 4,
+    "implemented": 0,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Require that the caller has an existing user profile (not just an AccessControl #user permission) to use user/report endpoints: getCallerUserProfile, saveCallerUserProfile, createReport, listReports, and getReportById. If the profile does not exist, reject the call with a clear trap message instructing the user to sign up first.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Harden signup and report creation against client-supplied privileged fields by enforcing server authority: during signupWithCode, ignore any incoming profile.role value and always store role = #engineer for new signups; during createReport, ignore any incoming report.createdBy value and always store createdBy = caller (current behavior) and ensure this is the only persisted creator value.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Prevent report overwrites by enforcing report ID uniqueness in createReport: if a report with the same id already exists, reject the call with a clear trap message rather than overwriting the existing report.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "When an admin deletes a user via deleteUser, also remove/revoke that user's authorization role(s) in AccessControl so the deleted principal cannot continue to pass permission checks after deletion.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}
