@@ -48,14 +48,17 @@ export interface backendInterface {
     deleteUser(user: Principal): Promise<void>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getPendingSignupsCount(): Promise<bigint>;
     getReportById(id: string): Promise<DailyServiceReport | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
+    processPendingSignups(): Promise<bigint>;
     purgeLegacyReportsAndUsers(): Promise<void>;
     resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    signupAdmin(profile: UserProfile, password: string): Promise<void>;
     signupWithRole(profile: UserProfile, requestedRole: Role): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;
 }

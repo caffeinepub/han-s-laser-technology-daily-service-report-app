@@ -131,14 +131,17 @@ export interface backendInterface {
     deleteUser(user: Principal): Promise<void>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getPendingSignupsCount(): Promise<bigint>;
     getReportById(id: string): Promise<DailyServiceReport | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
+    processPendingSignups(): Promise<bigint>;
     purgeLegacyReportsAndUsers(): Promise<void>;
     resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    signupAdmin(profile: UserProfile, password: string): Promise<void>;
     signupWithRole(profile: UserProfile, requestedRole: Role): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;
 }
@@ -229,6 +232,20 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n10(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getPendingSignupsCount(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPendingSignupsCount();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPendingSignupsCount();
+            return result;
+        }
+    }
     async getReportById(arg0: string): Promise<DailyServiceReport | null> {
         if (this.processError) {
             try {
@@ -299,6 +316,20 @@ export class Backend implements backendInterface {
             return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
         }
     }
+    async processPendingSignups(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.processPendingSignups();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.processPendingSignups();
+            return result;
+        }
+    }
     async purgeLegacyReportsAndUsers(): Promise<void> {
         if (this.processError) {
             try {
@@ -338,6 +369,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async signupAdmin(arg0: UserProfile, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.signupAdmin(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0), arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.signupAdmin(to_candid_UserProfile_n19(this._uploadFile, this._downloadFile, arg0), arg1);
             return result;
         }
     }

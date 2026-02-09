@@ -48,6 +48,7 @@ export const idlService = IDL.Service({
   'deleteUser' : IDL.Func([IDL.Principal], [], []),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getPendingSignupsCount' : IDL.Func([], [IDL.Nat], ['query']),
   'getReportById' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(DailyServiceReport)],
@@ -65,9 +66,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
       ['query'],
     ),
+  'processPendingSignups' : IDL.Func([], [IDL.Nat], []),
   'purgeLegacyReportsAndUsers' : IDL.Func([], [], []),
   'resetToFreshApp' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'signupAdmin' : IDL.Func([UserProfile, IDL.Text], [], []),
   'signupWithRole' : IDL.Func([UserProfile, Role], [], []),
   'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
 });
@@ -115,6 +118,7 @@ export const idlFactory = ({ IDL }) => {
     'deleteUser' : IDL.Func([IDL.Principal], [], []),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getPendingSignupsCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getReportById' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(DailyServiceReport)],
@@ -132,9 +136,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
         ['query'],
       ),
+    'processPendingSignups' : IDL.Func([], [IDL.Nat], []),
     'purgeLegacyReportsAndUsers' : IDL.Func([], [], []),
     'resetToFreshApp' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'signupAdmin' : IDL.Func([UserProfile, IDL.Text], [], []),
     'signupWithRole' : IDL.Func([UserProfile, Role], [], []),
     'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
   });

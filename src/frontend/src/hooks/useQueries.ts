@@ -78,6 +78,8 @@ export function useSignupWithRole() {
       
       if (!actor) throw new Error('Actor not available');
       
+      // Explicitly construct backend payload with only UserProfile fields
+      // Password is never included - it's frontend-only for validation
       const backendProfile: UserProfile = {
         name: profile.name,
         username: profile.username,
@@ -91,6 +93,7 @@ export function useSignupWithRole() {
         logSignupFlow('Signup mutation success');
         return result;
       } catch (error) {
+        // Log error without any password data (sanitizeErrorMessage ensures this)
         logSignupFlow('Signup mutation error', {
           error: sanitizeErrorMessage(error),
         });
@@ -99,6 +102,54 @@ export function useSignupWithRole() {
     },
     onSuccess: () => {
       logSignupFlow('Invalidating queries after signup');
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+    },
+  });
+}
+
+export function useSignupAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      profile, 
+      password, 
+    }: { 
+      profile: UserProfile; 
+      password: string; 
+    }) => {
+      logSignupFlow('Admin signup mutation starting', { 
+        actorAvailable: !!actor,
+      });
+      
+      if (!actor) throw new Error('Actor not available');
+      
+      // Explicitly construct backend payload with only UserProfile fields
+      const backendProfile: UserProfile = {
+        name: profile.name,
+        username: profile.username,
+        mobileNumber: profile.mobileNumber,
+        email: profile.email,
+        role: profile.role,
+      };
+      
+      try {
+        // Password is sent to backend for validation but never logged
+        const result = await actor.signupAdmin(backendProfile, password);
+        logSignupFlow('Admin signup mutation success');
+        return result;
+      } catch (error) {
+        // Log error without password (sanitizeErrorMessage ensures this)
+        logSignupFlow('Admin signup mutation error', {
+          error: sanitizeErrorMessage(error),
+        });
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      logSignupFlow('Invalidating queries after admin signup');
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
       queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
     },
@@ -132,6 +183,7 @@ export function useSaveCallerUserProfile() {
 // Admin User Management Queries
 export function useListUsers() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { data: isAdmin, isFetched: adminCheckFetched } = useIsCallerAdmin();
 
   return useQuery<Array<[Principal, UserProfile]>>({
     queryKey: ['users'],
@@ -139,7 +191,7 @@ export function useListUsers() {
       if (!actor) return [];
       return actor.listUsers();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && adminCheckFetched && isAdmin === true,
   });
 }
 

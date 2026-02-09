@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { useSignupWithRole } from '../hooks/useQueries';
+import { useSignupWithRole, useSignupAdmin } from '../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, User, AlertCircle } from 'lucide-react';
-import { Role } from '../backend';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Loader2, User, AlertCircle, Info, ShieldCheck, Wrench } from 'lucide-react';
+import { Role, type UserProfile } from '../backend';
 import { validateEmail, validateMobileNumber, validateRequired } from '../utils/signupValidation';
 import { translateSignupError } from '../utils/signupErrorMessaging';
+
+type AccountType = 'engineer' | 'admin';
 
 export function ProfileSetup() {
   const [name, setName] = useState('');
@@ -17,12 +19,14 @@ export function ProfileSetup() {
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role | ''>('');
+  const [accountType, setAccountType] = useState<AccountType>('engineer');
+  const [adminPassword, setAdminPassword] = useState('');
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [backendError, setBackendError] = useState<string>('');
   
   const signupMutation = useSignupWithRole();
+  const signupAdminMutation = useSignupAdmin();
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -44,8 +48,15 @@ export function ProfileSetup() {
     else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
-    if (!role) newErrors.role = 'Please select a role';
+
+    // Validate admin password if admin account type is selected
+    if (accountType === 'admin') {
+      if (!adminPassword) {
+        newErrors.adminPassword = 'Admin signup password is required';
+      } else if (adminPassword !== 'Hans@987123') {
+        newErrors.adminPassword = 'Invalid admin signup password';
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -60,27 +71,38 @@ export function ProfileSetup() {
     }
     
     try {
-      // Password is NOT sent to backend - only used for frontend validation
-      await signupMutation.mutateAsync({
-        profile: {
-          name: name.trim(),
-          username: username.trim(),
-          mobileNumber: mobileNumber.trim(),
-          email: email.trim(),
-          role: role as Role,
-        },
-        requestedRole: role as Role,
-      });
+      const profile: UserProfile = {
+        name: name.trim(),
+        username: username.trim(),
+        mobileNumber: mobileNumber.trim(),
+        email: email.trim(),
+        role: accountType === 'admin' ? Role.admin : Role.engineer,
+      };
+
+      if (accountType === 'admin') {
+        // Use admin signup mutation with password
+        await signupAdminMutation.mutateAsync({
+          profile,
+          password: adminPassword,
+        });
+        // Clear admin password after successful signup
+        setAdminPassword('');
+      } else {
+        // Use regular signup mutation
+        await signupMutation.mutateAsync({
+          profile,
+          requestedRole: Role.engineer,
+        });
+      }
     } catch (error: any) {
       const errorMessage = translateSignupError(error);
       setBackendError(errorMessage);
+      // Clear admin password on error to prevent resubmission with stale password
+      setAdminPassword('');
     }
   };
 
-  const handleRoleChange = (value: string) => {
-    setRole(value as Role);
-    if (errors.role) setErrors({ ...errors, role: '' });
-  };
+  const isPending = signupMutation.isPending || signupAdminMutation.isPending;
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] py-8">
@@ -115,7 +137,7 @@ export function ProfileSetup() {
                   if (errors.name) setErrors({ ...errors, name: '' });
                 }}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
               {errors.name && (
                 <p className="text-sm text-destructive">{errors.name}</p>
@@ -134,7 +156,7 @@ export function ProfileSetup() {
                   if (errors.username) setErrors({ ...errors, username: '' });
                 }}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
               {errors.username && (
                 <p className="text-sm text-destructive">{errors.username}</p>
@@ -153,7 +175,7 @@ export function ProfileSetup() {
                   if (errors.mobileNumber) setErrors({ ...errors, mobileNumber: '' });
                 }}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
               {errors.mobileNumber && (
                 <p className="text-sm text-destructive">{errors.mobileNumber}</p>
@@ -172,7 +194,7 @@ export function ProfileSetup() {
                   if (errors.email) setErrors({ ...errors, email: '' });
                 }}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email}</p>
@@ -191,45 +213,95 @@ export function ProfileSetup() {
                   if (errors.password) setErrors({ ...errors, password: '' });
                 }}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
+              <div className="flex items-start gap-2 text-xs text-muted-foreground mt-1">
+                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                <p>
+                  This password is only for local validation and is not stored. 
+                  Authentication is handled securely via Internet Identity.
+                </p>
+              </div>
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
 
             <div className="space-y-3">
-              <Label>Role *</Label>
+              <Label>Account Type *</Label>
               <RadioGroup
-                value={role}
-                onValueChange={handleRoleChange}
-                disabled={signupMutation.isPending}
-                required
+                value={accountType}
+                onValueChange={(value) => {
+                  setAccountType(value as AccountType);
+                  // Clear admin password error when switching away from admin
+                  if (value === 'engineer' && errors.adminPassword) {
+                    setErrors({ ...errors, adminPassword: '' });
+                  }
+                }}
+                disabled={isPending}
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value={Role.admin} id="admin" />
-                  <Label htmlFor="admin" className="font-normal cursor-pointer">
-                    Admin - Full access to all reports and user management
+                  <RadioGroupItem value="engineer" id="engineer" />
+                  <Label htmlFor="engineer" className="flex items-center gap-2 font-normal cursor-pointer">
+                    <Wrench className="h-4 w-4" />
+                    Engineer
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value={Role.engineer} id="engineer" />
-                  <Label htmlFor="engineer" className="font-normal cursor-pointer">
-                    Engineer - Access to your own reports only
+                  <RadioGroupItem value="admin" id="admin" />
+                  <Label htmlFor="admin" className="flex items-center gap-2 font-normal cursor-pointer">
+                    <ShieldCheck className="h-4 w-4" />
+                    Admin
                   </Label>
                 </div>
               </RadioGroup>
-              {errors.role && (
-                <p className="text-sm text-destructive">{errors.role}</p>
-              )}
             </div>
+
+            {accountType === 'admin' && (
+              <div className="space-y-2">
+                <Label htmlFor="adminPassword">Admin Signup Password *</Label>
+                <Input
+                  id="adminPassword"
+                  type="password"
+                  placeholder="Enter admin signup password"
+                  value={adminPassword}
+                  onChange={(e) => {
+                    setAdminPassword(e.target.value);
+                    if (errors.adminPassword) setErrors({ ...errors, adminPassword: '' });
+                  }}
+                  required
+                  disabled={isPending}
+                />
+                {errors.adminPassword && (
+                  <p className="text-sm text-destructive">{errors.adminPassword}</p>
+                )}
+              </div>
+            )}
+
+            {accountType === 'engineer' && (
+              <Alert className="bg-muted/50 border-muted">
+                <Wrench className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  <strong>Engineer Access:</strong> Create and view your own service reports.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {accountType === 'admin' && (
+              <Alert className="bg-muted/50 border-muted">
+                <ShieldCheck className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  <strong>Admin Access:</strong> View all reports, manage users, and access administrative functions. Admin accounts require a special signup password and are restricted to pre-approved names.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Button
               type="submit"
               className="w-full"
-              disabled={signupMutation.isPending}
+              disabled={isPending}
             >
-              {signupMutation.isPending ? (
+              {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...

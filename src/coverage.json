@@ -1,50 +1,57 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T19:29:48.564Z",
+  "generatedAt": "2026-02-09T20:19:31.561Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 2,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the new-user signup gating by ensuring that an authenticated principal without an existing profile can reach the ProfileSetup screen (i.e., profile lookup must not trap/throw for new users). Update the backend so `getCallerUserProfile()` returns `null` when the caller has no profile yet, instead of trapping due to missing `#user` permission.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Ensure an admin can view a complete list of all registered users via the existing admin user management UI, and ensure non-admin users are blocked from accessing the user list.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminUsersPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/AppHeader.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminUsersPage.tsx",
+          "frontend/src/components/AppHeader.tsx"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Harden the frontend session-invalid detection so that failures during profile fetch that indicate a missing signup/profile do not route the user to SessionInvalidScreen. Ensure the UI treats the “no profile yet” condition as expected and continues into ProfileSetup rather than showing a stale-session recovery flow.",
+        "summary": "Add an admin signup path where selecting the Admin role during signup requires entering the special admin signup password exactly: \"Hans@987123\"; if the password is missing or incorrect, the signup must fail with a clear, user-facing error message in English.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/authErrorDetection.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/components/ProfileSetup.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/utils/signupFlowDebug.ts"
         ],
         "matchedFiles": [
-          "frontend/src/utils/authErrorDetection.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/components/ProfileSetup.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/utils/signupFlowDebug.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Add targeted signup/profile-flow debugging output (console logging) in the frontend to make the persistent signup issue diagnosable in production builds: log the login status, whether identity is present, profile query status (loading/fetched), and any profile-fetch error message (sanitized to avoid leaking sensitive data).",
+        "summary": "Update frontend signup error translation so that backend failures related to invalid/missing admin signup password are displayed as a concise, user-friendly English message without exposing internal details.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/signupFlowDebug.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/hooks/useInternetIdentity.ts"
+          "frontend/src/utils/signupErrorMessaging.ts",
+          "frontend/src/components/ProfileSetup.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/signupFlowDebug.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/utils/signupErrorMessaging.ts",
+          "frontend/src/components/ProfileSetup.tsx"
         ]
       }
     ]
@@ -55,9 +62,15 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/AppHeader.tsx",
+    "frontend/src/components/ProfileSetup.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/authErrorDetection.ts",
+    "frontend/src/pages/AdminUsersPage.tsx",
+    "frontend/src/utils/signupErrorMessaging.ts",
     "frontend/src/utils/signupFlowDebug.ts",
     "project_state.json",
     "scratch/component-selection.json",

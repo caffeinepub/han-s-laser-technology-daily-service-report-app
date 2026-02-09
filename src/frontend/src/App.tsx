@@ -56,19 +56,6 @@ function RootComponent() {
     );
   }
 
-  // Detect stale/invalid session: authenticated but profile fetch fails with genuine auth error
-  // (NOT a missing profile error, which is expected for new users)
-  if (isAuthenticated && isFetched && profileError && isAuthError(profileError) && !isMissingProfileError(profileError)) {
-    logSignupFlow('Showing session invalid screen', {
-      error: sanitizeErrorMessage(profileError),
-    });
-    return (
-      <AppLayout>
-        <SessionInvalidScreen />
-      </AppLayout>
-    );
-  }
-
   // Show login if not authenticated
   if (!isAuthenticated) {
     logSignupFlow('Showing login screen', { isAuthenticated: false });
@@ -80,7 +67,7 @@ function RootComponent() {
   }
 
   // Show profile setup if authenticated but no profile exists
-  // This includes both: userProfile === null (backend returned null) OR missing profile error
+  // This includes: userProfile === null (backend returned null) OR missing profile error
   const showProfileSetup = 
     isAuthenticated && 
     !profileLoading && 
@@ -95,6 +82,39 @@ function RootComponent() {
     return (
       <AppLayout>
         <ProfileSetup />
+      </AppLayout>
+    );
+  }
+
+  // Detect stale/invalid session: authenticated but profile fetch fails with genuine auth error
+  // (NOT a missing profile error, which is expected for new users)
+  // (NOT a non-auth runtime/initialization error like "Actor not available")
+  if (isAuthenticated && isFetched && profileError && isAuthError(profileError)) {
+    logSignupFlow('Showing session invalid screen', {
+      error: sanitizeErrorMessage(profileError),
+    });
+    return (
+      <AppLayout>
+        <SessionInvalidScreen />
+      </AppLayout>
+    );
+  }
+
+  // Handle non-auth profile load errors (transient/initialization issues)
+  // Show a safe fallback without triggering SessionInvalidScreen
+  if (isAuthenticated && isFetched && profileError && !isAuthError(profileError)) {
+    logSignupFlow('Non-auth profile error, showing fallback', {
+      error: sanitizeErrorMessage(profileError),
+    });
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4 max-w-md">
+            <p className="text-muted-foreground">
+              Unable to load your profile. Please refresh the page or try again later.
+            </p>
+          </div>
+        </div>
       </AppLayout>
     );
   }

@@ -20,7 +20,7 @@ import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export function AdminUsersPage() {
-  const { data: isAdmin, isLoading: adminCheckLoading } = useIsCallerAdmin();
+  const { data: isAdmin, isLoading: adminCheckLoading, isFetched: adminCheckFetched } = useIsCallerAdmin();
   const { data: users, isLoading: usersLoading, error } = useListUsers();
   const deleteUser = useDeleteUser();
   const purgeLegacyData = usePurgeLegacyReportsAndUsers();
@@ -32,7 +32,8 @@ export function AdminUsersPage() {
   const [purgeError, setPurgeError] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
 
-  if (adminCheckLoading) {
+  // Show loading while checking admin status
+  if (adminCheckLoading || !adminCheckFetched) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
@@ -40,8 +41,17 @@ export function AdminUsersPage() {
     );
   }
 
+  // Show access denied if not admin
   if (!isAdmin) {
     return <AccessDeniedScreen />;
+  }
+
+  // Handle authorization errors from backend (e.g., non-admin trying to list users)
+  if (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('admin')) {
+      return <AccessDeniedScreen />;
+    }
   }
 
   const handleDeleteClick = (user: Principal) => {
@@ -77,147 +87,159 @@ export function AdminUsersPage() {
       // Force logout and clear all cached data
       await clear();
       setShowResetDialog(false);
-      // The app will automatically redirect to login screen
+      // The app will automatically reload to anonymous state
+      window.location.reload();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to reset application. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reset system. Please try again.';
       setResetError(errorMessage);
     }
   };
 
-  if (usersLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error Loading Users</CardTitle>
-            <CardDescription>
-              {error instanceof Error ? error.message : 'Failed to load users. Please try again.'}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-start justify-between">
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Users className="h-8 w-8" />
             User Management
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage system users and their access permissions
+          <p className="text-muted-foreground mt-1">
+            Manage user accounts and system data
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="destructive"
-            onClick={() => setShowPurgeDialog(true)}
-            disabled={purgeLegacyData.isPending}
-            className="flex items-center gap-2"
-          >
-            {purgeLegacyData.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="h-4 w-4" />
-                Delete all old data
-              </>
-            )}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setShowResetDialog(true)}
-            disabled={resetToFreshApp.isPending}
-            className="flex items-center gap-2 bg-destructive/90 hover:bg-destructive"
-          >
-            {resetToFreshApp.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Resetting...
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4" />
-                Full System Reset
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
-      {!users || users.length === 0 ? (
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardContent className="py-12 text-center">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No users found</p>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Delete All Old Data
+            </CardTitle>
+            <CardDescription>
+              Remove all reports and users except your own account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="destructive"
+              onClick={() => setShowPurgeDialog(true)}
+              disabled={purgeLegacyData.isPending}
+            >
+              {purgeLegacyData.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete All Old Data
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-4">
-          {users.map(([principal, profile]) => (
-            <Card key={principal.toString()}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      {profile.role === Role.admin ? (
-                        <ShieldCheck className="h-5 w-5 text-accent" />
-                      ) : (
-                        <Wrench className="h-5 w-5 text-muted-foreground" />
-                      )}
-                      {profile.name}
-                    </CardTitle>
-                    <CardDescription className="mt-2 font-mono text-xs break-all">
-                      {principal.toString()}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={profile.role === Role.admin ? 'default' : 'secondary'}>
-                      {profile.role === Role.admin ? 'Admin' : 'Engineer'}
-                    </Badge>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteClick(principal)}
-                      disabled={deleteUser.isPending}
-                    >
-                      {deleteUser.isPending && userToDelete?.toString() === principal.toString() ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      )}
 
-      {/* Delete single user dialog */}
-      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Full System Reset
+            </CardTitle>
+            <CardDescription>
+              Clear all data and log out (requires re-authentication)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="destructive"
+              onClick={() => setShowResetDialog(true)}
+              disabled={resetToFreshApp.isPending}
+            >
+              {resetToFreshApp.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Full System Reset
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Users</CardTitle>
+          <CardDescription>
+            {users ? `${users.length} user${users.length !== 1 ? 's' : ''} registered` : 'Loading users...'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            </div>
+          ) : users && users.length > 0 ? (
+            <div className="space-y-3">
+              {users.map(([principal, profile]) => (
+                <div
+                  key={principal.toString()}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-medium truncate">{profile.name}</p>
+                      <Badge variant={profile.role === Role.admin ? 'default' : 'secondary'}>
+                        {profile.role === Role.admin ? (
+                          <>
+                            <ShieldCheck className="h-3 w-3 mr-1" />
+                            Admin
+                          </>
+                        ) : (
+                          <>
+                            <Wrench className="h-3 w-3 mr-1" />
+                            Engineer
+                          </>
+                        )}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">@{profile.username}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {profile.email} • {profile.mobileNumber}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteClick(principal)}
+                    disabled={deleteUser.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this user? This action cannot be undone. All reports created by this user will also be deleted.
+              Are you sure you want to delete this user? This will also delete all their reports. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -232,85 +254,66 @@ export function AdminUsersPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Purge all data dialog */}
-      <AlertDialog open={showPurgeDialog} onOpenChange={(open) => {
-        setShowPurgeDialog(open);
-        if (!open) setPurgeError(null);
-      }}>
+      {/* Purge Legacy Data Confirmation Dialog */}
+      <AlertDialog open={showPurgeDialog} onOpenChange={setShowPurgeDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete All Old Data</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete all service reports and all users except yourself. This action cannot be undone.
+              This will permanently delete:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>All service reports</li>
+                <li>All user accounts except yours</li>
+              </ul>
+              <p className="mt-2 font-semibold">This action cannot be undone.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           {purgeError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded">
               {purgeError}
             </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={purgeLegacyData.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handlePurgeConfirm}
-              disabled={purgeLegacyData.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {purgeLegacyData.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete All Old Data'
-              )}
+              Delete All Old Data
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Full system reset dialog */}
-      <AlertDialog open={showResetDialog} onOpenChange={(open) => {
-        setShowResetDialog(open);
-        if (!open) setResetError(null);
-      }}>
+      {/* Full System Reset Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive">Full System Reset</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p className="font-semibold">
-                WARNING: This will permanently delete ALL data from the application:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>All user accounts (including your current admin account)</li>
+            <AlertDialogTitle>Full System Reset</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete:
+              <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>All service reports</li>
-                <li>All access permissions</li>
+                <li>All user accounts (including yours)</li>
+                <li>All system data</li>
               </ul>
-              <p className="font-semibold text-destructive">
-                This action cannot be undone. You will be logged out and must sign up again to use the application.
+              <p className="mt-2 font-semibold text-destructive">
+                You will be logged out and need to sign up again. This action cannot be undone.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           {resetError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded">
               {resetError}
             </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetToFreshApp.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleResetConfirm}
-              disabled={resetToFreshApp.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {resetToFreshApp.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Resetting...
-                </>
-              ) : (
-                'Reset Everything'
-              )}
+              Reset Everything
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

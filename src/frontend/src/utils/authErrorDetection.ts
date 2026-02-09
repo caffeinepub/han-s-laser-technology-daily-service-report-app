@@ -29,7 +29,8 @@ export function isMissingProfileError(error: unknown): boolean {
 
 /**
  * Checks if an error indicates a genuine authentication/session failure.
- * Returns false for missing profile errors (which are expected for new users).
+ * Returns false for missing profile errors (which are expected for new users)
+ * and non-auth initialization/runtime errors.
  */
 export function isAuthError(error: unknown): boolean {
   if (!error) return false;
@@ -41,19 +42,34 @@ export function isAuthError(error: unknown): boolean {
   
   const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
   
-  // Check for genuine auth-related error patterns
-  const authErrorPatterns = [
-    'unauthorized',
-    'forbidden',
-    'authentication',
-    'identity',
-    'delegation',
-    'invalid principal',
-    'not authenticated',
-    'session expired',
-    'invalid session',
-    'permission denied',
+  // Exclude non-auth initialization and runtime errors
+  const nonAuthErrorPatterns = [
+    'actor not available',
+    'actor not initialized',
+    'canister not found',
+    'network error',
+    'connection failed',
   ];
   
-  return authErrorPatterns.some(pattern => errorMessage.includes(pattern));
+  if (nonAuthErrorPatterns.some(pattern => errorMessage.includes(pattern))) {
+    return false;
+  }
+  
+  // Check for genuine auth-related error patterns with more specific matching
+  // Use word boundaries or specific phrases to avoid false positives
+  const authErrorPatterns = [
+    /\bnot authenticated\b/,
+    /\bauthentication (failed|required|invalid)\b/,
+    /\bdelegation (invalid|expired)\b/,
+    /\binvalid principal\b/,
+    /\bsession expired\b/,
+    /\binvalid session\b/,
+    /\bpermission denied\b/,
+    /\bforbidden\b/,
+    /\bunauthorized for caller\b/,
+    /\binvalid identity\b/,
+    /\bidentity (invalid|expired)\b/,
+  ];
+  
+  return authErrorPatterns.some(pattern => pattern.test(errorMessage));
 }

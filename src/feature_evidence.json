@@ -2,11 +2,33 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-harden-the-frontend-session-invalid-detection-so-that-failures-during-profile-fetch-that-indicate-a-missing-signup-profile-do-not-route-the-user-to-sessioninvalidscreen-ensure-the-ui-treats-the-no-profile-yet-condition-as-expected-and-continues-into-profilesetup-rather-than-showing-a-stale-session-recovery-flow",
-      "featureTitle": "Harden the frontend session-invalid detection so that failures during profile fetch that indicate a missing signup/profile do not route the user to SessionInvalidScreen. Ensure the UI treats the “no profile yet” condition as expected and continues into ProfileSetup rather than showing a stale-session recovery flow.",
+      "featureId": "feature-ensure-an-admin-can-view-a-complete-list-of-all-registered-users-via-the-existing-admin-user-management-ui-and-ensure-non-admin-users-are-blocked-from-accessing-the-user-list",
+      "featureTitle": "Ensure an admin can view a complete list of all registered users via the existing admin user management UI, and ensure non-admin users are blocked from accessing the user list.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/utils/authErrorDetection.ts"
+        "frontend/src/components/AppHeader.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminUsersPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-admin-signup-path-where-selecting-the-admin-role-during-signup-requires-entering-the-special-admin-signup-password-exactly-hans-987123-if-the-password-is-missing-or-incorrect-the-signup-must-fail-with-a-clear-user-facing-error-message-in-english",
+      "featureTitle": "Add an admin signup path where selecting the Admin role during signup requires entering the special admin signup password exactly: \"Hans@987123\"; if the password is missing or incorrect, the signup must fail with a clear, user-facing error message in English.",
+      "files": [
+        "frontend/src/components/ProfileSetup.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/signupFlowDebug.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,12 +44,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-targeted-signup-profile-flow-debugging-output-console-logging-in-the-frontend-to-make-the-persistent-signup-issue-diagnosable-in-production-builds-log-the-login-status-whether-identity-is-present-profile-query-status-loading-fetched-and-any-profile-fetch-error-message-sanitized-to-avoid-leaking-sensitive-data",
-      "featureTitle": "Add targeted signup/profile-flow debugging output (console logging) in the frontend to make the persistent signup issue diagnosable in production builds: log the login status, whether identity is present, profile query status (loading/fetched), and any profile-fetch error message (sanitized to avoid leaking sensitive data).",
+      "featureId": "feature-update-frontend-signup-error-translation-so-that-backend-failures-related-to-invalid-missing-admin-signup-password-are-displayed-as-a-concise-user-friendly-english-message-without-exposing-internal-details",
+      "featureTitle": "Update frontend signup error translation so that backend failures related to invalid/missing admin signup password are displayed as a concise, user-friendly English message without exposing internal details.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/utils/signupFlowDebug.ts"
+        "frontend/src/components/ProfileSetup.tsx",
+        "frontend/src/utils/signupErrorMessaging.ts"
       ],
       "components": [
         "authorization@4.0.0",

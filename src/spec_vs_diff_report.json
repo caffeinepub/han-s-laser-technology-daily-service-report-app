@@ -1,32 +1,61 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T19:29:48.562Z",
-  "summary": "Diff implements backend change to make getCallerUserProfile return null for new users, updates frontend gating to route new authenticated users to ProfileSetup instead of SessionInvalidScreen, and adds sanitized console logging for signup/profile flow diagnostics.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-09T20:19:31.558Z",
+  "summary": "REQ-2 and REQ-3 appear largely implemented (admin role selection in signup UI, password gate, backend server-side password check, and user-friendly English error translation). REQ-1 is partially supported on the frontend (admin-only navigation/access denied screen), but the diff summary is insufficient to confirm the backend `listUsers` behavior (admin-only and returning all users). Several unrequested features/restrictions were added (admin allowlist gating, system reset/purge tooling, and signup-flow debug logging).",
+  "missing_requirements": [
     {
-      "description": "Backend behavior change: saveCallerUserProfile now traps if the caller lacks #user permission and also traps when no existing profile exists (\"Please complete sign up first.\"), which is not part of the requested gating fix and may alter profile-update semantics.",
-      "reason": "BuildRequest only specifies changing getCallerUserProfile() behavior for new users; it does not request tightening/altering saveCallerUserProfile authorization or adding a prerequisite that a profile must already exist.",
+      "id": "REQ-1",
+      "requirement": "Backend `listUsers` API remains admin-only and returns all user profiles stored in the canister.",
+      "reason": "The diff summary for `backend/main.mo` is truncated and does not show any `listUsers` implementation or authorization checks for listing users; only frontend gating is visible.",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Backend behavior change: signupWithRole explicitly removes authorization checks to allow any authenticated principal (including guests) to sign up.",
-      "reason": "While possibly related to improving signup flow, the BuildRequest did not explicitly request changing authorization behavior of signupWithRole; it only required getCallerUserProfile not to trap and frontend routing changes.",
-      "evidence": [
-        "backend/main.mo"
+        "backend/main.mo (truncated)",
+        "frontend/src/pages/AdminUsersPage.tsx",
+        "frontend/src/hooks/useQueries.ts (truncated)"
       ]
     }
   ],
-  "confidence": 0.74,
+  "hallucinated_features": [
+    {
+      "description": "Admin allowlist gating based on specific names and additional restrictions on admin role assignment beyond the requested admin-signup password gate.",
+      "reason": "BuildRequest only requires gating Admin signup via a special password; it does not request name-based allowlisting or forcing non-allowlisted users to Engineer even if they request Admin.",
+      "evidence": [
+        "backend/main.mo (createAllowlist, adminAllowlist, isAllowlistedAdmin, determineAccessControlRole, signupWithRole forces #engineer, signupAdmin allowlist check)"
+      ]
+    },
+    {
+      "description": "Full system reset / legacy purge administrative capabilities exposed in the Admin Users page and implemented in backend (`resetToFreshApp`).",
+      "reason": "BuildRequest does not include requirements to add data purge or full reset functionality.",
+      "evidence": [
+        "backend/main.mo (resetToFreshApp)",
+        "frontend/src/pages/AdminUsersPage.tsx (useResetToFreshApp, purge/reset dialogs/actions)"
+      ]
+    },
+    {
+      "description": "Signup-flow debug logging framework (`logSignupFlow`) added to frontend hooks.",
+      "reason": "BuildRequest does not request adding debug logging utilities; it only constrains not logging/persisting the admin signup password.",
+      "evidence": [
+        "frontend/src/utils/signupFlowDebug.ts",
+        "frontend/src/hooks/useQueries.ts (imports and uses logSignupFlow)"
+      ]
+    },
+    {
+      "description": "Hard-coded admin signup password check on the client side (UI validation compares to \"Hans@987123\").",
+      "reason": "BuildRequest requires server-side enforcement and user-facing error messaging; it does not request (and may be considered risky to add) client-side exact-secret validation using the literal secret.",
+      "evidence": [
+        "frontend/src/components/ProfileSetup.tsx (adminPassword !== 'Hans@987123')"
+      ]
+    }
+  ],
+  "confidence": 0.64,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
+    "frontend/src/components/AppHeader.tsx",
+    "frontend/src/components/ProfileSetup.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/authErrorDetection.ts",
+    "frontend/src/pages/AdminUsersPage.tsx",
+    "frontend/src/utils/signupErrorMessaging.ts",
     "frontend/src/utils/signupFlowDebug.ts",
     "project_state.json"
   ]

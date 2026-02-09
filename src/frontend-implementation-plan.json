@@ -1,61 +1,84 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix frontend signup gating vs session-invalid routing and add production-safe debug logging",
+  "title": "Admin user listing access + admin signup gated by special password (frontend-only)",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Treat authenticated “no profile yet” as an expected state (route to ProfileSetup) and reserve SessionInvalidScreen for genuine auth/session failures.",
+      "id": "REQ-1",
+      "summary": "Gate Admin Users UI behind admin-only checks and ensure the user list loads only for admins and renders the full backend-provided list.",
       "acceptanceCriteria": [
-        "When authenticated and the backend indicates the user has no profile yet, the app renders ProfileSetup instead of SessionInvalidScreen.",
-        "SessionInvalidScreen is shown only for genuine authentication/session failures (e.g., invalid/expired delegation), not for expected new-user states.",
-        "No infinite loading loop occurs between login, profile fetch, and ProfileSetup."
+        "When logged in as an admin, the existing Admin Users page successfully loads and displays all users returned by the backend (not only the current user).",
+        "When logged in as a non-admin, attempting to access the Admin Users page shows an access denied screen and the backend rejects user-list requests with an authorization error.",
+        "The backend `listUsers` API remains admin-only and returns all user profiles stored in the canister."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/authErrorDetection.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Refine auth/session error classification by introducing a distinct detection for “missing signup/profile” errors (based on known backend error strings for new principals) so they are not treated as stale/invalid sessions. Verify the component's usage instructions before implementing."
+          "description": "Update the user-list React Query hook to support conditional fetching (e.g., only enable fetching when the caller is confirmed admin) so non-admin users do not continuously trigger admin-only backend authorization failures. Use the existing authorization system signals already exposed to the frontend (e.g., isCallerAdmin). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminUsersPage.tsx",
+          "operation": "modify",
+          "description": "Ensure the Admin Users page only attempts to load the user list after admin status is confirmed, and treat authorization failures from the backend as an access-denied UX (render AccessDeniedScreen) rather than a generic error card. Use the existing AccessDeniedScreen component to present the restricted-access state (authorization component guidance: show AccessDeniedScreen when unauthorized). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Update RootComponent gating logic to: (1) show SessionInvalidScreen only when isAuthError(profileError) AND NOT a detected new-user/missing-profile error; (2) route authenticated callers with userProfile === null OR a detected missing-profile error into ProfileSetup; (3) keep existing loading gating to avoid loops (use isInitializing/profileLoading/isFetched consistently). Use the authorization component’s frontend guidance for Profile Setup gating (getCallerUserProfile returning null) to align behavior. Verify the component's usage instructions before implementing."
+          "description": "Keep the /admin/users route guarded via admin-role checks and ensure navigation to Admin Users is not sufficient to bypass the guard. Confirm the route guard behavior still renders AccessDeniedScreen for non-admins using the existing authorization-driven admin check hook. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AppHeader.tsx",
+          "operation": "modify",
+          "description": "Confirm the 'Users' navigation link is only visible when the caller is an admin (using the existing admin-check hook) to reduce accidental access attempts by non-admin users. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add admin signup option in the signup UI with a required special password gate and submit the correct backend signup call for admin role.",
+      "acceptanceCriteria": [
+        "The signup UI allows choosing between Engineer and Admin account type.",
+        "If Admin is selected and the password is not exactly \"Hans@987123\", the user cannot complete signup and sees an English error message indicating the admin signup password is invalid.",
+        "If Admin is selected and the password is exactly \"Hans@987123\", the frontend sends an admin signup request to the backend and the created profile is stored with role Admin.",
+        "The backend enforces the admin signup password check server-side (not just in the UI).",
+        "The admin signup password is never persisted in canister state and is not included in any frontend debug logs or error logs."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ProfileSetup.tsx",
+          "operation": "modify",
+          "description": "Update the signup form to allow selecting account type (Engineer vs Admin). When Admin is selected, show an additional 'Admin signup password' input and require it to equal exactly \"Hans@987123\" before allowing submission; when Engineer is selected, do not require/admin-password-gate. Ensure the password is held only in component state for submission, is cleared after success/failure, and is never written to logs or UI error echoes. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a dedicated signup mutation for admin signup that calls the backend admin-signup capability (signupAdmin) and avoids logging or including the admin signup password in any debug payloads. Continue to use existing sanitized logging utilities, and ensure no mutation logs include the password string (even inadvertently via objects). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/signupFlowDebug.ts",
+          "operation": "modify",
+          "description": "Harden signup-flow debug sanitation to ensure the admin signup password value is never emitted in console logs, including cases where the raw error message might contain user-provided content. Confirm password-related patterns remain redacted and that helper usage in signup hooks does not pass password values into logs. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Add targeted, sanitized console logging for authentication and profile-fetch state to debug persistent signup issues in production.",
+      "summary": "Map backend admin-signup password failures to a concise, user-friendly English message without exposing internal details or the password.",
       "acceptanceCriteria": [
-        "When running the app and reproducing the signup flow, the browser console includes clear logs for: authentication state, profile fetch state, and any encountered error message.",
-        "The logs do not include secrets (e.g., URL secret parameters such as `caffeineAdminToken`) or personally identifying form inputs (name/email/mobile/password)."
+        "When the backend rejects an admin signup due to incorrect password, the UI shows a user-friendly English message (e.g., \"Invalid admin signup password.\").",
+        "Error handling does not echo the admin password back to the user and does not include stack traces or internal backend details."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/signupFlowDebug.ts",
-          "operation": "create",
-          "description": "Create a small debug utility that emits consistent console logs for the signup/profile flow and sanitizes error messages (e.g., strip/replace sensitive URL secret parameter names like caffeineAdminToken and avoid logging principals or any form-input values). Verify the component's usage instructions before implementing."
+          "path": "frontend/src/utils/signupErrorMessaging.ts",
+          "operation": "modify",
+          "description": "Extend signup error translation to detect backend failures specifically related to invalid/missing admin signup password and return a concise English message such as \"Invalid admin signup password.\" Ensure the mapping does not include internal backend details, stack traces, or any reflection of the password value. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/ProfileSetup.tsx",
           "operation": "modify",
-          "description": "Add signup/profile-flow console logging at key decision points (initialization, authenticated vs not, profile query loading/fetched, gating decisions, and any profileError message via sanitizer). Ensure logs are present in production builds and do not include secrets/PII. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add targeted logs (via the shared debug utility) around the current-user profile query lifecycle: actor availability, query start/success (null vs profile), and sanitized error. Avoid logging any user-entered fields and avoid logging principals. Use the authorization component’s recommended pattern for getCallerUserProfile query state to ensure logging matches isLoading/isFetched semantics. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Add minimal, sanitized logs (via the shared debug utility) indicating whether an identity is present and whether an actor was created/refreshed. Do not log the caffeineAdminToken or any URL parameter values. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useInternetIdentity.ts",
-          "operation": "modify",
-          "description": "Add minimal logs for loginStatus transitions and whether identity is present after initialization/login success, using the shared debug utility and avoiding principal strings or any secrets. Verify the component's usage instructions before implementing."
+          "description": "Wire the updated error translation into the admin signup flow so backend rejections for invalid/missing admin signup password display the concise user-facing English message, and ensure the UI never echoes the provided password back to the user in any error state. Verify the component's usage instructions before implementing."
         }
       ]
     }

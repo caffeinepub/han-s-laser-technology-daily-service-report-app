@@ -23,27 +23,55 @@ actor {
     role : Role;
   };
 
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let reports = Map.empty<Text, DailyServiceReport>();
+  public type DailyServiceReport = {
+    id : Text;
+    createdBy : Principal;
+    date : Text;
+    customerName : Text;
+    contactPerson : Text;
+    mobileNumber : Text;
+    machineModel : Text;
+    machineSerialNo : Text;
+    warrantyStatus : Text;
+    travelingExpensePaid : Bool;
+    issueDescribedByCustomer : Text;
+    issueFoundByEngineer : Text;
+    solution : Text;
+    issueResolved : Bool;
+    nextPlanOfAction : ?Text;
+    sparesRequired : Text;
+    customerFeedback : Text;
+  };
 
-  func isAdminAllowlisted(profile : UserProfile) : Bool {
+  func createAllowlist() : Map.Map<Text, ()> {
+    let allowlist = Map.empty<Text, ()>();
+    let names = ["sayed baquar", "Bharat Nikam"];
+    for (name in names.values()) {
+      allowlist.add(name, ());
+    };
+    allowlist;
+  };
+
+  let adminAllowlist = createAllowlist();
+  let adminSignupPassword = "Hans@987123";
+
+  func isAllowlistedAdmin(profile : UserProfile) : Bool {
     let trimmedName = profile.name.trim(#text(" "));
-    trimmedName == "sayed baquar" or trimmedName == "Bharat Nikam";
+    switch (adminAllowlist.get(trimmedName)) {
+      case (null) { false };
+      case (?_) { true };
+    };
   };
 
   func determineAccessControlRole(profile : UserProfile) : AccessControl.UserRole {
-    if (profile.role == #admin or isAdminAllowlisted(profile)) {
+    if (profile.role == #admin and isAllowlistedAdmin(profile)) {
       #admin;
-    } else {
-      #user;
-    };
+    } else { #user };
   };
 
-  func ensureAllowlistedAdminStatus(caller : Principal, profile : UserProfile) : () {
-    if (isAdminAllowlisted(profile)) {
-      AccessControl.assignRole(accessControlState, caller, caller, #admin);
-    };
-  };
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let reports = Map.empty<Text, DailyServiceReport>();
+  let pendingSignups = Map.empty<Principal, UserProfile>();
 
   public shared ({ caller }) func resetToFreshApp() : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
@@ -51,16 +79,93 @@ actor {
     };
 
     reports.clear();
+
     let allUsers = userProfiles.keys().toArray();
     userProfiles.clear();
-    for (user in allUsers.vals()) {
+
+    for (user in allUsers.values()) {
       AccessControl.assignRole(accessControlState, caller, user, #guest);
     };
+
+    pendingSignups.clear();
+  };
+
+  public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role) : async () {
+    if (caller.isAnonymous()) {
+      Runtime.trap("Anonymous users cannot sign up. Please authenticate first.");
+    };
+
+    if (userProfiles.containsKey(caller)) {
+      Runtime.trap("Profile already exists. Use \"update profile\" instead.");
+    };
+
+    let sanitizedProfile : UserProfile = {
+      profile with
+      name = profile.name.trim(#text(" "));
+      role = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+        requestedRole;
+      } else {
+        #engineer; // Force non-allowlisted users to engineer role
+      };
+    };
+
+    userProfiles.add(caller, sanitizedProfile);
+    pendingSignups.add(caller, sanitizedProfile);
+  };
+
+  public shared ({ caller }) func signupAdmin(profile : UserProfile, password : Text) : async () {
+    if (caller.isAnonymous()) {
+      Runtime.trap("Anonymous users cannot sign up. Please authenticate first.");
+    };
+
+    if (userProfiles.containsKey(caller)) {
+      Runtime.trap("Profile already exists. Use \"update profile\" instead.");
+    };
+
+    if (password != adminSignupPassword) {
+      Runtime.trap("Admin signup failed: Incorrect signup password");
+    };
+
+    if (not isAllowlistedAdmin(profile)) {
+      Runtime.trap("Admin signup failed: An admin profile with this name is not on the allowlist. Please contact your system administrator for additional permissions.");
+    };
+
+    let sanitizedProfile : UserProfile = {
+      profile with
+      name = profile.name.trim(#text(" "));
+      role = #admin;
+    };
+
+    userProfiles.add(caller, sanitizedProfile);
+    pendingSignups.add(caller, sanitizedProfile);
+  };
+
+  public shared ({ caller }) func processPendingSignups() : async Nat {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can process pending signups");
+    };
+
+    var processed : Nat = 0;
+    let entries = pendingSignups.entries().toArray();
+
+    for ((principal, profile) in entries.values()) {
+      let accessControlRole = determineAccessControlRole(profile);
+      AccessControl.assignRole(accessControlState, caller, principal, accessControlRole);
+      pendingSignups.remove(principal);
+      processed += 1;
+    };
+
+    processed;
+  };
+
+  public query ({ caller }) func getPendingSignupsCount() : async Nat {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view pending signups");
+    };
+    pendingSignups.size();
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    // No authorization check - allow any caller (including guests/new users) to check their profile status
-    // Returns null if no profile exists, enabling new-user signup flow
     userProfiles.get(caller);
   };
 
@@ -76,16 +181,22 @@ actor {
       case (?p) { p };
     };
 
+    let finalRole = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+      existingProfile.role;
+    } else { #engineer };
+
     let updatedProfile = {
-      name = profile.name;
+      name = profile.name.trim(#text(" "));
       username = profile.username;
       mobileNumber = profile.mobileNumber;
       email = profile.email;
-      role = existingProfile.role;
+      role = finalRole;
     };
     userProfiles.add(caller, updatedProfile);
 
-    ensureAllowlistedAdminStatus(caller, updatedProfile);
+    if (isAllowlistedAdmin(updatedProfile) and updatedProfile.role == #admin) {
+      AccessControl.assignRole(accessControlState, caller, caller, #admin);
+    };
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
@@ -93,26 +204,6 @@ actor {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
     userProfiles.get(user);
-  };
-
-  public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role) : async () {
-    // No authorization check - allow any authenticated principal (including guests) to sign up
-    if (userProfiles.containsKey(caller)) {
-      Runtime.trap("Profile already exists. Use \"update profile\" instead.");
-    };
-
-    let assignedRole = requestedRole;
-    let sanitizedProfile : UserProfile = {
-      name = profile.name;
-      username = profile.username;
-      mobileNumber = profile.mobileNumber;
-      email = profile.email;
-      role = assignedRole;
-    };
-
-    userProfiles.add(caller, sanitizedProfile);
-    let accessControlRole = determineAccessControlRole(sanitizedProfile);
-    AccessControl.assignRole(accessControlState, caller, caller, accessControlRole);
   };
 
   public shared ({ caller }) func updateUserRole(user : Principal, newRole : Role) : async () {
@@ -125,12 +216,14 @@ actor {
         Runtime.trap("User profile not found");
       };
       case (?existingProfile) {
+        let finalRole = if (newRole == #admin and not isAllowlistedAdmin(existingProfile)) {
+          #engineer; 
+        } else { newRole };
+
         let updatedProfile = {
-          name = existingProfile.name;
-          username = existingProfile.username;
-          mobileNumber = existingProfile.mobileNumber;
-          email = existingProfile.email;
-          role = newRole;
+          existingProfile with
+          name = existingProfile.name.trim(#text(" "));
+          role = finalRole;
         };
 
         let accessControlRole = determineAccessControlRole(updatedProfile);
@@ -162,6 +255,7 @@ actor {
       };
       case (?_) {
         userProfiles.remove(user);
+        pendingSignups.remove(user);
       };
     };
 
@@ -175,26 +269,6 @@ actor {
     for ((id, _) in reportsToRemove) {
       reports.remove(id);
     };
-  };
-
-  public type DailyServiceReport = {
-    id : Text;
-    createdBy : Principal;
-    date : Text;
-    customerName : Text;
-    contactPerson : Text;
-    mobileNumber : Text;
-    machineModel : Text;
-    machineSerialNo : Text;
-    warrantyStatus : Text;
-    travelingExpensePaid : Bool;
-    issueDescribedByCustomer : Text;
-    issueFoundByEngineer : Text;
-    solution : Text;
-    issueResolved : Bool;
-    nextPlanOfAction : ?Text;
-    sparesRequired : Text;
-    customerFeedback : Text;
   };
 
   public shared ({ caller }) func createReport(report : DailyServiceReport) : async Text {
@@ -232,9 +306,7 @@ actor {
     };
 
     let report = switch (reports.get(id)) {
-      case (null) {
-        return null;
-      };
+      case (null) { return null };
       case (?r) { r };
     };
 
@@ -265,6 +337,7 @@ actor {
     };
 
     userProfiles.clear();
+    pendingSignups.clear();
     for ((principal, user_profile) in filteredUser.entries()) {
       userProfiles.add(principal, user_profile);
     };
