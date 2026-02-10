@@ -1,26 +1,21 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "Build an app with role-based post-login routing (admin dashboard vs user form) and a header that displays the logged-in user's ID.",
+  "architectural_notes": [
+    "Implement role-aware post-login routing: admin -> admin dashboard (users list + reports), user -> user form page.",
+    "Add a persistent header component that shows the authenticated user's ID."
+  ],
   "known_issues": [
-    "Admin cannot currently view all users and their reports (regression/unfinished access control or UI listing)."
+    "Admin accounts are currently being routed/rendered as normal users (admin sees form page instead of admin dashboard)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-admin-users-ui-to-let-admins-view-each-user-s-reports-per-user-drilldown-using-existing-report-data-reports-include-createdby-principal",
-      "title": "Update the Admin Users UI to let admins view each user’s reports (per-user drilldown) using existing report data (reports include createdBy principal).",
+      "id": "feature-display-the-currently-logged-in-user-s-internet-identity-principal-user-id-at-the-top-of-the-app-for-both-normal-users-and-admins-visible-after-login-on-all-authenticated-screens",
+      "title": "Display the currently logged-in user's Internet Identity principal (user ID) at the top of the app for both normal users and admins, visible after login on all authenticated screens.",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-admin-reports-view-supports-showing-all-reports-unfiltered-and-filtered-by-user-reports-with-clear-english-ui-labels-indicating-the-current-filter",
-      "title": "Ensure the admin reports view supports showing all reports (unfiltered) and filtered-by-user reports with clear, English UI labels indicating the current filter.",
-      "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "version": 1
     }
@@ -28,20 +23,18 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Admin should be able to view all users and their reports",
+      "summary": "Fix role-based routing so admin accounts do not see the user form page and instead see admin views (all users list and reports).",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Fix backend admin authorization so an allowlisted admin account can successfully access admin-only operations (including listing all users and accessing all reports) after signup/login.",
-      "reqIds": [
-        "REQ-1"
-      ],
+      "summary": "Display the logged-in user's ID at the top of the app after login for both users and admins.",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix admin visibility: list all users and view their reports",
+  "projectName": "Show logged-in user ID in the app header",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

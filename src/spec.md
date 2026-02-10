@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Restore and improve admin access so allowlisted admins can list all users and view reports across all users, including per-user report drilldown in the UI.
+**Goal:** Show the logged-in user’s Internet Identity principal (user ID) in the app header after authentication.
 
 **Planned changes:**
-- Fix backend admin authorization so allowlisted admins can successfully call admin-only methods after signup/login (list all users; list all reports across users), while non-admins remain denied.
-- Update the Admin Users page to add an action on each user to view that user’s reports (using existing report data via `createdBy` principal).
-- Enhance the admin reports view to support switching between “All reports” and “Reports for <selected user>”, with clear English labels and an English empty state when no reports exist for the selected user.
+- Update the authenticated app header to display a “User ID:” label plus the current user’s principal (formatted using the existing short-form helper).
+- Ensure the user ID appears consistently for both normal users and admins across all authenticated routes, and is hidden when not logged in.
+- Adjust header layout styling as needed to keep it responsive on mobile and desktop without modifying read-only UI components or immutable auth hooks.
 
-**User-visible outcome:** Admins can access the admin Users page to see all users, drill into a selected user to view only their reports, and switch back to viewing all reports; non-admin users continue to see access denied for admin-only views.
+**User-visible outcome:** After logging in (as a user or admin), the app header displays “User ID: <principal>” on all authenticated screens; when logged out, no user ID is shown.

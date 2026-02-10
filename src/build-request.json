@@ -1,72 +1,34 @@
 {
   "kind": "build_request",
-  "title": "Fix admin visibility: list all users and view their reports",
+  "title": "Show logged-in user ID in the app header",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix backend admin authorization so an allowlisted admin account can successfully access admin-only operations (including listing all users and accessing all reports) after signup/login.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "still admin can not view all users. and their reports"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When logged in as an allowlisted admin, calling the backend method that powers the Users admin page returns all stored user profiles (does not trap with an unauthorized/admin error).",
-        "When logged in as an allowlisted admin, calling the backend method that lists reports returns all stored reports across all users.",
-        "When logged in as a non-admin, admin-only backend operations (e.g., list users) remain denied with an authorization error."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Update the Admin Users UI to let admins view each user’s reports (per-user drilldown) using existing report data (reports include createdBy principal).",
+      "text": "Display the currently logged-in user's Internet Identity principal (user ID) at the top of the app for both normal users and admins, visible after login on all authenticated screens.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "still admin can not view all users. and their reports"
+          "once a user or admin login, his user id should show on top of app"
         ]
       },
       "acceptanceCriteria": [
-        "On the admin Users page, each listed user has a clear action (e.g., button/link) to view that user’s reports.",
-        "Clicking the action navigates to a reports view filtered to that selected user and shows only reports created by that user.",
-        "The filtered reports view is accessible only to admins (non-admins see the existing access denied UI)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Ensure the admin reports view supports showing all reports (unfiltered) and filtered-by-user reports with clear, English UI labels indicating the current filter.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "still admin can not view all users. and their reports"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admins can switch between “All reports” and “Reports for <selected user>” (or equivalent) without needing a page reload.",
-        "The UI clearly indicates which user is selected when a user filter is active (e.g., shows the user’s name/username and/or principal).",
-        "If the selected user has no reports, the UI shows an English empty state message (e.g., “No reports found for this user.”)."
+        "When the user is not authenticated, no user ID is shown in the header.",
+        "When the user is authenticated (user or admin), the header shows a label and the user’s principal (e.g., \"User ID: <principal>\") on all routes.",
+        "The displayed user ID uses the existing principal-formatting helper (short form), and the UI remains responsive (does not break the header layout on mobile or desktop)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Use English for all user-facing text."
+    "Do not modify any files under frontend/src/components/ui (Shadcn components are read-only).",
+    "Do not modify frontend/src/hooks/useInternetIdentity.ts or other immutable paths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing third-party authentication providers (only Internet Identity is supported).",
-    "Adding real-time updates (e.g., websockets) for admin dashboards.",
-    "Changing report data fields or introducing new report types beyond enabling admin visibility and per-user filtering."
+    "Do not change role-based routing behavior or admin authorization logic as part of this request.",
+    "Do not add new authentication providers; continue using Internet Identity only."
   ],
   "imageRequirements": {
     "required": [],

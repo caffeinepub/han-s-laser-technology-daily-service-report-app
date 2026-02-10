@@ -1,57 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin per-user report drilldown and report history filtering",
+  "title": "Show authenticated Internet Identity principal in app header",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Add per-user “view reports” drilldown from Admin Users to the reports history filtered by createdBy principal.",
+      "id": "REQ-1",
+      "summary": "Show the logged-in Internet Identity principal (short form) in the header across all authenticated screens without impacting responsive layout.",
       "acceptanceCriteria": [
-        "On the admin Users page, each listed user has a clear action (e.g., button/link) to view that user’s reports.",
-        "Clicking the action navigates to a reports view filtered to that selected user and shows only reports created by that user.",
-        "The filtered reports view is accessible only to admins (non-admins see the existing access denied UI)."
+        "When the user is not authenticated, no user ID is shown in the header.",
+        "When the user is authenticated (user or admin), the header shows a label and the user’s principal (e.g., \"User ID: <principal>\") on all routes.",
+        "The displayed user ID uses the existing principal-formatting helper (short form), and the UI remains responsive (does not break the header layout on mobile or desktop)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AdminUsersPage.tsx",
+          "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Add a clear per-user action (e.g., “View Reports”) that navigates to the existing reports history view with a user filter (using the selected user’s principal as a route search/query value). Use existing shadcn-ui Button/Badge components for consistent UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/ReportHistoryPage.tsx",
-          "operation": "modify",
-          "description": "Enforce admin-only access when a user filter is active (i.e., when viewing another user’s reports via drilldown). Use the existing authorization-driven admin check (useIsCallerAdmin) and show the existing AccessDeniedScreen for non-admins. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Support switching between all reports and user-filtered reports in the admin reports view with clear English labels and empty states.",
-      "acceptanceCriteria": [
-        "Admins can switch between “All reports” and “Reports for <selected user>” (or equivalent) without needing a page reload.",
-        "The UI clearly indicates which user is selected when a user filter is active (e.g., shows the user’s name/username and/or principal).",
-        "If the selected user has no reports, the UI shows an English empty state message (e.g., “No reports found for this user.”)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Update the /history route configuration to accept and preserve an optional user filter in route search/query state (for admin drilldown), so navigation between filtered/unfiltered modes works via client-side routing without reload. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/ReportHistoryPage.tsx",
-          "operation": "modify",
-          "description": "Add admin-only filter controls to toggle between “All reports” and “Reports for <selected user>” using route search/query updates (no reload). When a filter is active, clearly display the selected user label (prefer username/name from listUsers when available, with principal as fallback) and filter the displayed list by report.createdBy. Add an English empty state specifically for the active user filter (e.g., “No reports found for this user.”). Use the authorization component’s admin check (useIsCallerAdmin) to gate admin-only controls and access. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add/adjust a small query utility for admin-only user display mapping needed by the filtered reports view (e.g., enabling reuse of listUsers data to resolve principal -> user label) while keeping existing role-based gating behavior. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/formatPrincipal.ts",
-          "operation": "create",
-          "description": "Create a small utility to format principals for display (e.g., short form) to support clear English filter labels like “Reports for <name> (<principal>)” without exposing overly long identifiers in the UI."
+          "description": "Add a \"User ID:\" header element that reads the current Internet Identity principal from the existing authentication context (authorization component) after login, formats it with the existing frontend/src/utils/formatPrincipal helper, and renders it on all authenticated views. Ensure responsive behavior via layout classes (e.g., min-width handling + truncation) so long principals do not overflow on mobile/desktop, and keep the element hidden when identity is not present. Verify the component's usage instructions before implementing."
         }
       ]
     }

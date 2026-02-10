@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useIsCallerAdmin } from '../hooks/useQueries';
 import { useFullLogout } from '../hooks/useFullLogout';
+import { formatPrincipal } from '../utils/formatPrincipal';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ export function AppHeader() {
   const { fullLogout } = useFullLogout();
 
   const isAuthenticated = !!identity;
+  const principalId = identity?.getPrincipal().toString() || '';
 
   const handleLogout = async () => {
     await fullLogout();
@@ -40,6 +42,13 @@ export function AppHeader() {
 
         {isAuthenticated && (
           <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium">User ID:</span>
+              <code className="px-2 py-1 rounded bg-muted text-foreground font-mono text-xs">
+                {formatPrincipal(principalId)}
+              </code>
+            </div>
+
             <nav className="hidden md:flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -76,6 +85,13 @@ export function AppHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-2 text-xs text-muted-foreground sm:hidden">
+                  <div className="font-medium mb-1">User ID:</div>
+                  <code className="block px-2 py-1 rounded bg-muted text-foreground font-mono break-all">
+                    {formatPrincipal(principalId)}
+                  </code>
+                </div>
+                <DropdownMenuSeparator className="sm:hidden" />
                 <DropdownMenuItem onClick={() => navigate({ to: '/' })}>
                   <FileText className="mr-2 h-4 w-4" />
                   New Report
