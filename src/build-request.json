@@ -1,37 +1,88 @@
 {
   "kind": "build_request",
-  "title": "Show logged-in user ID in the app header",
+  "title": "Apply uploaded Hans Laser logo as app branding (header + favicon)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Display the currently logged-in user's Internet Identity principal (user ID) at the top of the app for both normal users and admins, visible after login on all authenticated screens.",
+      "text": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "once a user or admin login, his user id should show on top of app"
+          "use this logo for the app"
         ]
       },
       "acceptanceCriteria": [
-        "When the user is not authenticated, no user ID is shown in the header.",
-        "When the user is authenticated (user or admin), the header shows a label and the user’s principal (e.g., \"User ID: <principal>\") on all routes.",
-        "The displayed user ID uses the existing principal-formatting helper (short form), and the UI remains responsive (does not break the header layout on mobile or desktop)."
+        "New logo image files exist in frontend/public/assets/generated using the filenames specified in imageRequirements.required.",
+        "Generated images are cropped/fit to a clean square mark suitable for an app icon (no unintended clipping).",
+        "Images have consistent colors with the uploaded logo and look sharp at small sizes."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Update the app header branding to use the newly generated logo asset instead of the current hardcoded logo path.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "use this logo for the app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "frontend/src/components/AppHeader.tsx uses the new generated logo filename (not /assets/generated/hans-laser-logo.dim_512x512.png).",
+        "The logo renders correctly in the header in both light and dark mode backgrounds (no broken image)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add favicon and app icon links in frontend/index.html using the newly generated logo assets.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "use this logo for the app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "frontend/index.html includes a favicon link pointing to the generated 32x32 (or 48x48) PNG.",
+        "frontend/index.html includes an apple-touch-icon link pointing to the generated 180x180 PNG.",
+        "After build, the browser tab favicon displays the new logo (no missing favicon requests in devtools network panel)."
       ]
     }
   ],
   "constraints": [
     "Do not modify any files under frontend/src/components/ui (Shadcn components are read-only).",
-    "Do not modify frontend/src/hooks/useInternetIdentity.ts or other immutable paths listed in SYSTEM_CONTEXT."
+    "Do not modify any files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
+    "Do not route logo delivery through the backend; serve it as a static frontend asset."
   ],
   "nonGoals": [
-    "Do not change role-based routing behavior or admin authorization logic as part of this request.",
-    "Do not add new authentication providers; continue using Internet Identity only."
+    "Changing authentication, role-based routing, or user/profile flows.",
+    "Rebranding any text content beyond swapping the visual logo assets.",
+    "Adding a PWA manifest or installability features unless explicitly requested."
   ],
   "imageRequirements": {
-    "required": [],
+    "required": [
+      "Square logo app icon derived from the uploaded logo (hans-laser-app-icon.dim_512x512.png)",
+      "Small favicon version derived from the uploaded logo (hans-laser-favicon.dim_32x32.png)",
+      "Apple touch icon derived from the uploaded logo (hans-laser-apple-touch-icon.dim_180x180.png)"
+    ],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

@@ -1,21 +1,62 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Show authenticated Internet Identity principal in app header",
+  "title": "Apply Hans Laser logo branding (header + favicon)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Show the logged-in Internet Identity principal (short form) in the header across all authenticated screens without impacting responsive layout.",
+      "summary": "Create production-ready square PNG logo assets from uploaded hans logo.jpeg and place them in frontend/public/assets/generated.",
       "acceptanceCriteria": [
-        "When the user is not authenticated, no user ID is shown in the header.",
-        "When the user is authenticated (user or admin), the header shows a label and the user’s principal (e.g., \"User ID: <principal>\") on all routes.",
-        "The displayed user ID uses the existing principal-formatting helper (short form), and the UI remains responsive (does not break the header layout on mobile or desktop)."
+        "New logo image files exist in frontend/public/assets/generated using the filenames specified in imageRequirements.required.",
+        "Generated images are cropped/fit to a clean square mark suitable for an app icon (no unintended clipping).",
+        "Images have consistent colors with the uploaded logo and look sharp at small sizes."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/public/assets/generated/hans-laser-app-icon.dim_512x512.png",
+          "operation": "create",
+          "description": "Generate a crisp, square 512x512 PNG app icon derived from the uploaded hans logo.jpeg and save it exactly at frontend/public/assets/generated/hans-laser-app-icon.dim_512x512.png (clean crop/fit; no unintended clipping)."
+        },
+        {
+          "path": "frontend/public/assets/generated/hans-laser-favicon.dim_32x32.png",
+          "operation": "create",
+          "description": "Generate a crisp, square 32x32 PNG favicon derived from the uploaded hans logo.jpeg and save it exactly at frontend/public/assets/generated/hans-laser-favicon.dim_32x32.png (optimized for small-size legibility)."
+        },
+        {
+          "path": "frontend/public/assets/generated/hans-laser-apple-touch-icon.dim_180x180.png",
+          "operation": "create",
+          "description": "Generate a crisp, square 180x180 PNG apple touch icon derived from the uploaded hans logo.jpeg and save it exactly at frontend/public/assets/generated/hans-laser-apple-touch-icon.dim_180x180.png (clean padding/crop suitable for iOS home screen)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Replace the header’s current hardcoded logo source with the newly generated logo asset.",
+      "acceptanceCriteria": [
+        "frontend/src/components/AppHeader.tsx uses the new generated logo filename (not /assets/generated/hans-laser-logo.dim_512x512.png).",
+        "The logo renders correctly in the header in both light and dark mode backgrounds (no broken image)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Add a \"User ID:\" header element that reads the current Internet Identity principal from the existing authentication context (authorization component) after login, formats it with the existing frontend/src/utils/formatPrincipal helper, and renders it on all authenticated views. Ensure responsive behavior via layout classes (e.g., min-width handling + truncation) so long principals do not overflow on mobile/desktop, and keep the element hidden when identity is not present. Verify the component's usage instructions before implementing."
+          "description": "Update the header branding image src to use the new generated logo asset at frontend/public/assets/generated/hans-laser-app-icon.dim_512x512.png (replace the current /assets/generated/hans-laser-logo.dim_512x512.png reference) and ensure it displays correctly on light/dark backgrounds."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add favicon and apple touch icon link tags in frontend/index.html using the newly generated logo assets.",
+      "acceptanceCriteria": [
+        "frontend/index.html includes a favicon link pointing to the generated 32x32 (or 48x48) PNG.",
+        "frontend/index.html includes an apple-touch-icon link pointing to the generated 180x180 PNG.",
+        "After build, the browser tab favicon displays the new logo (no missing favicon requests in devtools network panel)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/index.html",
+          "operation": "modify",
+          "description": "Add <link> tags for favicon and apple touch icon in the document head pointing to frontend/public/assets/generated/hans-laser-favicon.dim_32x32.png and frontend/public/assets/generated/hans-laser-apple-touch-icon.dim_180x180.png, respectively, ensuring the build serves them without missing requests."
         }
       ]
     }

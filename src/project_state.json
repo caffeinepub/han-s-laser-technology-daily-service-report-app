@@ -1,21 +1,33 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build an app with role-based post-login routing (admin dashboard vs user form) and a header that displays the logged-in user's ID.",
-  "architectural_notes": [
-    "Implement role-aware post-login routing: admin -> admin dashboard (users list + reports), user -> user form page.",
-    "Add a persistent header component that shows the authenticated user's ID."
-  ],
-  "known_issues": [
-    "Admin accounts are currently being routed/rendered as normal users (admin sees form page instead of admin dashboard)."
-  ],
-  "isFixRequest": true,
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "imageRequirements": "## Required Images\n- Square logo app icon derived from the uploaded logo (hans-laser-app-icon.dim_512x512.png)\n- Small favicon version derived from the uploaded logo (hans-laser-favicon.dim_32x32.png)\n- Apple touch icon derived from the uploaded logo (hans-laser-apple-touch-icon.dim_180x180.png)",
   "existing_features": [
     {
-      "id": "feature-display-the-currently-logged-in-user-s-internet-identity-principal-user-id-at-the-top-of-the-app-for-both-normal-users-and-admins-visible-after-login-on-all-authenticated-screens",
-      "title": "Display the currently logged-in user's Internet Identity principal (user ID) at the top of the app for both normal users and admins, visible after login on all authenticated screens.",
+      "id": "feature-generate-production-ready-png-logo-assets-from-the-uploaded-file-hans-logo-jpeg-and-add-them-as-static-assets-under-frontend-public-assets-generated",
+      "title": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated.",
       "reqIds": [
         "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-app-header-branding-to-use-the-newly-generated-logo-asset-instead-of-the-current-hardcoded-logo-path",
+      "title": "Update the app header branding to use the newly generated logo asset instead of the current hardcoded logo path.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-favicon-and-app-icon-links-in-frontend-index-html-using-the-newly-generated-logo-assets",
+      "title": "Add favicon and app icon links in frontend/index.html using the newly generated logo assets.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -23,18 +35,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix role-based routing so admin accounts do not see the user form page and instead see admin views (all users list and reports).",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Display the logged-in user's ID at the top of the app after login for both users and admins.",
+      "summary": "Use the provided logo for the app (branding/app icon)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Show logged-in user ID in the app header",
+  "projectName": "Apply uploaded Hans Laser logo as app branding (header + favicon)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

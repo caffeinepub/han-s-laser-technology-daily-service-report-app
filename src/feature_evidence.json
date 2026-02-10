@@ -2,8 +2,25 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-display-the-currently-logged-in-user-s-internet-identity-principal-user-id-at-the-top-of-the-app-for-both-normal-users-and-admins-visible-after-login-on-all-authenticated-screens",
-      "featureTitle": "Display the currently logged-in user's Internet Identity principal (user ID) at the top of the app for both normal users and admins, visible after login on all authenticated screens.",
+      "featureId": "feature-generate-production-ready-png-logo-assets-from-the-uploaded-file-hans-logo-jpeg-and-add-them-as-static-assets-under-frontend-public-assets-generated",
+      "featureTitle": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated.",
+      "files": [],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-app-header-branding-to-use-the-newly-generated-logo-asset-instead-of-the-current-hardcoded-logo-path",
+      "featureTitle": "Update the app header branding to use the newly generated logo asset instead of the current hardcoded logo path.",
       "files": [
         "frontend/src/components/AppHeader.tsx"
       ],
@@ -16,7 +33,26 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-favicon-and-app-icon-links-in-frontend-index-html-using-the-newly-generated-logo-assets",
+      "featureTitle": "Add favicon and app icon links in frontend/index.html using the newly generated logo assets.",
+      "files": [
+        "frontend/index.html"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

@@ -31,7 +31,7 @@ export function AppHeader() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img 
-            src="/assets/generated/hans-laser-logo.dim_512x512.png" 
+            src="/assets/generated/hans-laser-app-icon.dim_512x512.png" 
             alt="Hans Laser Tech India" 
             className="h-10 w-10"
           />
