@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useListUsers, useDeleteUser, useIsCallerAdmin, usePurgeLegacyReportsAndUsers, useResetToFreshApp } from '../hooks/useQueries';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { copyToClipboard } from '../utils/copyToClipboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,10 +16,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle, XCircle, FileText } from 'lucide-react';
+import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle, XCircle, FileText, Copy, Check } from 'lucide-react';
 import { AccessDeniedScreen } from '../components/AccessDeniedScreen';
 import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
+import { toast } from 'sonner';
 
 export function AdminUsersPage() {
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ export function AdminUsersPage() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [purgeError, setPurgeError] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [copiedPrincipal, setCopiedPrincipal] = useState<string | null>(null);
 
   // Show loading while checking admin status
   if (adminCheckLoading || !adminCheckFetched) {
@@ -104,6 +107,18 @@ export function AdminUsersPage() {
     });
   };
 
+  const handleCopyPrincipal = async (principal: Principal) => {
+    const principalString = principal.toString();
+    const success = await copyToClipboard(principalString);
+    if (success) {
+      setCopiedPrincipal(principalString);
+      setTimeout(() => setCopiedPrincipal(null), 2000);
+      toast.success('Principal ID copied to clipboard');
+    } else {
+      toast.error('Failed to copy Principal ID');
+    }
+  };
+
   const currentUserPrincipal = identity?.getPrincipal().toString();
   const adminCount = users?.filter(([_, profile]) => profile.role === Role.admin).length || 0;
   const engineerCount = users?.filter(([_, profile]) => profile.role === Role.engineer).length || 0;
@@ -173,9 +188,11 @@ export function AdminUsersPage() {
             <div className="space-y-3">
               {users.map(([principal, profile]) => {
                 const isCurrentUser = principal.toString() === currentUserPrincipal;
+                const principalString = principal.toString();
+                const isCopied = copiedPrincipal === principalString;
                 return (
                   <div
-                    key={principal.toString()}
+                    key={principalString}
                     className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
                       isCurrentUser ? 'bg-accent/10 border-accent' : ''
                     }`}
@@ -206,11 +223,26 @@ export function AdminUsersPage() {
                       <p className="text-xs text-muted-foreground truncate mt-1">
                         {profile.email} • {profile.mobileNumber}
                       </p>
-                      <p className="text-xs text-muted-foreground/70 truncate mt-1 font-mono">
-                        Principal: {principal.toString().slice(0, 20)}...
-                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <code className="text-xs text-muted-foreground/70 font-mono break-all max-w-[400px] overflow-x-auto whitespace-nowrap px-2 py-1 bg-muted rounded">
+                          {principalString}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 flex-shrink-0"
+                          onClick={() => handleCopyPrincipal(principal)}
+                          title="Copy Principal ID"
+                        >
+                          {isCopied ? (
+                            <Check className="h-3 w-3 text-success" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-4">
                       <Button
                         variant="outline"
                         size="sm"
@@ -334,12 +366,7 @@ export function AdminUsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete All Old Data</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>All service reports</li>
-                <li>All user accounts except yours</li>
-              </ul>
-              <p className="mt-2 font-semibold">This action cannot be undone.</p>
+              This will permanently delete all reports and all users except your own account. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {purgeError && (
@@ -352,8 +379,16 @@ export function AdminUsersPage() {
             <AlertDialogAction
               onClick={handlePurgeConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={purgeLegacyData.isPending}
             >
-              Delete All Old Data
+              {purgeLegacyData.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete All Old Data'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -365,15 +400,7 @@ export function AdminUsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Full System Reset</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>All service reports</li>
-                <li>All user accounts (including yours)</li>
-                <li>All system data</li>
-              </ul>
-              <p className="mt-2 font-semibold text-destructive">
-                You will be logged out and need to sign up again. This action cannot be undone.
-              </p>
+              This will permanently delete ALL data including all users and reports, and log you out. You will need to re-authenticate and sign up again. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {resetError && (
@@ -386,8 +413,16 @@ export function AdminUsersPage() {
             <AlertDialogAction
               onClick={handleResetConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={resetToFreshApp.isPending}
             >
-              Reset Everything
+              {resetToFreshApp.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                'Reset System'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

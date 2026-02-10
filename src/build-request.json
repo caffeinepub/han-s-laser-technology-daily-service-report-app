@@ -1,88 +1,81 @@
 {
   "kind": "build_request",
-  "title": "Apply uploaded Hans Laser logo as app branding (header + favicon)",
+  "title": "Generate an Android app package for the existing web application",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated.",
+      "text": "Add Progressive Web App (PWA) support to the existing React frontend so it can be installed and used from an Android device home screen, including an app manifest, required icons, and offline-capable service worker behavior.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6"
         ],
         "quotes": [
-          "use this logo for the app"
+          "generate android app for this application"
         ]
       },
       "acceptanceCriteria": [
-        "New logo image files exist in frontend/public/assets/generated using the filenames specified in imageRequirements.required.",
-        "Generated images are cropped/fit to a clean square mark suitable for an app icon (no unintended clipping).",
-        "Images have consistent colors with the uploaded logo and look sharp at small sizes."
+        "A web app manifest is present and linked from the HTML entrypoint so Android/Chrome recognizes the app as installable.",
+        "At minimum, the manifest includes: name, short_name, start_url, display=standalone, background_color, theme_color, and icon entries for 192x192 and 512x512 PNGs.",
+        "A service worker is registered and provides offline behavior that does not break authenticated navigation (e.g., app shell loads and shows a reasonable offline message/state when network is unavailable).",
+        "The app can be installed from Chrome on Android (“Add to Home screen”) and launches in standalone mode without browser chrome.",
+        "All user-facing text introduced for install/offline states is in English."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the app header branding to use the newly generated logo asset instead of the current hardcoded logo path.",
+      "text": "Create Android build guidance (no backend changes) describing how to package the existing deployed Internet Computer URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including required parameters (start URL, manifest URL), build steps, and how to produce a debug APK.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6"
         ],
         "quotes": [
-          "use this logo for the app"
+          "generate android app for this application"
         ]
       },
       "acceptanceCriteria": [
-        "frontend/src/components/AppHeader.tsx uses the new generated logo filename (not /assets/generated/hans-laser-logo.dim_512x512.png).",
-        "The logo renders correctly in the header in both light and dark mode backgrounds (no broken image)."
+        "Documentation exists in the frontend repo (e.g., a new markdown file) with step-by-step instructions to generate an Android app wrapper using a TWA approach.",
+        "The documentation explicitly states what URL to use for start_url (the production app URL) and how to verify the PWA manifest and icon availability.",
+        "The documentation includes steps to build a debug APK locally and notes what is out of scope (e.g., Play Store publishing/signing) unless configured by the developer."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add favicon and app icon links in frontend/index.html using the newly generated logo assets.",
+      "text": "Add and reference Android-appropriate app icons in the frontend static assets so the PWA/TWA wrapper uses consistent branding on Android.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6"
         ],
         "quotes": [
-          "use this logo for the app"
+          "generate android app for this application"
         ]
       },
       "acceptanceCriteria": [
-        "frontend/index.html includes a favicon link pointing to the generated 32x32 (or 48x48) PNG.",
-        "frontend/index.html includes an apple-touch-icon link pointing to the generated 180x180 PNG.",
-        "After build, the browser tab favicon displays the new logo (no missing favicon requests in devtools network panel)."
+        "Two new icon assets are available under frontend/public/assets/generated and referenced by the web manifest: a 192x192 PNG and a 512x512 PNG.",
+        "The manifest icon paths resolve correctly when the app is deployed (HTTP 200 for icon URLs).",
+        "Icons are visually consistent with the existing Han’s Laser branding already used by the site favicon/apple-touch-icon."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/components/ui (Shadcn components are read-only).",
-    "Do not modify any files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
-    "Do not route logo delivery through the backend; serve it as a static frontend asset."
+    "Do not modify files under frontend/src/components/ui (Shadcn UI sources are read-only and must be composed, not edited).",
+    "Do not modify the immutable frontend auth/actor hook files listed in SYSTEM_CONTEXT (compose around them instead).",
+    "Backend remains a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
+    "Do not introduce third-party authentication providers; Internet Identity remains the only auth mechanism."
   ],
   "nonGoals": [
-    "Changing authentication, role-based routing, or user/profile flows.",
-    "Rebranding any text content beyond swapping the visual logo assets.",
-    "Adding a PWA manifest or installability features unless explicitly requested."
+    "Publishing the Android app to the Google Play Store.",
+    "Implementing native Android-only features (push notifications, deep native integrations, background services).",
+    "Adding non-IC hosting or external databases/services."
   ],
   "imageRequirements": {
     "required": [
-      "Square logo app icon derived from the uploaded logo (hans-laser-app-icon.dim_512x512.png)",
-      "Small favicon version derived from the uploaded logo (hans-laser-favicon.dim_32x32.png)",
-      "Apple touch icon derived from the uploaded logo (hans-laser-apple-touch-icon.dim_180x180.png)"
+      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png)",
+      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png)"
     ],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

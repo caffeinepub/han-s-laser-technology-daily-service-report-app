@@ -1,330 +1,332 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useListReports, useIsCallerAdmin, useGetReportsForDownload, useListUsers } from '../hooks/useQueries';
+import { useListReports, useIsCallerAdmin, useGetUserProfile } from '../hooks/useQueries';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { copyToClipboard } from '../utils/copyToClipboard';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, Calendar, FileText, AlertCircle, CheckCircle2, XCircle, Download, X, Users } from 'lucide-react';
-import type { DailyServiceReport } from '../backend';
+import { Loader2, Search, Calendar, FileText, CheckCircle2, XCircle, Download, X, Copy, Check } from 'lucide-react';
 import { downloadReportsAsCSV } from '../utils/reportDownload';
+import { useGetReportsForDownload } from '../hooks/useQueries';
 import { toast } from 'sonner';
-import { formatPrincipal } from '../utils/formatPrincipal';
-import { AccessDeniedScreen } from '../components/AccessDeniedScreen';
 
 export function ReportHistoryPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/history' });
-  const userPrincipalFilter = search.userPrincipal;
-  
-  const { data: reports, isLoading, isError } = useListReports();
-  const { data: isAdmin, isLoading: isAdminLoading } = useIsCallerAdmin();
-  const { data: users } = useListUsers();
-  const { refetch: refetchDownloadReports, isFetching: isDownloading } = useGetReportsForDownload();
-  
-  const [searchText, setSearchText] = useState('');
+  const { identity } = useInternetIdentity();
+  const { data: reports, isLoading } = useListReports();
+  const { data: isAdmin } = useIsCallerAdmin();
+  const reportsForDownload = useGetReportsForDownload();
+  const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [copiedPrincipal, setCopiedPrincipal] = useState(false);
 
-  // Check if user filter is active
-  const isUserFilterActive = !!userPrincipalFilter;
+  const filterUserPrincipal = search?.userPrincipal;
+  const { data: filteredUserProfile } = useGetUserProfile(filterUserPrincipal);
 
-  // Find user info for the filtered principal - MUST be called before any conditional returns
-  const filteredUser = useMemo(() => {
-    if (!userPrincipalFilter || !users) return null;
-    const userEntry = users.find(([principal]) => principal.toString() === userPrincipalFilter);
-    return userEntry ? { principal: userEntry[0], profile: userEntry[1] } : null;
-  }, [userPrincipalFilter, users]);
+  const currentUserPrincipal = identity?.getPrincipal().toString();
 
-  // Filter reports - MUST be called before any conditional returns
+  const handleClearFilter = () => {
+    navigate({ to: '/history', search: {} });
+  };
+
+  const handleCopyFilteredPrincipal = async () => {
+    if (filterUserPrincipal) {
+      const success = await copyToClipboard(filterUserPrincipal);
+      if (success) {
+        setCopiedPrincipal(true);
+        setTimeout(() => setCopiedPrincipal(false), 2000);
+        toast.success('Principal ID copied to clipboard');
+      } else {
+        toast.error('Failed to copy Principal ID');
+      }
+    }
+  };
+
   const filteredReports = useMemo(() => {
     if (!reports) return [];
 
-    let filtered = reports;
+    return reports.filter((report) => {
+      const matchesSearch =
+        !searchTerm ||
+        report.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.machineModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.machineSerialNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.issueDescribedByCustomer.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Apply user filter if active (admin only)
-    if (isUserFilterActive && userPrincipalFilter) {
-      filtered = filtered.filter((report) => report.createdBy.toString() === userPrincipalFilter);
-    }
+      const matchesDateRange =
+        (!startDate || report.date >= startDate) &&
+        (!endDate || report.date <= endDate);
 
-    // Apply text search
-    const searchLower = searchText.toLowerCase();
-    filtered = filtered.filter((report) => {
-      const matchesSearch = !searchText || 
-        report.customerName.toLowerCase().includes(searchLower) ||
-        report.machineSerialNo.toLowerCase().includes(searchLower) ||
-        report.machineModel.toLowerCase().includes(searchLower);
+      const matchesUserFilter =
+        !filterUserPrincipal ||
+        report.createdBy.toString() === filterUserPrincipal;
 
-      // Date range filter
-      const reportDate = new Date(report.date);
-      const matchesStartDate = !startDate || reportDate >= new Date(startDate);
-      const matchesEndDate = !endDate || reportDate <= new Date(endDate);
-
-      return matchesSearch && matchesStartDate && matchesEndDate;
+      return matchesSearch && matchesDateRange && matchesUserFilter;
     });
+  }, [reports, searchTerm, startDate, endDate, filterUserPrincipal]);
 
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [reports, searchText, startDate, endDate, isUserFilterActive, userPrincipalFilter]);
-
-  // NOW we can do conditional returns after all hooks are called
-  
-  // Show access denied if non-admin tries to view filtered reports
-  if (isUserFilterActive && !isAdminLoading && !isAdmin) {
-    return <AccessDeniedScreen />;
-  }
-
-  const handleDownloadAllReports = async () => {
+  const handleDownloadCSV = async () => {
+    setIsDownloading(true);
     try {
-      const result = await refetchDownloadReports();
-      
-      if (result.data && result.data.length > 0) {
-        downloadReportsAsCSV(result.data);
-        toast.success(`Downloaded ${result.data.length} reports successfully`);
-      } else {
-        toast.info('No reports available to download');
+      const freshReports = await reportsForDownload.refetch();
+      const reportsToDownload = freshReports.data || [];
+
+      if (reportsToDownload.length === 0) {
+        toast.error('No reports available to download');
+        return;
       }
+
+      downloadReportsAsCSV(reportsToDownload);
+      toast.success(`Downloaded ${reportsToDownload.length} reports as CSV`);
     } catch (error) {
-      console.error('Download error:', error);
+      console.error('Failed to download reports:', error);
       toast.error('Failed to download reports. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
-  const handleClearUserFilter = () => {
-    navigate({
-      to: '/history',
-      search: {},
-    });
-  };
-
-  if (isLoading || isAdminLoading) {
+  if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
 
-  if (isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Failed to load reports. Please try again later.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const userFilterLabel = filteredUser 
-    ? `${filteredUser.profile.name} (${formatPrincipal(filteredUser.principal.toString())})`
-    : formatPrincipal(userPrincipalFilter || '');
+  const showFilterBadge = filterUserPrincipal && filteredUserProfile;
+  const isViewingOwnReports = filterUserPrincipal === currentUserPrincipal;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Service Report History</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <FileText className="h-8 w-8" />
+            Service Report History
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {isUserFilterActive 
-              ? `Viewing reports for ${userFilterLabel}`
-              : 'View and search all submitted service reports'}
+            {showFilterBadge
+              ? isViewingOwnReports
+                ? 'Viewing your reports'
+                : `Viewing reports by ${filteredUserProfile.name}`
+              : 'View and search all your service reports'}
           </p>
         </div>
-        <div className="flex gap-2">
-          {isAdmin && (
-            <Button
-              variant="outline"
-              onClick={handleDownloadAllReports}
-              disabled={isDownloading || !reports || reports.length === 0}
-            >
-              {isDownloading ? (
-                <>
-                  <Download className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download All Reports
-                </>
-              )}
-            </Button>
-          )}
-          <Button onClick={() => navigate({ to: '/' })}>
-            <FileText className="mr-2 h-4 w-4" />
-            New Report
+        {isAdmin && (
+          <Button
+            onClick={handleDownloadCSV}
+            disabled={isDownloading || !reports || reports.length === 0}
+            className="gap-2"
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Download All Reports
+              </>
+            )}
           </Button>
-        </div>
+        )}
       </div>
 
-      {/* User Filter Badge (Admin Only) */}
-      {isAdmin && isUserFilterActive && (
+      {showFilterBadge && (
         <Card className="bg-accent/10 border-accent">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-accent" />
-                <div>
-                  <p className="font-medium">Filtered by User</p>
-                  <p className="text-sm text-muted-foreground">{userFilterLabel}</p>
-                </div>
+                <Badge variant="outline" className="text-sm">
+                  Filtered by User
+                </Badge>
+                <span className="font-medium">{filteredUserProfile.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  (@{filteredUserProfile.username})
+                </span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearUserFilter}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear Filter
-              </Button>
+              <div className="flex items-center gap-2">
+                <code className="text-xs font-mono px-2 py-1 bg-muted rounded max-w-[200px] overflow-x-auto whitespace-nowrap">
+                  {filterUserPrincipal}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handleCopyFilteredPrincipal}
+                  title="Copy Principal ID"
+                >
+                  {copiedPrincipal ? (
+                    <Check className="h-3.5 w-3.5 text-success" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilter}
+                  className="gap-1"
+                >
+                  <X className="h-4 w-4" />
+                  Clear Filter
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Search and Filter Controls */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Search & Filter</CardTitle>
+          <CardTitle>Search & Filter</CardTitle>
           <CardDescription>
-            Find reports by customer name, machine serial number, or date range
+            Find reports by customer name, machine details, or date range
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by customer, machine model, serial number, or issue..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="search">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search"
-                  placeholder="Customer, serial no., model..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Start Date
+              </label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                End Date
+              </label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Reports List */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">
-            {filteredReports.length} {filteredReports.length === 1 ? 'Report' : 'Reports'}
-          </h2>
-        </div>
-
         {filteredReports.length === 0 ? (
           <Card>
-            <CardContent className="py-12">
-              <div className="text-center text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">
-                  {isUserFilterActive 
-                    ? 'No reports found for this user'
-                    : 'No reports found'}
-                </p>
-                <p className="text-sm mt-1">
-                  {isUserFilterActive
-                    ? 'This user has not submitted any service reports yet.'
-                    : searchText || startDate || endDate
-                    ? 'Try adjusting your search filters'
-                    : 'Start by creating your first service report'}
-                </p>
-              </div>
+            <CardContent className="py-12 text-center">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium mb-2">
+                {showFilterBadge
+                  ? `No reports found for ${filteredUserProfile?.name || 'this user'}`
+                  : searchTerm || startDate || endDate
+                  ? 'No reports match your search criteria'
+                  : 'No reports yet'}
+              </p>
+              <p className="text-muted-foreground mb-4">
+                {showFilterBadge
+                  ? 'This user has not created any service reports yet.'
+                  : searchTerm || startDate || endDate
+                  ? 'Try adjusting your search filters'
+                  : 'Create your first service report to get started'}
+              </p>
+              {showFilterBadge ? (
+                <Button onClick={handleClearFilter} variant="outline">
+                  View All Reports
+                </Button>
+              ) : (
+                <Button onClick={() => navigate({ to: '/' })}>
+                  Create New Report
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          filteredReports.map((report) => (
-            <Card
-              key={report.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate({ to: '/report/$id', params: { id: report.id } })}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{report.customerName}</CardTitle>
-                    <CardDescription>
-                      {report.machineModel} • S/N: {report.machineSerialNo}
-                    </CardDescription>
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'}
+              </p>
+            </div>
+            {filteredReports.map((report) => (
+              <Card
+                key={report.id}
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate({ to: `/report/${report.id}` })}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-xl">{report.customerName}</CardTitle>
+                      <CardDescription className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(report.date).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </CardDescription>
+                    </div>
+                    <Badge
+                      variant={report.issueResolved ? 'default' : 'secondary'}
+                      className="flex items-center gap-1"
+                    >
+                      {report.issueResolved ? (
+                        <>
+                          <CheckCircle2 className="h-3 w-3" />
+                          Resolved
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-3 w-3" />
+                          Pending
+                        </>
+                      )}
+                    </Badge>
                   </div>
-                  <Badge variant={report.issueResolved ? 'default' : 'secondary'}>
-                    {report.issueResolved ? (
-                      <>
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Resolved
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Pending
-                      </>
-                    )}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(report.date).toLocaleDateString()}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium">Issue: </span>
-                    <span className="text-muted-foreground">
-                      {report.issueDescribedByCustomer.slice(0, 100)}
-                      {report.issueDescribedByCustomer.length > 100 ? '...' : ''}
-                    </span>
-                  </div>
-                  {report.solution && (
-                    <div>
-                      <span className="font-medium">Solution: </span>
-                      <span className="text-muted-foreground">
-                        {report.solution.slice(0, 100)}
-                        {report.solution.length > 100 ? '...' : ''}
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="grid gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium min-w-[120px]">Machine Model:</span>
+                      <span className="text-muted-foreground">{report.machineModel}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium min-w-[120px]">Serial Number:</span>
+                      <span className="text-muted-foreground">{report.machineSerialNo}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium min-w-[120px]">Contact Person:</span>
+                      <span className="text-muted-foreground">{report.contactPerson}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-medium min-w-[120px]">Issue:</span>
+                      <span className="text-muted-foreground line-clamp-2">
+                        {report.issueDescribedByCustomer}
                       </span>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
         )}
       </div>
     </div>

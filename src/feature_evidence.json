@@ -2,9 +2,17 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-generate-production-ready-png-logo-assets-from-the-uploaded-file-hans-logo-jpeg-and-add-them-as-static-assets-under-frontend-public-assets-generated",
-      "featureTitle": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated.",
-      "files": [],
+      "featureId": "feature-add-progressive-web-app-pwa-support-to-the-existing-react-frontend-so-it-can-be-installed-and-used-from-an-android-device-home-screen-including-an-app-manifest-required-icons-and-offline-capable-service-worker-behavior",
+      "featureTitle": "Add Progressive Web App (PWA) support to the existing React frontend so it can be installed and used from an Android device home screen, including an app manifest, required icons, and offline-capable service worker behavior.",
+      "files": [
+        "frontend/index.html",
+        "frontend/public/manifest.webmanifest",
+        "frontend/public/sw.js",
+        "frontend/src/App.tsx",
+        "frontend/src/components/AppLayout.tsx",
+        "frontend/src/components/OfflineBanner.tsx",
+        "frontend/src/hooks/useNetworkStatus.ts"
+      ],
       "components": [
         "authorization@4.0.0",
         "core-infrastructure@1.0.2",
@@ -19,10 +27,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-app-header-branding-to-use-the-newly-generated-logo-asset-instead-of-the-current-hardcoded-logo-path",
-      "featureTitle": "Update the app header branding to use the newly generated logo asset instead of the current hardcoded logo path.",
+      "featureId": "feature-create-android-build-guidance-no-backend-changes-describing-how-to-package-the-existing-deployed-internet-computer-url-into-an-android-apk-aab-using-a-trusted-web-activity-twa-wrapper-including-required-parameters-start-url-manifest-url-build-steps-and-how-to-produce-a-debug-apk",
+      "featureTitle": "Create Android build guidance (no backend changes) describing how to package the existing deployed Internet Computer URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including required parameters (start URL, manifest URL), build steps, and how to produce a debug APK.",
       "files": [
-        "frontend/src/components/AppHeader.tsx"
+        "frontend/ANDROID_TWA_BUILD.md",
+        "frontend/DEPLOYMENT.md"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,10 +47,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-favicon-and-app-icon-links-in-frontend-index-html-using-the-newly-generated-logo-assets",
-      "featureTitle": "Add favicon and app icon links in frontend/index.html using the newly generated logo assets.",
+      "featureId": "feature-add-and-reference-android-appropriate-app-icons-in-the-frontend-static-assets-so-the-pwa-twa-wrapper-uses-consistent-branding-on-android",
+      "featureTitle": "Add and reference Android-appropriate app icons in the frontend static assets so the PWA/TWA wrapper uses consistent branding on Android.",
       "files": [
-        "frontend/index.html"
+        "frontend/public/manifest.webmanifest"
       ],
       "components": [
         "authorization@4.0.0",

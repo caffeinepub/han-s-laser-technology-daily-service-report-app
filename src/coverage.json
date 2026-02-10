@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T16:28:24.451Z",
+  "generatedAt": "2026-02-10T17:15:54.950Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,39 +12,54 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated.",
+        "summary": "Add Progressive Web App (PWA) support to the existing React frontend so it can be installed and used from an Android device home screen, including an app manifest, required icons, and offline-capable service worker behavior.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/public/assets/generated/hans-laser-app-icon.dim_512x512.png",
-          "frontend/public/assets/generated/hans-laser-favicon.dim_32x32.png",
-          "frontend/public/assets/generated/hans-laser-apple-touch-icon.dim_180x180.png"
+          "frontend/index.html",
+          "frontend/public/manifest.webmanifest",
+          "frontend/public/sw.js",
+          "frontend/src/main.tsx",
+          "frontend/src/hooks/useNetworkStatus.ts",
+          "frontend/src/components/OfflineBanner.tsx",
+          "frontend/src/components/AppLayout.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/public/assets/generated/hans-laser-app-icon.dim_512x512.png",
-          "frontend/public/assets/generated/hans-laser-favicon.dim_32x32.png",
-          "frontend/public/assets/generated/hans-laser-apple-touch-icon.dim_180x180.png"
+          "frontend/index.html",
+          "frontend/public/manifest.webmanifest",
+          "frontend/public/sw.js",
+          "frontend/src/hooks/useNetworkStatus.ts",
+          "frontend/src/components/OfflineBanner.tsx",
+          "frontend/src/components/AppLayout.tsx",
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Update the app header branding to use the newly generated logo asset instead of the current hardcoded logo path.",
+        "summary": "Create Android build guidance (no backend changes) describing how to package the existing deployed Internet Computer URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including required parameters (start URL, manifest URL), build steps, and how to produce a debug APK.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/AppHeader.tsx"
+          "frontend/ANDROID_TWA_BUILD.md",
+          "frontend/DEPLOYMENT.md"
         ],
         "matchedFiles": [
-          "frontend/src/components/AppHeader.tsx"
+          "frontend/ANDROID_TWA_BUILD.md",
+          "frontend/DEPLOYMENT.md"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Add favicon and app icon links in frontend/index.html using the newly generated logo assets.",
+        "summary": "Add and reference Android-appropriate app icons in the frontend static assets so the PWA/TWA wrapper uses consistent branding on Android.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/index.html"
+          "frontend/public/assets/generated/android-app-icon.dim_192x192.png",
+          "frontend/public/assets/generated/android-app-icon.dim_512x512.png",
+          "frontend/public/manifest.webmanifest"
         ],
         "matchedFiles": [
-          "frontend/index.html"
+          "frontend/public/assets/generated/android-app-icon.dim_192x192.png",
+          "frontend/public/assets/generated/android-app-icon.dim_512x512.png",
+          "frontend/public/manifest.webmanifest"
         ]
       }
     ]
@@ -54,11 +69,17 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/ANDROID_TWA_BUILD.md",
+    "frontend/DEPLOYMENT.md",
     "frontend/index.html",
-    "frontend/public/assets/generated/hans-laser-app-icon.dim_512x512.png",
-    "frontend/public/assets/generated/hans-laser-apple-touch-icon.dim_180x180.png",
-    "frontend/public/assets/generated/hans-laser-favicon.dim_32x32.png",
-    "frontend/src/components/AppHeader.tsx",
+    "frontend/public/assets/generated/android-app-icon.dim_192x192.png",
+    "frontend/public/assets/generated/android-app-icon.dim_512x512.png",
+    "frontend/public/manifest.webmanifest",
+    "frontend/public/sw.js",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AppLayout.tsx",
+    "frontend/src/components/OfflineBanner.tsx",
+    "frontend/src/hooks/useNetworkStatus.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

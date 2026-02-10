@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Apply the uploaded Hans Laser logo as the app’s branding in the header and as the site favicon/app icons.
+**Goal:** Make the existing web app installable and usable like an Android app via PWA support, and provide guidance to package it into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper.
 
 **Planned changes:**
-- Generate production-ready PNG logo assets (app icon, favicon, apple touch icon) derived from `hans logo.jpeg` and save them under `frontend/public/assets/generated` with the required filenames.
-- Update `frontend/src/components/AppHeader.tsx` to reference the newly generated logo asset (replacing the current hardcoded logo path).
-- Update `frontend/index.html` to include favicon and apple-touch-icon links pointing to the newly generated PNG assets.
+- Add a web app manifest linked from the HTML entrypoint with required fields (name, short_name, start_url, standalone display, theme/background colors, and 192x192 + 512x512 icons).
+- Add offline-capable service worker registration and offline behavior that preserves authenticated navigation (app shell loads and shows an English offline state/message when the network is unavailable).
+- Add Android-appropriate app icon assets under `frontend/public/assets/generated` and reference them from the manifest.
+- Add frontend repository documentation with step-by-step instructions to build an Android TWA wrapper for the production URL, including parameters, verification steps for manifest/icons, and how to produce a debug APK (not covering Play Store publishing/signing).
 
-**User-visible outcome:** The app header displays the Hans Laser logo, and browser tabs/bookmarks (including Apple touch icons) show the new logo without missing asset requests.
+**User-visible outcome:** Users can install the app from Chrome on Android (“Add to Home screen”) and launch it in standalone mode with basic offline behavior; developers have written guidance to wrap the deployed app URL into an Android APK/AAB using TWA.

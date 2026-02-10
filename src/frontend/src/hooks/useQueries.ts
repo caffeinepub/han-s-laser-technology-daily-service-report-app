@@ -39,6 +39,29 @@ export function useGetCallerUserProfile() {
   };
 }
 
+export function useGetUserProfile(userPrincipal: string | undefined) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<UserProfile | null>({
+    queryKey: ['userProfile', userPrincipal],
+    queryFn: async () => {
+      if (!actor || !userPrincipal) return null;
+      
+      try {
+        // Convert string to Principal
+        const { Principal } = await import('@icp-sdk/core/principal');
+        const principal = Principal.fromText(userPrincipal);
+        return actor.getUserProfile(principal);
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        return null;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!userPrincipal,
+    retry: false,
+  });
+}
+
 export function useIsCallerAdmin() {
   const { actor, isFetching: actorFetching } = useActor();
 

@@ -1,6 +1,7 @@
 import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useIsCallerAdmin } from './hooks/useQueries';
+import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { AppLayout } from './components/AppLayout';
 import { LoginScreen } from './components/LoginScreen';
 import { ProfileSetup } from './components/ProfileSetup';
@@ -12,12 +13,13 @@ import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AccessDeniedScreen } from './components/AccessDeniedScreen';
 import { isAuthError, isMissingProfileError } from './utils/authErrorDetection';
 import { logSignupFlow, sanitizeErrorMessage } from './utils/signupFlowDebug';
-import { Loader2 } from 'lucide-react';
+import { Loader2, WifiOff } from 'lucide-react';
 import { useEffect } from 'react';
 
 function RootComponent() {
   const { identity, isInitializing } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched, error: profileError } = useGetCallerUserProfile();
+  const { isOnline } = useNetworkStatus();
 
   const isAuthenticated = !!identity;
 
@@ -110,8 +112,14 @@ function RootComponent() {
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4 max-w-md">
+            {!isOnline && (
+              <div className="flex items-center justify-center gap-2 text-warning mb-4">
+                <WifiOff className="h-5 w-5" />
+                <span className="font-medium">You are currently offline</span>
+              </div>
+            )}
             <p className="text-muted-foreground">
-              Unable to load your profile. Please refresh the page or try again later.
+              Unable to load your profile. {!isOnline ? 'Please check your internet connection and try again.' : 'Please refresh the page or try again later.'}
             </p>
           </div>
         </div>

@@ -1,40 +1,77 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T16:28:24.449Z",
-  "summary": "REQ-2 (header logo) and REQ-3 (favicon/apple-touch-icon links) appear implemented by updating AppHeader.tsx and frontend/index.html to reference the specified generated asset filenames. REQ-1 (actually adding the generated PNG files under frontend/public/assets/generated) is not evidenced in the diff summary (no added files shown). Additionally, unrelated project metadata/summary files were modified without being requested.",
+  "generatedAt": "2026-02-10T17:15:54.947Z",
+  "summary": "Diff adds a web manifest, a custom service worker script, an offline UI banner/hook, and a TWA build guide. However, the diff summary does not show the required generated Android icon PNG assets being added, does not show service worker registration in the app entrypoint, and the TWA guide (as shown) does not include explicit debug APK build steps. Several unrelated frontend/UI and feature changes also appear in the summaries but were not requested.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Generate production-ready PNG logo assets from the uploaded file (hans logo.jpeg) and add them as static assets under frontend/public/assets/generated using the specified filenames.",
-      "reason": "The diff shows no added files at all, so there is no evidence that the required PNG assets were created and placed under frontend/public/assets/generated.",
+      "requirement": "Register a service worker so offline-capable behavior is active in the running app.",
+      "reason": "A service worker file (frontend/public/sw.js) is added, but the diff summary does not show any code that registers it (e.g., in main.tsx/index.tsx). Without registration, the service worker will not control pages and offline behavior may not take effect.",
       "evidence": [
-        "File diff summary: \"Added: 0\"",
-        "No entries for frontend/public/assets/generated/* in the diff summary"
+        "frontend/public/sw.js"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Documentation includes steps to build a debug APK locally and notes what is out of scope.",
+      "reason": "The added TWA guide shows release/unsigned APK output from `bubblewrap build`, but the visible portion does not include explicit debug APK build steps (e.g., debug build commands) nor clearly states out-of-scope items such as Play Store publishing/signing.",
+      "evidence": [
+        "frontend/ANDROID_TWA_BUILD.md"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Add two new generated icon assets under frontend/public/assets/generated: android-app-icon.dim_192x192.png and android-app-icon.dim_512x512.png.",
+      "reason": "The manifest references these icon paths and the service worker precache list includes them, but the diff summary does not list these PNG files as added under frontend/public/assets/generated.",
+      "evidence": [
+        "frontend/public/manifest.webmanifest",
+        "frontend/public/sw.js"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Modified project_state.json to add/track feature requests (AR-1..AR-4) and statuses.",
-      "reason": "BuildRequest does not ask to update project tracking/metadata files.",
+      "description": "Added a footer with a caffeine.ai attribution link and UTM tracking.",
+      "reason": "Not requested by the BuildRequest (which focuses on PWA/TWA packaging and Android icons).",
       "evidence": [
-        "project_state.json"
+        "frontend/src/components/AppLayout.tsx"
       ]
     },
     {
-      "description": "Modified frontend-file-summaries.txt with extensive descriptions of many unrelated app features (signup/admin flows, report pages, styling/tailwind changes, etc.).",
-      "reason": "BuildRequest is limited to swapping visual logo assets in header and adding favicon/app icon links; it does not request updating documentation/summary files or describing unrelated features.",
+      "description": "Introduced industrial-themed global styling and Tailwind configuration changes (custom OKLCH color tokens, etc.).",
+      "reason": "Not requested as part of PWA/TWA/icon work.",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Added/changed admin signup password/access-code logic and other auth/signup flow debug behaviors beyond offline/PWA needs.",
+      "reason": "Not requested; BuildRequest explicitly focuses on PWA support, TWA build guidance, and Android icons (and disallows auth-provider changes, but this is still unrequested behavior).",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Expanded admin user management and CSV export/report download-related features.",
+      "reason": "Not requested by the BuildRequest (scope is Android packaging support).",
       "evidence": [
         "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.82,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
+    "frontend/ANDROID_TWA_BUILD.md",
+    "frontend/DEPLOYMENT.md",
     "frontend/index.html",
-    "frontend/src/components/AppHeader.tsx",
+    "frontend/public/manifest.webmanifest",
+    "frontend/public/sw.js",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AppLayout.tsx",
+    "frontend/src/components/OfflineBanner.tsx",
+    "frontend/src/hooks/useNetworkStatus.ts",
     "project_state.json"
   ]
 }

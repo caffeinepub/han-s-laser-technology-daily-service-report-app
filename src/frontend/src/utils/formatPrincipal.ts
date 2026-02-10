@@ -13,3 +13,12 @@ export function formatPrincipal(principal: string): string {
   
   return principal;
 }
+
+/**
+ * Get the full principal ID without any formatting
+ * @param principal - The full principal ID string
+ * @returns The complete principal ID
+ */
+export function getFullPrincipal(principal: string): string {
+  return principal;
+}
