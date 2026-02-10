@@ -1,73 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Admin user listing and admin signup gated by special password",
+  "title": "Fix admin visibility: list all users and view their reports",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure an admin can view a complete list of all registered users via the existing admin user management UI, and ensure non-admin users are blocked from accessing the user list.",
-      "target": "both",
+      "text": "Fix backend admin authorization so an allowlisted admin account can successfully access admin-only operations (including listing all users and accessing all reports) after signup/login.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "admin can see all users"
+          "still admin can not view all users. and their reports"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in as an admin, the existing Admin Users page successfully loads and displays all users returned by the backend (not only the current user).",
-        "When logged in as a non-admin, attempting to access the Admin Users page shows an access denied screen and the backend rejects user-list requests with an authorization error.",
-        "The backend `listUsers` API remains admin-only and returns all user profiles stored in the canister."
+        "When logged in as an allowlisted admin, calling the backend method that powers the Users admin page returns all stored user profiles (does not trap with an unauthorized/admin error).",
+        "When logged in as an allowlisted admin, calling the backend method that lists reports returns all stored reports across all users.",
+        "When logged in as a non-admin, admin-only backend operations (e.g., list users) remain denied with an authorization error."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add an admin signup path where selecting the Admin role during signup requires entering the special admin signup password exactly: \"Hans@987123\"; if the password is missing or incorrect, the signup must fail with a clear, user-facing error message in English.",
-      "target": "both",
+      "text": "Update the Admin Users UI to let admins view each user’s reports (per-user drilldown) using existing report data (reports include createdBy principal).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "admin signup required special password \"Hans@987123\""
+          "still admin can not view all users. and their reports"
         ]
       },
       "acceptanceCriteria": [
-        "The signup UI allows choosing between Engineer and Admin account type.",
-        "If Admin is selected and the password is not exactly \"Hans@987123\", the user cannot complete signup and sees an English error message indicating the admin signup password is invalid.",
-        "If Admin is selected and the password is exactly \"Hans@987123\", the frontend sends an admin signup request to the backend and the created profile is stored with role Admin.",
-        "The backend enforces the admin signup password check server-side (not just in the UI).",
-        "The admin signup password is never persisted in canister state and is not included in any frontend debug logs or error logs."
+        "On the admin Users page, each listed user has a clear action (e.g., button/link) to view that user’s reports.",
+        "Clicking the action navigates to a reports view filtered to that selected user and shows only reports created by that user.",
+        "The filtered reports view is accessible only to admins (non-admins see the existing access denied UI)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update frontend signup error translation so that backend failures related to invalid/missing admin signup password are displayed as a concise, user-friendly English message without exposing internal details.",
+      "text": "Ensure the admin reports view supports showing all reports (unfiltered) and filtered-by-user reports with clear, English UI labels indicating the current filter.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "admin signup required special password \"Hans@987123\""
+          "still admin can not view all users. and their reports"
         ]
       },
       "acceptanceCriteria": [
-        "When the backend rejects an admin signup due to incorrect password, the UI shows a user-friendly English message (e.g., \"Invalid admin signup password.\").",
-        "Error handling does not echo the admin password back to the user and does not include stack traces or internal backend details."
+        "Admins can switch between “All reports” and “Reports for <selected user>” (or equivalent) without needing a page reload.",
+        "The UI clearly indicates which user is selected when a user filter is active (e.g., shows the user’s name/username and/or principal).",
+        "If the selected user has no reports, the UI shows an English empty state message (e.g., “No reports found for this user.”)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
-    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
-    "Do not persist or log the admin signup password; it must not be stored in canister state or in frontend logs."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Implementing third-party authentication providers (only Internet Identity is used).",
-    "Adding real-time updates for the user list.",
-    "Adding password-based authentication (the admin signup password is only a gate for role selection, not an auth system)."
+    "Implementing third-party authentication providers (only Internet Identity is supported).",
+    "Adding real-time updates (e.g., websockets) for admin dashboards.",
+    "Changing report data fields or introducing new report types beyond enabling admin visibility and per-user filtering."
   ],
   "imageRequirements": {
     "required": [],

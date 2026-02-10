@@ -50,6 +50,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getPendingSignupsCount(): Promise<bigint>;
     getReportById(id: string): Promise<DailyServiceReport | null>;
+    getReportsForDownload(): Promise<Array<DailyServiceReport>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listReports(): Promise<Array<DailyServiceReport>>;

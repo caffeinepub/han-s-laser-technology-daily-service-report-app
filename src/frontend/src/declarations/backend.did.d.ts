@@ -50,6 +50,7 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getPendingSignupsCount' : ActorMethod<[], bigint>,
   'getReportById' : ActorMethod<[string], [] | [DailyServiceReport]>,
+  'getReportsForDownload' : ActorMethod<[], Array<DailyServiceReport>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listReports' : ActorMethod<[], Array<DailyServiceReport>>,

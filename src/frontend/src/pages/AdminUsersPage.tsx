@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useListUsers, useDeleteUser, useIsCallerAdmin, usePurgeLegacyReportsAndUsers, useResetToFreshApp } from '../hooks/useQueries';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,18 +15,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle, XCircle } from 'lucide-react';
+import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle, XCircle, FileText } from 'lucide-react';
 import { AccessDeniedScreen } from '../components/AccessDeniedScreen';
 import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export function AdminUsersPage() {
+  const navigate = useNavigate();
   const { data: isAdmin, isLoading: adminCheckLoading, isFetched: adminCheckFetched } = useIsCallerAdmin();
   const { data: users, isLoading: usersLoading, error } = useListUsers();
   const deleteUser = useDeleteUser();
   const purgeLegacyData = usePurgeLegacyReportsAndUsers();
   const resetToFreshApp = useResetToFreshApp();
-  const { clear } = useInternetIdentity();
+  const { clear, identity } = useInternetIdentity();
   const [userToDelete, setUserToDelete] = useState<Principal | null>(null);
   const [showPurgeDialog, setShowPurgeDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -95,6 +97,17 @@ export function AdminUsersPage() {
     }
   };
 
+  const handleViewUserReports = (principal: Principal) => {
+    navigate({
+      to: '/history',
+      search: { userPrincipal: principal.toString() },
+    });
+  };
+
+  const currentUserPrincipal = identity?.getPrincipal().toString();
+  const adminCount = users?.filter(([_, profile]) => profile.role === Role.admin).length || 0;
+  const engineerCount = users?.filter(([_, profile]) => profile.role === Role.engineer).length || 0;
+
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -104,11 +117,132 @@ export function AdminUsersPage() {
             User Management
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage user accounts and system data
+            View and manage all registered users in the system
           </p>
         </div>
       </div>
 
+      {/* User Statistics */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{users?.length || 0}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-4 w-4" />
+              Admins
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{adminCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+              <Wrench className="h-4 w-4" />
+              Engineers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{engineerCount}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* All Users List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Registered Users</CardTitle>
+          <CardDescription>
+            Complete list of all users with their roles and contact information
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            </div>
+          ) : users && users.length > 0 ? (
+            <div className="space-y-3">
+              {users.map(([principal, profile]) => {
+                const isCurrentUser = principal.toString() === currentUserPrincipal;
+                return (
+                  <div
+                    key={principal.toString()}
+                    className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+                      isCurrentUser ? 'bg-accent/10 border-accent' : ''
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="font-medium truncate">{profile.name}</p>
+                        <Badge variant={profile.role === Role.admin ? 'default' : 'secondary'}>
+                          {profile.role === Role.admin ? (
+                            <>
+                              <ShieldCheck className="h-3 w-3 mr-1" />
+                              Admin
+                            </>
+                          ) : (
+                            <>
+                              <Wrench className="h-3 w-3 mr-1" />
+                              Engineer
+                            </>
+                          )}
+                        </Badge>
+                        {isCurrentUser && (
+                          <Badge variant="outline" className="text-xs">
+                            You
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">@{profile.username}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-1">
+                        {profile.email} • {profile.mobileNumber}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 truncate mt-1 font-mono">
+                        Principal: {principal.toString().slice(0, 20)}...
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewUserReports(principal)}
+                        title="View this user's reports"
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        View Reports
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteClick(principal)}
+                        disabled={deleteUser.isPending || isCurrentUser}
+                        title={isCurrentUser ? "Cannot delete your own account" : "Delete user"}
+                      >
+                        <Trash2 className={`h-4 w-4 ${isCurrentUser ? 'text-muted-foreground' : 'text-destructive'}`} />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Admin Actions */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -172,66 +306,6 @@ export function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>
-            {users ? `${users.length} user${users.length !== 1 ? 's' : ''} registered` : 'Loading users...'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {usersLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-accent" />
-            </div>
-          ) : users && users.length > 0 ? (
-            <div className="space-y-3">
-              {users.map(([principal, profile]) => (
-                <div
-                  key={principal.toString()}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium truncate">{profile.name}</p>
-                      <Badge variant={profile.role === Role.admin ? 'default' : 'secondary'}>
-                        {profile.role === Role.admin ? (
-                          <>
-                            <ShieldCheck className="h-3 w-3 mr-1" />
-                            Admin
-                          </>
-                        ) : (
-                          <>
-                            <Wrench className="h-3 w-3 mr-1" />
-                            Engineer
-                          </>
-                        )}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">@{profile.username}</p>
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {profile.email} • {profile.mobileNumber}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteClick(principal)}
-                    disabled={deleteUser.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No users found
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Delete User Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>

@@ -1,32 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Add admin role capabilities: admin can view all users and admin signup requires a special password.",
-  "architectural_notes": [
-    "Admin signup is gated by a special password (currently provided by user). Ensure this secret is not hard-coded or exposed client-side."
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "Admin cannot currently view all users and their reports (regression/unfinished access control or UI listing)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-ensure-an-admin-can-view-a-complete-list-of-all-registered-users-via-the-existing-admin-user-management-ui-and-ensure-non-admin-users-are-blocked-from-accessing-the-user-list",
-      "title": "Ensure an admin can view a complete list of all registered users via the existing admin user management UI, and ensure non-admin users are blocked from accessing the user list.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-admin-signup-path-where-selecting-the-admin-role-during-signup-requires-entering-the-special-admin-signup-password-exactly-hans-987123-if-the-password-is-missing-or-incorrect-the-signup-must-fail-with-a-clear-user-facing-error-message-in-english",
-      "title": "Add an admin signup path where selecting the Admin role during signup requires entering the special admin signup password exactly: \"Hans@987123\"; if the password is missing or incorrect, the signup must fail with a clear, user-facing error message in English.",
+      "id": "feature-update-the-admin-users-ui-to-let-admins-view-each-user-s-reports-per-user-drilldown-using-existing-report-data-reports-include-createdby-principal",
+      "title": "Update the Admin Users UI to let admins view each user’s reports (per-user drilldown) using existing report data (reports include createdBy principal).",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-frontend-signup-error-translation-so-that-backend-failures-related-to-invalid-missing-admin-signup-password-are-displayed-as-a-concise-user-friendly-english-message-without-exposing-internal-details",
-      "title": "Update frontend signup error translation so that backend failures related to invalid/missing admin signup password are displayed as a concise, user-friendly English message without exposing internal details.",
+      "id": "feature-ensure-the-admin-reports-view-supports-showing-all-reports-unfiltered-and-filtered-by-user-reports-with-clear-english-ui-labels-indicating-the-current-filter",
+      "title": "Ensure the admin reports view supports showing all reports (unfiltered) and filtered-by-user reports with clear, English UI labels indicating the current filter.",
       "reqIds": [
         "REQ-3"
       ],
@@ -36,18 +28,20 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Allow admin to see all users (admin user listing/access).",
+      "summary": "Admin should be able to view all users and their reports",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Require a special password to sign up as admin (admin signup gate).",
-      "reqIds": [],
+      "summary": "Fix backend admin authorization so an allowlisted admin account can successfully access admin-only operations (including listing all users and accessing all reports) after signup/login.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Admin user listing and admin signup gated by special password",
+  "projectName": "Fix admin visibility: list all users and view their reports",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

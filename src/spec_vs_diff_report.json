@@ -1,62 +1,75 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T20:19:31.558Z",
-  "summary": "REQ-2 and REQ-3 appear largely implemented (admin role selection in signup UI, password gate, backend server-side password check, and user-friendly English error translation). REQ-1 is partially supported on the frontend (admin-only navigation/access denied screen), but the diff summary is insufficient to confirm the backend `listUsers` behavior (admin-only and returning all users). Several unrequested features/restrictions were added (admin allowlist gating, system reset/purge tooling, and signup-flow debug logging).",
+  "generatedAt": "2026-02-10T03:22:29.888Z",
+  "summary": "Frontend changes add an admin per-user reports drilldown via a URL search param filter on the report history page, plus UI utilities and additional admin tooling. Backend changes show new allowlist-based admin determination logic and admin-gated reset, but the diff is truncated and does not clearly show that allowlisted admins are actually assigned/recognized as admins for the existing admin-only operations (list users/list reports) after signup/login.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Backend `listUsers` API remains admin-only and returns all user profiles stored in the canister.",
-      "reason": "The diff summary for `backend/main.mo` is truncated and does not show any `listUsers` implementation or authorization checks for listing users; only frontend gating is visible.",
+      "requirement": "Fix backend admin authorization so an allowlisted admin account can successfully access admin-only operations (including listing all users and accessing all reports) after signup/login.",
+      "reason": "backend/main.mo shows allowlist checks and a determineAccessControlRole helper, but the provided diff does not show where/when AccessControl roles are assigned to the caller after signup/login, nor does it show the admin-only methods for listing users/reports being updated to use this corrected role assignment. Because the backend file is truncated, there is insufficient evidence that allowlisted admins can successfully call the list-users and list-reports operations without unauthorized traps.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/pages/AdminUsersPage.tsx",
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Ensure the admin reports view supports showing all reports (unfiltered) and filtered-by-user reports with clear, English UI labels indicating the current filter, including an English empty state for no reports for the selected user.",
+      "reason": "ReportHistoryPage.tsx clearly applies a userPrincipal filter from URL search params and enforces admin-only access for filtered views, but the truncated excerpt does not show the UI controls/labels for switching between “All reports” and “Reports for <selected user>” (e.g., a clear filter action) or the exact English empty-state text for the per-user no-reports case.",
+      "evidence": [
+        "frontend/src/pages/ReportHistoryPage.tsx",
+        "frontend-file-summaries.txt (ReportHistoryPage description mentions empty states but the actual strings/UI are not visible in the diff excerpt)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Admin allowlist gating based on specific names and additional restrictions on admin role assignment beyond the requested admin-signup password gate.",
-      "reason": "BuildRequest only requires gating Admin signup via a special password; it does not request name-based allowlisting or forcing non-allowlisted users to Engineer even if they request Admin.",
+      "description": "Admin system reset operation (resetToFreshApp) that clears reports, userProfiles, and pendingSignups and reassigns roles to guest.",
+      "reason": "Not requested by the BuildRequest (scope is admin visibility for users/reports and per-user filtering), and introduces additional destructive admin tooling.",
       "evidence": [
-        "backend/main.mo (createAllowlist, adminAllowlist, isAllowlistedAdmin, determineAccessControlRole, signupWithRole forces #engineer, signupAdmin allowlist check)"
+        "backend/main.mo",
+        "frontend/src/pages/AdminUsersPage.tsx (useResetToFreshApp, reset confirmation flow)"
       ]
     },
     {
-      "description": "Full system reset / legacy purge administrative capabilities exposed in the Admin Users page and implemented in backend (`resetToFreshApp`).",
-      "reason": "BuildRequest does not include requirements to add data purge or full reset functionality.",
+      "description": "Admin signup password flow and admin signup enforcement with a hardcoded password and allowlist checks.",
+      "reason": "BuildRequest focuses on fixing admin authorization after signup/login for allowlisted admins, but does not request introducing/expanding a password-based admin signup mechanism or adding hardcoded secrets/validation UI.",
       "evidence": [
-        "backend/main.mo (resetToFreshApp)",
-        "frontend/src/pages/AdminUsersPage.tsx (useResetToFreshApp, purge/reset dialogs/actions)"
+        "backend/main.mo (adminSignupPassword, signupAdmin, allowlist-based checks)",
+        "frontend-file-summaries.txt (ProfileSetup: admin signup requires special password \"Hans@987123\"; useQueries: new useSignupAdmin hook)"
       ]
     },
     {
-      "description": "Signup-flow debug logging framework (`logSignupFlow`) added to frontend hooks.",
-      "reason": "BuildRequest does not request adding debug logging utilities; it only constrains not logging/persisting the admin signup password.",
+      "description": "CSV download capability for reports (admin-oriented \"Download All Reports\" functionality).",
+      "reason": "Not requested; the BuildRequest explicitly focuses on visibility and filtering, and lists non-goals that do not include adding export/download features.",
       "evidence": [
-        "frontend/src/utils/signupFlowDebug.ts",
-        "frontend/src/hooks/useQueries.ts (imports and uses logSignupFlow)"
+        "frontend/src/pages/ReportHistoryPage.tsx (useGetReportsForDownload, downloadReportsAsCSV usage in excerpt)",
+        "frontend-file-summaries.txt (ReportHistoryPage mentions admin-only \"Download All Reports\" button with CSV export)"
       ]
     },
     {
-      "description": "Hard-coded admin signup password check on the client side (UI validation compares to \"Hans@987123\").",
-      "reason": "BuildRequest requires server-side enforcement and user-facing error messaging; it does not request (and may be considered risky to add) client-side exact-secret validation using the literal secret.",
+      "description": "Additional admin tools: purge legacy reports/users and individual user deletion UI on the Admin Users page.",
+      "reason": "Not requested; requirements only mention listing users and drilling into their reports.",
       "evidence": [
-        "frontend/src/components/ProfileSetup.tsx (adminPassword !== 'Hans@987123')"
+        "frontend/src/pages/AdminUsersPage.tsx (useDeleteUser, usePurgeLegacyReportsAndUsers, delete/purge dialogs and handlers)"
+      ]
+    },
+    {
+      "description": "New principal formatting utility for shortened display of Principal IDs.",
+      "reason": "Not requested; UI enhancement outside stated requirements.",
+      "evidence": [
+        "frontend/src/utils/formatPrincipal.ts"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/AppHeader.tsx",
-    "frontend/src/components/ProfileSetup.tsx",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/App.tsx",
     "frontend/src/pages/AdminUsersPage.tsx",
-    "frontend/src/utils/signupErrorMessaging.ts",
-    "frontend/src/utils/signupFlowDebug.ts",
+    "frontend/src/pages/ReportHistoryPage.tsx",
+    "frontend/src/utils/formatPrincipal.ts",
     "project_state.json"
   ]
 }

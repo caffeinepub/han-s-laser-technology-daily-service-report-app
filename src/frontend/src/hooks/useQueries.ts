@@ -284,3 +284,18 @@ export function useCreateReport() {
     },
   });
 }
+
+// Download Reports Query (for admin download functionality)
+export function useGetReportsForDownload() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<DailyServiceReport[]>({
+    queryKey: ['reportsForDownload'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getReportsForDownload();
+    },
+    enabled: !!actor && !actorFetching,
+    staleTime: 0, // Always fetch fresh data for downloads
+  });
+}

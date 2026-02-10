@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Ensure admin-only access to the full registered user list, and add a gated admin signup flow protected by a special password.
+**Goal:** Restore and improve admin access so allowlisted admins can list all users and view reports across all users, including per-user report drilldown in the UI.
 
 **Planned changes:**
-- Fix/ensure the existing Admin Users page loads and displays the complete backend user list when the logged-in user is an admin.
-- Block non-admin users from accessing the Admin Users page (show an access denied screen) and ensure the backend rejects non-admin user-list requests.
-- Add an Admin option during signup that requires entering the admin signup password exactly `"Hans@987123"` to complete admin signup.
-- Enforce the admin signup password validation on the backend (server-side) without persisting or logging the password.
-- Update frontend error handling/translation so invalid or missing admin signup password failures display a concise, user-friendly English message without internal details.
+- Fix backend admin authorization so allowlisted admins can successfully call admin-only methods after signup/login (list all users; list all reports across users), while non-admins remain denied.
+- Update the Admin Users page to add an action on each user to view that user’s reports (using existing report data via `createdBy` principal).
+- Enhance the admin reports view to support switching between “All reports” and “Reports for <selected user>”, with clear English labels and an English empty state when no reports exist for the selected user.
 
-**User-visible outcome:** Admins can view all registered users in the Admin Users page, non-admins are denied access, and users can only create an Admin account during signup if they enter the correct admin signup password (otherwise they see a clear English error).
+**User-visible outcome:** Admins can access the admin Users page to see all users, drill into a selected user to view only their reports, and switch back to viewing all reports; non-admin users continue to see access denied for admin-only views.

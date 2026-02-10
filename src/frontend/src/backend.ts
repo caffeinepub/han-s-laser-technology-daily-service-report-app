@@ -133,6 +133,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getPendingSignupsCount(): Promise<bigint>;
     getReportById(id: string): Promise<DailyServiceReport | null>;
+    getReportsForDownload(): Promise<Array<DailyServiceReport>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listReports(): Promise<Array<DailyServiceReport>>;
@@ -258,6 +259,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getReportById(arg0);
             return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getReportsForDownload(): Promise<Array<DailyServiceReport>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getReportsForDownload();
+                return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getReportsForDownload();
+            return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {

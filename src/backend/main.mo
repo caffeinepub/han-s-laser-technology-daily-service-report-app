@@ -166,6 +166,9 @@ actor {
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view profiles");
+    };
     userProfiles.get(caller);
   };
 
@@ -217,7 +220,7 @@ actor {
       };
       case (?existingProfile) {
         let finalRole = if (newRole == #admin and not isAllowlistedAdmin(existingProfile)) {
-          #engineer; 
+          #engineer;
         } else { newRole };
 
         let updatedProfile = {
@@ -342,4 +345,20 @@ actor {
       userProfiles.add(principal, user_profile);
     };
   };
+
+  // Securely fetch reports for CSV download (non-admins only get their own reports)
+  public query ({ caller }) func getReportsForDownload() : async [DailyServiceReport] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access reports");
+    };
+
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      return reports.values().toArray();
+    };
+
+    reports.values().toArray().filter(
+      func(report : DailyServiceReport) : Bool { report.createdBy == caller }
+    );
+  };
 };
+

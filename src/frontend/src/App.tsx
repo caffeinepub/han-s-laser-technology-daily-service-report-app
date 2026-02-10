@@ -142,6 +142,11 @@ const historyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/history',
   component: ReportHistoryPage,
+  validateSearch: (search: Record<string, unknown>): { userPrincipal?: string } => {
+    return {
+      userPrincipal: typeof search.userPrincipal === 'string' ? search.userPrincipal : undefined,
+    };
+  },
 });
 
 const reportDetailRoute = createRoute({

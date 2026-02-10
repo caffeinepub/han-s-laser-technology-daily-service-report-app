@@ -54,6 +54,11 @@ export const idlService = IDL.Service({
       [IDL.Opt(DailyServiceReport)],
       ['query'],
     ),
+  'getReportsForDownload' : IDL.Func(
+      [],
+      [IDL.Vec(DailyServiceReport)],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -122,6 +127,11 @@ export const idlFactory = ({ IDL }) => {
     'getReportById' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(DailyServiceReport)],
+        ['query'],
+      ),
+    'getReportsForDownload' : IDL.Func(
+        [],
+        [IDL.Vec(DailyServiceReport)],
         ['query'],
       ),
     'getUserProfile' : IDL.Func(
