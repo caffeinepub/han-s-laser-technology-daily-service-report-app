@@ -1,36 +1,37 @@
 {
   "kind": "build_request",
-  "title": "Publish current deployed draft to production",
-  "priority": "normal",
+  "title": "Publish current draft to IC mainnet production",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
-      "target": "unknown",
+      "text": "Promote the currently deployed draft build to the production (IC mainnet) environment by deploying both backend and frontend canisters successfully, using a new deterministic build/version identifier so the service worker and UI reflect the published version.",
+      "target": "both",
       "source": {
         "messageIds": [
           "msg-3"
         ],
         "quotes": [
-          "yes"
+          "yes. Publish it now"
         ]
       },
       "acceptanceCriteria": [
-        "Production deployment completes without errors.",
-        "The production app is accessible via the production frontend canister URL (https://<frontend-canister-id>.ic0.app).",
-        "The in-app build/version indicator in the footer shows a new build value after publish (different from the pre-publish value).",
-        "Service worker update flow functions in production: if an update is available, the update banner appears and reloading activates the latest assets without requiring an admin-only cache reset."
+        "Backend canister is deployed to IC mainnet using a state-preserving upgrade (no data loss).",
+        "Frontend canister is deployed to IC mainnet with a newly set VITE_BUILD_VERSION so BUILD_VERSION changes compared to the pre-publish value.",
+        "Production app loads at https://<frontend-canister-id>.ic0.app without console errors blocking normal use.",
+        "Post-deploy smoke tests in frontend/DEPLOYMENT.md pass: Internet Identity login/logout, profile load/signup, report create/list/detail, admin users page access for admin, CSV export, and PWA manifest/service worker registration.",
+        "Service worker update mechanism works after publish: users on the old version see the update banner and can apply the update to reload into the new version."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Do not edit files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT.",
-    "Backend must remain a single Motoko actor in backend/main.mo; introduce migration.mo only if state upgrades require it."
+    "Follow the runbooks and verification steps in frontend/DEPLOYMENT.md for mainnet deployment and post-deploy smoke tests.",
+    "Use a state-preserving upgrade for the backend canister when publishing over an existing production deployment (do not reinstall unless intentionally wiping data).",
+    "User-facing text must be in English."
   ],
   "nonGoals": [
-    "Adding new application features unrelated to production publishing.",
-    "Changing authentication providers (Internet Identity remains the only supported auth)."
+    "Do not add new product features or change existing UX flows as part of this publish request.",
+    "Do not modify immutable frontend paths listed in SYSTEM_CONTEXT."
   ],
   "imageRequirements": {
     "required": [],

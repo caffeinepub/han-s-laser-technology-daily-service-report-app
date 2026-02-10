@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-promote-the-currently-deployed-draft-draft-version-35-to-the-production-ic-mainnet-environment-ensuring-the-production-frontend-and-backend-canisters-are-updated-successfully",
-      "featureTitle": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
+      "featureId": "feature-promote-the-currently-deployed-draft-build-to-the-production-ic-mainnet-environment-by-deploying-both-backend-and-frontend-canisters-successfully-using-a-new-deterministic-build-version-identifier-so-the-service-worker-and-ui-reflect-the-published-version",
+      "featureTitle": "Promote the currently deployed draft build to the production (IC mainnet) environment by deploying both backend and frontend canisters successfully, using a new deterministic build/version identifier so the service worker and UI reflect the published version.",
       "files": [
         "frontend/DEPLOYMENT.md",
-        "frontend/public/sw.js",
-        "frontend/src/hooks/useServiceWorkerUpdate.ts",
         "frontend/src/utils/buildInfo.ts"
       ],
       "components": [

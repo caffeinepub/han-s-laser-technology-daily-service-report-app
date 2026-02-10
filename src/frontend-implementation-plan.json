@@ -1,42 +1,26 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Production publish readiness: stable build version + robust service worker update flow",
+  "title": "Mainnet publish readiness: deterministic build version + service worker update verification",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure production publish results in an updated frontend build indicator and a reliable service worker update banner/reload flow on mainnet.",
+      "summary": "Ensure the frontend publish process produces a new deterministic build/version identifier and that the PWA service worker update banner reliably appears after a mainnet publish, aligned with the DEPLOYMENT.md runbook.",
       "acceptanceCriteria": [
-        "Production deployment completes without errors.",
-        "The production app is accessible via the production frontend canister URL (https://<frontend-canister-id>.ic0.app).",
-        "The in-app build/version indicator in the footer shows a new build value after publish (different from the pre-publish value).",
-        "Service worker update flow functions in production: if an update is available, the update banner appears and reloading activates the latest assets without requiring an admin-only cache reset."
+        "Frontend build/version identifier is deterministic on production builds via VITE_BUILD_VERSION and is visibly reflected in the UI build indicator.",
+        "Service worker is registered with a versioned URL tied to the build identifier, so a new publish triggers an update flow for existing users.",
+        "DEPLOYMENT.md provides clear, executable mainnet publish and post-deploy smoke test steps, including service worker update verification."
       ],
       "file_operations": [
         {
           "path": "frontend/src/utils/buildInfo.ts",
           "operation": "modify",
-          "description": "Make the build/version identifier deterministic per deployed build (prefer an injected VITE_BUILD_VERSION), and avoid per-refresh randomness that can cause spurious version changes and service worker churn."
-        },
-        {
-          "path": "frontend/src/hooks/useServiceWorkerUpdate.ts",
-          "operation": "modify",
-          "description": "Align service worker registration/versioning with the deterministic build identifier and harden the update detection flow so that a newly deployed version reliably triggers an update-available state and reload activation in production."
-        },
-        {
-          "path": "frontend/src/components/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Confirm the footer build/version indicator displays the deterministic build identifier and remains visible in production for post-publish verification."
-        },
-        {
-          "path": "frontend/public/sw.js",
-          "operation": "modify",
-          "description": "Validate and, if needed, adjust cache versioning/activation behavior to ensure old caches are cleaned and the SKIP_WAITING + clients.claim + reload flow works smoothly after production publishes."
+          "description": "Add a production-time safeguard that warns (console-only) when VITE_BUILD_VERSION is missing during a production build, while keeping existing version derivation behavior unchanged; this helps prevent accidental publishes without a new deterministic build/version identifier."
         },
         {
           "path": "frontend/DEPLOYMENT.md",
           "operation": "modify",
-          "description": "Update the mainnet publish instructions to include setting/injecting VITE_BUILD_VERSION during the production build, and add a brief smoke-test checklist item verifying (1) footer build indicator changes and (2) service worker update banner appears when a new build is published."
+          "description": "Tighten the mainnet publish runbook to explicitly require setting a new VITE_BUILD_VERSION for each production publish, and add/clarify verification steps for: (1) build indicator changed, (2) service worker registered successfully, and (3) users on the old version see the ServiceWorkerUpdateBanner and can apply the update to reload into the new version."
         }
       ]
     }

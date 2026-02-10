@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T18:28:00.691Z",
+  "generatedAt": "2026-02-10T18:33:37.787Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,33 +12,25 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
+        "summary": "Promote the currently deployed draft build to the production (IC mainnet) environment by deploying both backend and frontend canisters successfully, using a new deterministic build/version identifier so the service worker and UI reflect the published version.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/utils/buildInfo.ts",
-          "frontend/src/hooks/useServiceWorkerUpdate.ts",
-          "frontend/src/components/AppLayout.tsx",
-          "frontend/public/sw.js",
           "frontend/DEPLOYMENT.md"
         ],
         "matchedFiles": [
           "frontend/src/utils/buildInfo.ts",
-          "frontend/src/hooks/useServiceWorkerUpdate.ts",
-          "frontend/public/sw.js",
           "frontend/DEPLOYMENT.md"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/DEPLOYMENT.md",
-    "frontend/public/sw.js",
-    "frontend/src/hooks/useServiceWorkerUpdate.ts",
     "frontend/src/utils/buildInfo.ts",
     "project_state.json",
     "scratch/component-selection.json",

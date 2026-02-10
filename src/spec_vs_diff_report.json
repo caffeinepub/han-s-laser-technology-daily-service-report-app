@@ -1,52 +1,59 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T18:28:00.689Z",
-  "summary": "Diff adds build/version utilities and a more explicit service worker update mechanism (versioned SW URL, SKIP_WAITING flow) plus mainnet deployment documentation updates. It also includes substantial backend authorization/signup logic changes that are not evidenced as necessary for “promote draft to production”. Several REQ-1 acceptance criteria (actual production publish of Draft Version 35, footer build indicator wiring, and update banner UI wiring) are not demonstrably implemented from the provided diff summary.",
+  "generatedAt": "2026-02-10T18:33:37.784Z",
+  "summary": "Diff updates frontend build version sourcing to prefer VITE_BUILD_VERSION and expands DEPLOYMENT.md with mainnet state-preserving upgrade steps and smoke test checklist. The diff does not provide evidence of actually deploying backend/frontend to IC mainnet or of passing the required post-deploy verification steps.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
-      "reason": "The diff shows code and documentation changes, but no concrete evidence of a production promotion/publish of “Draft Version 35” (e.g., release tagging, network/ic deploy configuration changes, canister configuration updates). Deployment success and production accessibility cannot be validated from these code diffs alone, and there is no mention of “Draft Version 35” being promoted.",
+      "requirement": "Backend canister is deployed to IC mainnet using a state-preserving upgrade (no data loss).",
+      "reason": "The diff only updates documentation and frontend build version logic; there is no evidence of an executed or automated backend mainnet upgrade deployment change (e.g., CI/CD, scripts, dfx config changes) in the provided file modifications.",
       "evidence": [
         "frontend/DEPLOYMENT.md",
-        "project_state.json"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "In-app build/version indicator in the footer shows a new build value after publish (different from pre-publish value).",
-      "reason": "A build version source of truth was added (BUILD_VERSION / getBuildVersionDisplay), but the diff does not include any modified footer/component code that actually renders this value in the UI.",
-      "evidence": [
         "frontend/src/utils/buildInfo.ts"
       ]
     },
     {
       "id": "REQ-1",
-      "requirement": "Service worker update flow functions in production: if an update is available, the update banner appears and reloading activates the latest assets without requiring an admin-only cache reset.",
-      "reason": "The hook and service worker messaging/activation flow are implemented, but the diff does not show any UI component changes that display an “update available” banner or wire `useServiceWorkerUpdate()` into the visible app shell. Without that wiring, the “update banner appears” portion is not evidenced.",
+      "requirement": "Frontend canister is deployed to IC mainnet with a newly set VITE_BUILD_VERSION so BUILD_VERSION changes compared to the pre-publish value.",
+      "reason": "Code and documentation describe using VITE_BUILD_VERSION, but the diff does not include evidence of an actual mainnet frontend deployment or any pipeline/config enforcement that ensures a new deterministic VITE_BUILD_VERSION is set during the publish.",
       "evidence": [
-        "frontend/src/hooks/useServiceWorkerUpdate.ts",
-        "frontend/public/sw.js"
+        "frontend/src/utils/buildInfo.ts",
+        "frontend/DEPLOYMENT.md"
       ]
-    }
-  ],
-  "hallucinated_features": [
+    },
     {
-      "description": "Backend admin allowlist, admin signup password, role determination logic, pending signups tracking, and reset-to-fresh-app logic changes.",
-      "reason": "REQ-1 is about promoting an already-deployed draft to production and ensuring version indicator + service worker update flow works. The diff shows significant new/changed backend authorization and signup behavior that is not requested by the BuildRequest and is explicitly outside the stated non-goal of adding unrelated application features.",
+      "id": "REQ-1",
+      "requirement": "Production app loads at https://<frontend-canister-id>.ic0.app without console errors blocking normal use.",
+      "reason": "No production runtime verification results are included in the diff; only documentation and build version logic changes are shown.",
       "evidence": [
-        "backend/main.mo"
+        "frontend/DEPLOYMENT.md"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Post-deploy smoke tests in frontend/DEPLOYMENT.md pass: Internet Identity login/logout, profile load/signup, report create/list/detail, admin users page access for admin, CSV export, and PWA manifest/service worker registration.",
+      "reason": "The diff adds/updates a smoke test checklist in DEPLOYMENT.md but does not provide evidence that the tests were executed and passed.",
+      "evidence": [
+        "frontend/DEPLOYMENT.md"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Service worker update mechanism works after publish: users on the old version see the update banner and can apply the update to reload into the new version.",
+      "reason": "While the build version logic and deployment docs emphasize VITE_BUILD_VERSION for update detection, the diff does not show changes to the service worker, update banner logic, or any proof of end-to-end behavior in production.",
+      "evidence": [
+        "frontend/src/utils/buildInfo.ts",
+        "frontend/DEPLOYMENT.md",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.72,
+  "hallucinated_features": [],
+  "confidence": 0.74,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/DEPLOYMENT.md",
-    "frontend/public/sw.js",
-    "frontend/src/hooks/useServiceWorkerUpdate.ts",
     "frontend/src/utils/buildInfo.ts",
     "project_state.json"
   ]

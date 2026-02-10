@@ -2,13 +2,15 @@
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
   "summary": "New project",
-  "architectural_notes": [],
+  "architectural_notes": [
+    "User approved publishing the current draft (Version 36) to production."
+  ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-promote-the-currently-deployed-draft-draft-version-35-to-the-production-ic-mainnet-environment-ensuring-the-production-frontend-and-backend-canisters-are-updated-successfully",
-      "title": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
+      "id": "feature-promote-the-currently-deployed-draft-build-to-the-production-ic-mainnet-environment-by-deploying-both-backend-and-frontend-canisters-successfully-using-a-new-deterministic-build-version-identifier-so-the-service-worker-and-ui-reflect-the-published-version",
+      "title": "Promote the currently deployed draft build to the production (IC mainnet) environment by deploying both backend and frontend canisters successfully, using a new deterministic build/version identifier so the service worker and UI reflect the published version.",
       "reqIds": [
         "REQ-1"
       ],
@@ -16,7 +18,7 @@
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Publish current deployed draft to production",
+  "projectName": "Publish current draft to IC mainnet production",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

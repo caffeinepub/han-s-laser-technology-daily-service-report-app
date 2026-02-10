@@ -13,6 +13,16 @@ const getBuildVersion = (): string => {
     return import.meta.env.VITE_BUILD_VERSION;
   }
   
+  // Production safeguard: warn if VITE_BUILD_VERSION is missing in production mode
+  if (import.meta.env.PROD) {
+    console.warn(
+      '⚠️ VITE_BUILD_VERSION not set for production build. ' +
+      'Set this environment variable before deploying to ensure deterministic versioning ' +
+      'and proper service worker update detection. ' +
+      'Example: export VITE_BUILD_VERSION="$(date +%Y%m%d-%H%M%S)"'
+    );
+  }
+  
   // Development fallback: use a stable identifier based on import.meta.url
   // This ensures the version is consistent within a single build but changes
   // when the code is rebuilt (Vite will generate a new module URL)
