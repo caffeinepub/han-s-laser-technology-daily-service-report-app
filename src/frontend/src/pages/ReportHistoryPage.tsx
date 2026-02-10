@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useListReports, useIsCallerAdmin, useGetUserProfile } from '../hooks/useQueries';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { copyToClipboard } from '../utils/copyToClipboard';
+import { formatPrincipal } from '../utils/formatPrincipal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Loader2, Search, Calendar, FileText, CheckCircle2, XCircle, Download, X
 import { downloadReportsAsCSV } from '../utils/reportDownload';
 import { useGetReportsForDownload } from '../hooks/useQueries';
 import { toast } from 'sonner';
+import { Principal } from '@icp-sdk/core/principal';
 
 export function ReportHistoryPage() {
   const navigate = useNavigate();
@@ -23,9 +25,10 @@ export function ReportHistoryPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-  const [copiedPrincipal, setCopiedPrincipal] = useState(false);
+  const [copiedItem, setCopiedItem] = useState<string | null>(null);
 
-  const filterUserPrincipal = search?.userPrincipal;
+  const filterUserPrincipalString = search?.userPrincipal;
+  const filterUserPrincipal = filterUserPrincipalString ? Principal.fromText(filterUserPrincipalString) : null;
   const { data: filteredUserProfile } = useGetUserProfile(filterUserPrincipal);
 
   const currentUserPrincipal = identity?.getPrincipal().toString();
@@ -34,12 +37,25 @@ export function ReportHistoryPage() {
     navigate({ to: '/history', search: {} });
   };
 
-  const handleCopyFilteredPrincipal = async () => {
-    if (filterUserPrincipal) {
-      const success = await copyToClipboard(filterUserPrincipal);
+  const handleCopyUsername = async () => {
+    if (filteredUserProfile?.username) {
+      const success = await copyToClipboard(filteredUserProfile.username);
       if (success) {
-        setCopiedPrincipal(true);
-        setTimeout(() => setCopiedPrincipal(false), 2000);
+        setCopiedItem('username');
+        setTimeout(() => setCopiedItem(null), 2000);
+        toast.success('Username copied to clipboard');
+      } else {
+        toast.error('Failed to copy username');
+      }
+    }
+  };
+
+  const handleCopyPrincipal = async () => {
+    if (filterUserPrincipalString) {
+      const success = await copyToClipboard(filterUserPrincipalString);
+      if (success) {
+        setCopiedItem('principal');
+        setTimeout(() => setCopiedItem(null), 2000);
         toast.success('Principal ID copied to clipboard');
       } else {
         toast.error('Failed to copy Principal ID');
@@ -63,12 +79,12 @@ export function ReportHistoryPage() {
         (!endDate || report.date <= endDate);
 
       const matchesUserFilter =
-        !filterUserPrincipal ||
-        report.createdBy.toString() === filterUserPrincipal;
+        !filterUserPrincipalString ||
+        report.createdBy.toString() === filterUserPrincipalString;
 
       return matchesSearch && matchesDateRange && matchesUserFilter;
     });
-  }, [reports, searchTerm, startDate, endDate, filterUserPrincipal]);
+  }, [reports, searchTerm, startDate, endDate, filterUserPrincipalString]);
 
   const handleDownloadCSV = async () => {
     setIsDownloading(true);
@@ -99,8 +115,8 @@ export function ReportHistoryPage() {
     );
   }
 
-  const showFilterBadge = filterUserPrincipal && filteredUserProfile;
-  const isViewingOwnReports = filterUserPrincipal === currentUserPrincipal;
+  const showFilterBadge = filterUserPrincipalString && filteredUserProfile;
+  const isViewingOwnReports = filterUserPrincipalString === currentUserPrincipal;
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -114,7 +130,7 @@ export function ReportHistoryPage() {
             {showFilterBadge
               ? isViewingOwnReports
                 ? 'Viewing your reports'
-                : `Viewing reports by ${filteredUserProfile.name}`
+                : `Viewing reports by ${filteredUserProfile.name} (@${filteredUserProfile.username})`
               : 'View and search all your service reports'}
           </p>
         </div>
@@ -122,6 +138,7 @@ export function ReportHistoryPage() {
           <Button
             onClick={handleDownloadCSV}
             disabled={isDownloading || !reports || reports.length === 0}
+            variant="outline"
             className="gap-2"
           >
             {isDownloading ? (
@@ -132,7 +149,7 @@ export function ReportHistoryPage() {
             ) : (
               <>
                 <Download className="h-4 w-4" />
-                Download All Reports
+                Export CSV
               </>
             )}
           </Button>
@@ -141,87 +158,101 @@ export function ReportHistoryPage() {
 
       {showFilterBadge && (
         <Card className="bg-accent/10 border-accent">
-          <CardContent className="pt-4">
+          <CardContent className="py-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-sm">
                   Filtered by User
                 </Badge>
-                <span className="font-medium">{filteredUserProfile.name}</span>
-                <span className="text-sm text-muted-foreground">
-                  (@{filteredUserProfile.username})
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{filteredUserProfile.name}</span>
+                  <span className="text-muted-foreground">@{filteredUserProfile.username}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleCopyUsername}
+                    title="Copy username"
+                  >
+                    {copiedItem === 'username' ? (
+                      <Check className="h-3 w-3 text-success" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <code className="text-xs font-mono px-2 py-1 bg-muted rounded max-w-[200px] overflow-x-auto whitespace-nowrap">
-                  {filterUserPrincipal}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilter}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear Filter
+              </Button>
+            </div>
+            <details className="mt-2 text-xs">
+              <summary className="cursor-pointer text-muted-foreground/70 hover:text-muted-foreground select-none">
+                Principal ID
+              </summary>
+              <div className="flex items-center gap-2 mt-1 pl-2">
+                <code className="text-xs text-muted-foreground/70 font-mono break-all">
+                  {filterUserPrincipalString}
                 </code>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
-                  onClick={handleCopyFilteredPrincipal}
+                  className="h-5 w-5 flex-shrink-0"
+                  onClick={handleCopyPrincipal}
                   title="Copy Principal ID"
                 >
-                  {copiedPrincipal ? (
-                    <Check className="h-3.5 w-3.5 text-success" />
+                  {copiedItem === 'principal' ? (
+                    <Check className="h-3 w-3 text-success" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy className="h-3 w-3" />
                   )}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearFilter}
-                  className="gap-1"
-                >
-                  <X className="h-4 w-4" />
-                  Clear Filter
-                </Button>
               </div>
-            </div>
+            </details>
           </CardContent>
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
-          <CardDescription>
-            Find reports by customer name, machine details, or date range
-          </CardDescription>
+          <CardTitle>Filter Reports</CardTitle>
+          <CardDescription>Search and filter by date range</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by customer, machine model, serial number, or issue..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Start Date
-              </label>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Search by customer, machine, or issue..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                End Date
-              </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="date"
+                placeholder="Start Date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="date"
+                placeholder="End Date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="pl-9"
               />
             </div>
           </div>
@@ -233,100 +264,75 @@ export function ReportHistoryPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">
-                {showFilterBadge
-                  ? `No reports found for ${filteredUserProfile?.name || 'this user'}`
-                  : searchTerm || startDate || endDate
-                  ? 'No reports match your search criteria'
-                  : 'No reports yet'}
-              </p>
-              <p className="text-muted-foreground mb-4">
-                {showFilterBadge
-                  ? 'This user has not created any service reports yet.'
-                  : searchTerm || startDate || endDate
+              <p className="text-lg font-medium mb-2">No reports found</p>
+              <p className="text-muted-foreground">
+                {reports && reports.length > 0
                   ? 'Try adjusting your search filters'
                   : 'Create your first service report to get started'}
               </p>
-              {showFilterBadge ? (
-                <Button onClick={handleClearFilter} variant="outline">
-                  View All Reports
-                </Button>
-              ) : (
-                <Button onClick={() => navigate({ to: '/' })}>
-                  Create New Report
-                </Button>
-              )}
             </CardContent>
           </Card>
         ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'}
-              </p>
-            </div>
-            {filteredReports.map((report) => (
-              <Card
-                key={report.id}
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate({ to: `/report/${report.id}` })}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="text-xl">{report.customerName}</CardTitle>
-                      <CardDescription className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
+          filteredReports.map((report) => (
+            <Card
+              key={report.id}
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate({ to: '/report/$id', params: { id: report.id } })}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-2">{report.customerName}</CardTitle>
+                    <CardDescription className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{report.machineModel}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span>S/N: {report.machineSerialNo}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-3.5 w-3.5" />
                         {new Date(report.date).toLocaleDateString('en-IN', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
                         })}
-                      </CardDescription>
-                    </div>
-                    <Badge
-                      variant={report.issueResolved ? 'default' : 'secondary'}
-                      className="flex items-center gap-1"
-                    >
-                      {report.issueResolved ? (
-                        <>
-                          <CheckCircle2 className="h-3 w-3" />
-                          Resolved
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-3 w-3" />
-                          Pending
-                        </>
-                      )}
-                    </Badge>
+                      </div>
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid gap-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium min-w-[120px]">Machine Model:</span>
-                      <span className="text-muted-foreground">{report.machineModel}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium min-w-[120px]">Serial Number:</span>
-                      <span className="text-muted-foreground">{report.machineSerialNo}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium min-w-[120px]">Contact Person:</span>
-                      <span className="text-muted-foreground">{report.contactPerson}</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="font-medium min-w-[120px]">Issue:</span>
-                      <span className="text-muted-foreground line-clamp-2">
-                        {report.issueDescribedByCustomer}
-                      </span>
-                    </div>
+                  <Badge
+                    variant={report.issueResolved ? 'default' : 'secondary'}
+                    className="ml-4 flex-shrink-0"
+                  >
+                    {report.issueResolved ? (
+                      <>
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Resolved
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Pending
+                      </>
+                    )}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Issue Described:</p>
+                    <p className="text-sm line-clamp-2">{report.issueDescribedByCustomer}</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </>
+                  {report.issueFoundByEngineer && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Issue Found:</p>
+                      <p className="text-sm line-clamp-2">{report.issueFoundByEngineer}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
     </div>

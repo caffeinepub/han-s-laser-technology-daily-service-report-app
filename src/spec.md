@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Capture optional geolocation when submitting a daily service report, store it with the report, and show/export it wherever reports are viewed or downloaded.
+**Goal:** Publish the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment.
 
 **Planned changes:**
-- Extend the backend `DailyServiceReport` model to include optional geolocation fields (at least latitude/longitude, optionally accuracy and captured timestamp) and persist them on report creation when provided.
-- Add a backend migration to keep existing stored reports readable by initializing new geolocation fields to null/none.
-- Update the report submission UI to optionally capture the user’s current location via the browser Geolocation API and include it in the `useCreateReport` payload, with clear non-blocking error handling when unavailable/denied/timeouts.
-- Update report viewing and export surfaces to display location when present and include geolocation columns in CSV downloads (blank when not available), without breaking existing report browsing/filtering.
+- Promote the deployed draft frontend and backend canisters to production (IC mainnet).
+- Verify production accessibility via the production frontend canister URL.
+- Ensure the in-app build/version indicator in the footer updates to a new value post-publish.
+- Confirm the production service worker update flow shows an update banner when a new version is available and reload activates the latest assets without requiring an admin-only cache reset.
 
-**User-visible outcome:** Users can attach their current location to a service report at submission time (optional), see the captured coordinates when viewing a report, and download CSVs that include location columns when available.
+**User-visible outcome:** The production app is updated to the latest draft build, is accessible at the production canister URL, shows an updated build/version indicator in the footer, and supports a working service-worker-driven update banner/reload flow.

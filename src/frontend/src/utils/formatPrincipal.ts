@@ -1,24 +1,32 @@
 /**
- * Format a principal ID for display by showing a shortened version
+ * Formats a principal ID for display by showing first and last segments
  * @param principal - The full principal ID string
- * @returns A shortened, human-readable version of the principal
+ * @returns Formatted principal string (e.g., "abc12...xyz89")
  */
 export function formatPrincipal(principal: string): string {
-  if (!principal) return '';
-  
-  // Show first 8 and last 5 characters with ellipsis in between
-  if (principal.length > 20) {
-    return `${principal.slice(0, 8)}...${principal.slice(-5)}`;
+  if (!principal || principal.length <= 15) {
+    return principal;
   }
   
+  const start = principal.slice(0, 8);
+  const end = principal.slice(-6);
+  return `${start}...${end}`;
+}
+
+/**
+ * Returns the full principal ID without any formatting
+ * @param principal - The full principal ID string
+ * @returns The complete principal string
+ */
+export function getFullPrincipal(principal: string): string {
   return principal;
 }
 
 /**
- * Get the full principal ID without any formatting
- * @param principal - The full principal ID string
- * @returns The complete principal ID
+ * Formats a username for display with @ prefix
+ * @param username - The username string
+ * @returns Formatted username with @ prefix
  */
-export function getFullPrincipal(principal: string): string {
-  return principal;
+export function formatUsername(username: string): string {
+  return username.startsWith('@') ? username : `@${username}`;
 }

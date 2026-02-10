@@ -9,10 +9,10 @@ import { useFullLogout } from '../hooks/useFullLogout';
  * Provides a clear explanation and action to log out and sign in again.
  */
 export function SessionInvalidScreen() {
-  const { fullLogout } = useFullLogout();
+  const { performLogout } = useFullLogout();
 
   const handleLogoutAndRetry = async () => {
-    await fullLogout();
+    await performLogout();
   };
 
   return (

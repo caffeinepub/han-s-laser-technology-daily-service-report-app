@@ -2,11 +2,13 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-report-submission-ui-to-capture-the-user-s-current-geolocation-using-the-browser-geolocation-api-and-include-it-in-the-report-payload-when-submitting",
-      "featureTitle": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
+      "featureId": "feature-promote-the-currently-deployed-draft-draft-version-35-to-the-production-ic-mainnet-environment-ensuring-the-production-frontend-and-backend-canisters-are-updated-successfully",
+      "featureTitle": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
       "files": [
-        "frontend/src/hooks/useGeolocation.ts",
-        "frontend/src/pages/ReportEntryPage.tsx"
+        "frontend/DEPLOYMENT.md",
+        "frontend/public/sw.js",
+        "frontend/src/hooks/useServiceWorkerUpdate.ts",
+        "frontend/src/utils/buildInfo.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,27 +19,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-display-captured-geolocation-on-report-viewing-surfaces-and-include-it-in-csv-exports",
-      "featureTitle": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
-      "files": [
-        "frontend/src/pages/ReportDetailPage.tsx",
-        "frontend/src/utils/reportDownload.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "confidence": "high"
     }

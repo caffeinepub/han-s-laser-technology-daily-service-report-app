@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export type GeolocationStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -21,9 +21,10 @@ const TIMEOUT_MS = 10000; // 10 seconds
 
 /**
  * Hook for capturing user's current geolocation using browser Geolocation API.
- * Provides one-shot capture with configurable timeout and user-friendly error messages.
+ * Provides one-shot capture with configurable timeout.
+ * Errors are handled silently (internal state only) for background capture scenarios.
  */
-export function useGeolocation(): UseGeolocationResult {
+export function useGeolocation(options?: { autoCapture?: boolean }): UseGeolocationResult {
   const [data, setData] = useState<GeolocationData | null>(null);
   const [status, setStatus] = useState<GeolocationStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -54,19 +55,19 @@ export function useGeolocation(): UseGeolocationResult {
         setStatus('error');
         setData(null);
         
-        // Provide user-friendly error messages
+        // Store error internally but don't expose user-facing messages for background capture
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            setError('Location access was denied. Please enable location permissions in your browser settings to attach location to reports.');
+            setError('Permission denied');
             break;
           case err.POSITION_UNAVAILABLE:
-            setError('Location information is unavailable. Please check your device settings and try again.');
+            setError('Position unavailable');
             break;
           case err.TIMEOUT:
-            setError('Location request timed out. Please try again.');
+            setError('Timeout');
             break;
           default:
-            setError('An error occurred while retrieving your location. Please try again.');
+            setError('Unknown error');
         }
       },
       {
@@ -82,6 +83,13 @@ export function useGeolocation(): UseGeolocationResult {
     setStatus('idle');
     setError(null);
   }, []);
+
+  // Auto-capture on mount if requested
+  useEffect(() => {
+    if (options?.autoCapture) {
+      captureLocation();
+    }
+  }, [options?.autoCapture, captureLocation]);
 
   return {
     data,

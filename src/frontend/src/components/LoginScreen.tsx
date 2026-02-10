@@ -6,7 +6,7 @@ import { LogIn, UserPlus, Loader2, RefreshCw } from 'lucide-react';
 
 export function LoginScreen() {
   const { login, loginStatus, identity } = useInternetIdentity();
-  const { fullLogout } = useFullLogout();
+  const { performLogout } = useFullLogout();
 
   const isLoggingIn = loginStatus === 'logging-in';
   const hasStaleSession = !!identity; // If identity exists but we're on login screen, it's stale
@@ -20,7 +20,7 @@ export function LoginScreen() {
   };
 
   const handleSwitchAccount = async () => {
-    await fullLogout();
+    await performLogout();
   };
 
   return (

@@ -1,8 +1,9 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useIsCallerAdmin } from '../hooks/useQueries';
+import { useIsCallerAdmin, useGetCallerUserProfile } from '../hooks/useQueries';
 import { useFullLogout } from '../hooks/useFullLogout';
 import { copyToClipboard } from '../utils/copyToClipboard';
+import { formatPrincipal } from '../utils/formatPrincipal';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,8 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { Menu, FileText, History, Users, LogOut, Copy, Check } from 'lucide-react';
+import { Menu, FileText, History, Users, LogOut, Copy, Check, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -19,19 +21,22 @@ export function AppHeader() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const { data: isAdmin } = useIsCallerAdmin();
-  const { fullLogout } = useFullLogout();
+  const { data: userProfile } = useGetCallerUserProfile();
+  const { performLogout } = useFullLogout();
   const [copiedDesktop, setCopiedDesktop] = useState(false);
   const [copiedMobile, setCopiedMobile] = useState(false);
 
   const isAuthenticated = !!identity;
   const principalId = identity?.getPrincipal().toString() || '';
+  const username = userProfile?.username || formatPrincipal(principalId);
+  const displayName = userProfile?.name || username;
 
   const handleLogout = async () => {
-    await fullLogout();
+    await performLogout();
   };
 
-  const handleCopyPrincipal = async (isMobile: boolean = false) => {
-    const success = await copyToClipboard(principalId);
+  const handleCopyUsername = async (isMobile: boolean = false) => {
+    const success = await copyToClipboard(username);
     if (success) {
       if (isMobile) {
         setCopiedMobile(true);
@@ -40,9 +45,18 @@ export function AppHeader() {
         setCopiedDesktop(true);
         setTimeout(() => setCopiedDesktop(false), 2000);
       }
-      toast.success('User ID copied to clipboard');
+      toast.success('Username copied to clipboard');
     } else {
-      toast.error('Failed to copy User ID');
+      toast.error('Failed to copy username');
+    }
+  };
+
+  const handleCopyPrincipal = async () => {
+    const success = await copyToClipboard(principalId);
+    if (success) {
+      toast.success('Principal ID copied to clipboard');
+    } else {
+      toast.error('Failed to copy Principal ID');
     }
   };
 
@@ -62,17 +76,15 @@ export function AppHeader() {
 
         {isAuthenticated && (
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-medium">User ID:</span>
-              <code className="px-2 py-1 rounded bg-muted text-foreground font-mono text-xs max-w-[200px] overflow-x-auto whitespace-nowrap">
-                {principalId}
-              </code>
+            <div className="hidden sm:flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">@{username}</span>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => handleCopyPrincipal(false)}
-                title="Copy User ID"
+                onClick={() => handleCopyUsername(false)}
+                title="Copy username"
               >
                 {copiedDesktop ? (
                   <Check className="h-3.5 w-3.5 text-success" />
@@ -118,15 +130,21 @@ export function AppHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <div className="px-2 py-2 text-xs text-muted-foreground sm:hidden">
-                  <div className="font-medium mb-1 flex items-center justify-between">
-                    <span>User ID:</span>
+                <div className="px-2 py-2 sm:hidden">
+                  <DropdownMenuLabel className="flex items-center gap-2 px-0">
+                    <User className="h-4 w-4" />
+                    {displayName}
+                  </DropdownMenuLabel>
+                  <div className="flex items-center justify-between mt-1">
+                    <code className="text-xs text-muted-foreground font-medium">
+                      @{username}
+                    </code>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
-                      onClick={() => handleCopyPrincipal(true)}
-                      title="Copy User ID"
+                      onClick={() => handleCopyUsername(true)}
+                      title="Copy username"
                     >
                       {copiedMobile ? (
                         <Check className="h-3 w-3 text-success" />
@@ -135,9 +153,14 @@ export function AppHeader() {
                       )}
                     </Button>
                   </div>
-                  <code className="block px-2 py-1 rounded bg-muted text-foreground font-mono text-xs break-all max-h-20 overflow-y-auto">
-                    {principalId}
-                  </code>
+                  <button
+                    onClick={handleCopyPrincipal}
+                    className="text-xs text-muted-foreground/70 hover:text-muted-foreground mt-2 flex items-center gap-1 w-full"
+                    title="Copy Principal ID"
+                  >
+                    <span className="truncate font-mono">{formatPrincipal(principalId)}</span>
+                    <Copy className="h-3 w-3 flex-shrink-0" />
+                  </button>
                 </div>
                 <DropdownMenuSeparator className="sm:hidden" />
                 <DropdownMenuItem onClick={() => navigate({ to: '/' })}>

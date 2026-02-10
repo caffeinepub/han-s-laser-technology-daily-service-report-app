@@ -1,44 +1,53 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T17:30:55.825Z",
-  "summary": "Diff adds optional geolocation to the backend report type, provides a migration initializing the new field to null, adds a frontend geolocation hook, conditionally displays geolocation in report detail, and adds latitude/longitude columns to CSV export. However, the diff summary does not provide clear evidence that the report creation flow actually accepts/persists submitted geolocation end-to-end (backend createReport storage and frontend submit payload).",
+  "generatedAt": "2026-02-10T18:28:00.689Z",
+  "summary": "Diff adds build/version utilities and a more explicit service worker update mechanism (versioned SW URL, SKIP_WAITING flow) plus mainnet deployment documentation updates. It also includes substantial backend authorization/signup logic changes that are not evidenced as necessary for “promote draft to production”. Several REQ-1 acceptance criteria (actual production publish of Draft Version 35, footer build indicator wiring, and update banner UI wiring) are not demonstrably implemented from the provided diff summary.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "createReport stores the submitted geolocation (when provided) and continues to set createdBy to the caller as it does today.",
-      "reason": "backend/main.mo shows the DailyServiceReport type extended with geolocation, but the provided truncation does not include any createReport logic demonstrating that geolocation is accepted in the input and persisted, nor that createdBy behavior is preserved.",
+      "requirement": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
+      "reason": "The diff shows code and documentation changes, but no concrete evidence of a production promotion/publish of “Draft Version 35” (e.g., release tagging, network/ic deploy configuration changes, canister configuration updates). Deployment success and production accessibility cannot be validated from these code diffs alone, and there is no mention of “Draft Version 35” being promoted.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "frontend/DEPLOYMENT.md",
+        "project_state.json"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "When location capture succeeds, the submitted report includes the captured latitude/longitude (and any additional captured fields) sent to the backend via useCreateReport.",
-      "reason": "ReportEntryPage.tsx shows useGeolocation is imported/used and a report object is constructed, but the truncated snippet does not show geolocation being attached to the report payload passed to useCreateReport.",
+      "id": "REQ-1",
+      "requirement": "In-app build/version indicator in the footer shows a new build value after publish (different from pre-publish value).",
+      "reason": "A build version source of truth was added (BUILD_VERSION / getBuildVersionDisplay), but the diff does not include any modified footer/component code that actually renders this value in the UI.",
       "evidence": [
-        "frontend/src/pages/ReportEntryPage.tsx (truncated)"
+        "frontend/src/utils/buildInfo.ts"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Service worker update flow functions in production: if an update is available, the update banner appears and reloading activates the latest assets without requiring an admin-only cache reset.",
+      "reason": "The hook and service worker messaging/activation flow are implemented, but the diff does not show any UI component changes that display an “update available” banner or wire `useServiceWorkerUpdate()` into the visible app shell. Without that wiring, the “update banner appears” portion is not evidenced.",
+      "evidence": [
+        "frontend/src/hooks/useServiceWorkerUpdate.ts",
+        "frontend/public/sw.js"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Adds a Google Maps link in the ReportDetailPage geolocation section.",
-      "reason": "REQ-4 only asks to display captured geolocation on viewing surfaces; a Google Maps link is an extra behavior not requested in the BuildRequest.",
+      "description": "Backend admin allowlist, admin signup password, role determination logic, pending signups tracking, and reset-to-fresh-app logic changes.",
+      "reason": "REQ-1 is about promoting an already-deployed draft to production and ensuring version indicator + service worker update flow works. The diff shows significant new/changed backend authorization and signup behavior that is not requested by the BuildRequest and is explicitly outside the stated non-goal of adding unrelated application features.",
       "evidence": [
-        "frontend-file-summaries.txt (\"ReportDetailPage.tsx\": \"...conditional geolocation section displaying coordinates with Google Maps link...\")"
+        "backend/main.mo"
       ]
     }
   ],
-  "confidence": 0.63,
+  "confidence": 0.72,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useGeolocation.ts",
-    "frontend/src/pages/ReportDetailPage.tsx",
-    "frontend/src/pages/ReportEntryPage.tsx",
-    "frontend/src/utils/reportDownload.ts",
+    "frontend/DEPLOYMENT.md",
+    "frontend/public/sw.js",
+    "frontend/src/hooks/useServiceWorkerUpdate.ts",
+    "frontend/src/utils/buildInfo.ts",
     "project_state.json"
   ]
 }

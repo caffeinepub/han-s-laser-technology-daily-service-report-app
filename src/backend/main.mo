@@ -1,4 +1,3 @@
-import Migration "migration";
 import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Iter "mo:core/Iter";
@@ -7,8 +6,6 @@ import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-// Specify the migration module
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -93,7 +90,10 @@ actor {
     userProfiles.clear();
 
     for (user in allUsers.values()) {
-      AccessControl.assignRole(accessControlState, caller, user, #guest);
+      // Preserve the caller's admin role to prevent system lockout
+      if (user != caller) {
+        AccessControl.assignRole(accessControlState, caller, user, #guest);
+      };
     };
 
     pendingSignups.clear();

@@ -1,74 +1,45 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T17:30:55.828Z",
+  "generatedAt": "2026-02-10T18:28:00.691Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 2,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Extend the backend DailyServiceReport data model to store optional geolocation captured at report submission time, and persist it with each report.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Add a conditional state migration for existing deployments so previously stored reports remain readable after adding the new geolocation fields.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
+        "summary": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useGeolocation.ts",
-          "frontend/src/backend.d.ts",
-          "frontend/src/pages/ReportEntryPage.tsx"
+          "frontend/src/utils/buildInfo.ts",
+          "frontend/src/hooks/useServiceWorkerUpdate.ts",
+          "frontend/src/components/AppLayout.tsx",
+          "frontend/public/sw.js",
+          "frontend/DEPLOYMENT.md"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useGeolocation.ts",
-          "frontend/src/backend.d.ts",
-          "frontend/src/pages/ReportEntryPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/ReportDetailPage.tsx",
-          "frontend/src/utils/reportDownload.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/ReportDetailPage.tsx",
-          "frontend/src/utils/reportDownload.ts"
+          "frontend/src/utils/buildInfo.ts",
+          "frontend/src/hooks/useServiceWorkerUpdate.ts",
+          "frontend/public/sw.js",
+          "frontend/DEPLOYMENT.md"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useGeolocation.ts",
-    "frontend/src/pages/ReportDetailPage.tsx",
-    "frontend/src/pages/ReportEntryPage.tsx",
-    "frontend/src/utils/reportDownload.ts",
+    "frontend/DEPLOYMENT.md",
+    "frontend/public/sw.js",
+    "frontend/src/hooks/useServiceWorkerUpdate.ts",
+    "frontend/src/utils/buildInfo.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

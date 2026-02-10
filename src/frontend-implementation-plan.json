@@ -1,53 +1,42 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Geolocation capture and display for service reports (frontend)",
+  "title": "Production publish readiness: stable build version + robust service worker update flow",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Capture the user’s current geolocation on ReportEntryPage and submit it with the report when available, without blocking submission on errors/denial.",
+      "id": "REQ-1",
+      "summary": "Ensure production publish results in an updated frontend build indicator and a reliable service worker update banner/reload flow on mainnet.",
       "acceptanceCriteria": [
-        "ReportEntryPage includes a clearly labeled geolocation section (e.g., “Location”) with a control to capture/refresh location and an indicator showing whether location is attached to the report.",
-        "If the user denies permission, location is unavailable, or the request times out, the report can still be submitted successfully without location and the UI shows a clear, non-blocking error message in English.",
-        "When location capture succeeds, the submitted report includes the captured latitude/longitude (and any additional captured fields) sent to the backend via useCreateReport.",
-        "No changes are made to frontend immutable paths listed in SYSTEM_CONTEXT."
+        "Production deployment completes without errors.",
+        "The production app is accessible via the production frontend canister URL (https://<frontend-canister-id>.ic0.app).",
+        "The in-app build/version indicator in the footer shows a new build value after publish (different from the pre-publish value).",
+        "Service worker update flow functions in production: if an update is available, the update banner appears and reloading activates the latest assets without requiring an admin-only cache reset."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useGeolocation.ts",
-          "operation": "create",
-          "description": "Create a small reusable geolocation helper hook that wraps the browser geolocation API (one-shot capture only), supports a configurable timeout, returns status (idle/loading/success/error), and provides a user-friendly English error string suitable for non-blocking UI display."
+          "path": "frontend/src/utils/buildInfo.ts",
+          "operation": "modify",
+          "description": "Make the build/version identifier deterministic per deployed build (prefer an injected VITE_BUILD_VERSION), and avoid per-refresh randomness that can cause spurious version changes and service worker churn."
         },
         {
-          "path": "frontend/src/backend.d.ts",
+          "path": "frontend/src/hooks/useServiceWorkerUpdate.ts",
           "operation": "modify",
-          "description": "Update frontend TypeScript types to reflect the new optional geolocation payload shape returned/accepted by the backend: keep latitude/longitude and add optional fields such as accuracy and captured timestamp if supported. Ensure DailyServiceReport.geolocation remains optional so reports can be submitted without location."
+          "description": "Align service worker registration/versioning with the deterministic build identifier and harden the update detection flow so that a newly deployed version reliably triggers an update-available state and reload activation in production."
         },
         {
-          "path": "frontend/src/pages/ReportEntryPage.tsx",
+          "path": "frontend/src/components/AppLayout.tsx",
           "operation": "modify",
-          "description": "Add a “Location” section to the report submission form using existing shadcn/ui components already used on the page (e.g., Card/Alert/Button) (Verify the component's usage instructions before implementing.). Provide a Capture/Refresh control, show whether location is currently attached, show a non-blocking English error message on denial/unavailable/timeout, and include the captured geolocation object in the DailyServiceReport payload passed to useCreateReport when available."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Show captured geolocation on report detail views and include geolocation fields in CSV exports while keeping browsing/filtering stable.",
-      "acceptanceCriteria": [
-        "ReportDetailPage displays location information when present (e.g., latitude/longitude and accuracy if available) and hides the section when not present.",
-        "CSV download (frontend/src/utils/reportDownload.ts) includes additional column(s) for geolocation, leaving values blank when a report has no location.",
-        "Existing report history browsing and filtering continues to work without runtime errors after the DailyServiceReport type changes."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/ReportDetailPage.tsx",
-          "operation": "modify",
-          "description": "Add a conditional “Location” section that renders only when report.geolocation is present, displaying latitude/longitude and any additional optional fields (e.g., accuracy, captured timestamp) when available. Use existing shadcn/ui building blocks already present on the page (e.g., Card/Separator/Badge/Alert) (Verify the component's usage instructions before implementing.)."
+          "description": "Confirm the footer build/version indicator displays the deterministic build identifier and remains visible in production for post-publish verification."
         },
         {
-          "path": "frontend/src/utils/reportDownload.ts",
+          "path": "frontend/public/sw.js",
           "operation": "modify",
-          "description": "Extend CSV export headers and row generation to include geolocation columns (e.g., Latitude, Longitude, Accuracy, Captured At). Leave fields blank when geolocation is missing and ensure CSV escaping remains correct."
+          "description": "Validate and, if needed, adjust cache versioning/activation behavior to ensure old caches are cleaned and the SKIP_WAITING + clients.claim + reload flow works smoothly after production publishes."
+        },
+        {
+          "path": "frontend/DEPLOYMENT.md",
+          "operation": "modify",
+          "description": "Update the mainnet publish instructions to include setting/injecting VITE_BUILD_VERSION during the production build, and add a brief smoke-test checklist item verifying (1) footer build indicator changes and (2) service worker update banner appears when a new build is published."
         }
       ]
     }

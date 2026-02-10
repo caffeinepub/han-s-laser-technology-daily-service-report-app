@@ -1,90 +1,36 @@
 {
   "kind": "build_request",
-  "title": "Add geolocation capture to service report submission",
+  "title": "Publish current deployed draft to production",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Extend the backend DailyServiceReport data model to store optional geolocation captured at report submission time, and persist it with each report.",
-      "target": "backend",
+      "text": "Promote the currently deployed draft (Draft Version 35) to the production (IC mainnet) environment, ensuring the production frontend and backend canisters are updated successfully.",
+      "target": "unknown",
       "source": {
         "messageIds": [
-          "msg-7"
+          "msg-3"
         ],
         "quotes": [
-          "want to add geo location for report submission."
+          "yes"
         ]
       },
       "acceptanceCriteria": [
-        "DailyServiceReport includes optional geolocation fields (at minimum latitude and longitude; may also include accuracy and captured timestamp) without breaking report creation for users who do not grant location permission.",
-        "createReport stores the submitted geolocation (when provided) and continues to set createdBy to the caller as it does today.",
-        "listReports, getReportById, and getReportsForDownload return geolocation fields as part of the report payload."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a conditional state migration for existing deployments so previously stored reports remain readable after adding the new geolocation fields.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "want to add geo location for report submission."
-        ]
-      },
-      "acceptanceCriteria": [
-        "A backend migration is provided (per the project migration policy) that upgrades existing stored DailyServiceReport entries by initializing new geolocation fields to null/none.",
-        "After upgrade, existing reports can still be listed and viewed without traps or decoding errors."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "want to add geo location for report submission."
-        ]
-      },
-      "acceptanceCriteria": [
-        "ReportEntryPage includes a clearly labeled geolocation section (e.g., “Location”) with a control to capture/refresh location and an indicator showing whether location is attached to the report.",
-        "If the user denies permission, location is unavailable, or the request times out, the report can still be submitted successfully without location and the UI shows a clear, non-blocking error message in English.",
-        "When location capture succeeds, the submitted report includes the captured latitude/longitude (and any additional captured fields) sent to the backend via useCreateReport.",
-        "No changes are made to frontend immutable paths listed in SYSTEM_CONTEXT."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "want to add geo location for report submission."
-        ]
-      },
-      "acceptanceCriteria": [
-        "ReportDetailPage displays location information when present (e.g., latitude/longitude and accuracy if available) and hides the section when not present.",
-        "CSV download (frontend/src/utils/reportDownload.ts) includes additional column(s) for geolocation, leaving values blank when a report has no location.",
-        "Existing report history browsing and filtering continues to work without runtime errors after the DailyServiceReport type changes."
+        "Production deployment completes without errors.",
+        "The production app is accessible via the production frontend canister URL (https://<frontend-canister-id>.ic0.app).",
+        "The in-app build/version indicator in the footer shows a new build value after publish (different from the pre-publish value).",
+        "Service worker update flow functions in production: if an update is available, the update banner appears and reloading activates the latest assets without requiring an admin-only cache reset."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor with all logic in backend/main.mo; only add backend/migration.mo if required for upgrade compatibility.",
-    "Do not edit files under frontend/src/components/ui, frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx (compose around them instead).",
-    "Use English for all user-facing UI strings."
+    "Use English for any user-facing text.",
+    "Do not edit files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT.",
+    "Backend must remain a single Motoko actor in backend/main.mo; introduce migration.mo only if state upgrades require it."
   ],
   "nonGoals": [
-    "Implementing map views, reverse geocoding, or address lookup.",
-    "Adding third-party location services, GPS/map SDKs, or external databases.",
-    "Adding real-time location tracking; only capture location for report submission."
+    "Adding new application features unrelated to production publishing.",
+    "Changing authentication providers (Internet Identity remains the only supported auth)."
   ],
   "imageRequirements": {
     "required": [],

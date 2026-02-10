@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Calendar, User, Phone, Wrench, CheckCircle2, XCircle, AlertCircle, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Phone, Wrench, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
 export function ReportDetailPage() {
   const navigate = useNavigate();
@@ -105,36 +105,6 @@ export function ReportDetailPage() {
           </div>
 
           <Separator />
-
-          {/* Location Information */}
-          {report.geolocation && (
-            <>
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Service Location
-                </h3>
-                <div className="bg-muted/30 p-4 rounded-lg space-y-2">
-                  <DetailField
-                    label="Coordinates"
-                    value={`${report.geolocation.latitude.toFixed(6)}, ${report.geolocation.longitude.toFixed(6)}`}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    <a
-                      href={`https://www.google.com/maps?q=${report.geolocation.latitude},${report.geolocation.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      <MapPin className="h-3 w-3" />
-                      View on Google Maps
-                    </a>
-                  </p>
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
 
           {/* Machine Information */}
           <div>

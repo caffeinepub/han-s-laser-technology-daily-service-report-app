@@ -2,31 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { DailyServiceReport, UserProfile, Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
-import { logSignupFlow, sanitizeErrorMessage } from '../utils/signupFlowDebug';
 
-// User Profile Queries
+// ============================================================================
+// Profile Queries
+// ============================================================================
+
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      logSignupFlow('Profile query starting', { actorAvailable: !!actor });
-      
       if (!actor) throw new Error('Actor not available');
-      
-      try {
-        const profile = await actor.getCallerUserProfile();
-        logSignupFlow('Profile query success', { 
-          hasProfile: profile !== null,
-        });
-        return profile;
-      } catch (error) {
-        logSignupFlow('Profile query error', {
-          error: sanitizeErrorMessage(error),
-        });
-        throw error;
-      }
+      return actor.getCallerUserProfile();
     },
     enabled: !!actor && !actorFetching,
     retry: false,
@@ -39,143 +27,17 @@ export function useGetCallerUserProfile() {
   };
 }
 
-export function useGetUserProfile(userPrincipal: string | undefined) {
+export function useGetUserProfile(userPrincipal: Principal | null) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<UserProfile | null>({
-    queryKey: ['userProfile', userPrincipal],
+    queryKey: ['userProfile', userPrincipal?.toString()],
     queryFn: async () => {
       if (!actor || !userPrincipal) return null;
-      
-      try {
-        // Convert string to Principal
-        const { Principal } = await import('@icp-sdk/core/principal');
-        const principal = Principal.fromText(userPrincipal);
-        return actor.getUserProfile(principal);
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-        return null;
-      }
+      return actor.getUserProfile(userPrincipal);
     },
     enabled: !!actor && !actorFetching && !!userPrincipal,
     retry: false,
-  });
-}
-
-export function useIsCallerAdmin() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  const query = useQuery<boolean>({
-    queryKey: ['isCallerAdmin'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.isCallerAdmin();
-    },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
-}
-
-export function useSignupWithRole() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ 
-      profile, 
-      requestedRole, 
-    }: { 
-      profile: UserProfile; 
-      requestedRole: Role; 
-    }) => {
-      logSignupFlow('Signup mutation starting', { 
-        actorAvailable: !!actor,
-        requestedRole,
-      });
-      
-      if (!actor) throw new Error('Actor not available');
-      
-      // Explicitly construct backend payload with only UserProfile fields
-      // Password is never included - it's frontend-only for validation
-      const backendProfile: UserProfile = {
-        name: profile.name,
-        username: profile.username,
-        mobileNumber: profile.mobileNumber,
-        email: profile.email,
-        role: profile.role,
-      };
-      
-      try {
-        const result = await actor.signupWithRole(backendProfile, requestedRole);
-        logSignupFlow('Signup mutation success');
-        return result;
-      } catch (error) {
-        // Log error without any password data (sanitizeErrorMessage ensures this)
-        logSignupFlow('Signup mutation error', {
-          error: sanitizeErrorMessage(error),
-        });
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      logSignupFlow('Invalidating queries after signup');
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
-    },
-  });
-}
-
-export function useSignupAdmin() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ 
-      profile, 
-      password, 
-    }: { 
-      profile: UserProfile; 
-      password: string; 
-    }) => {
-      logSignupFlow('Admin signup mutation starting', { 
-        actorAvailable: !!actor,
-      });
-      
-      if (!actor) throw new Error('Actor not available');
-      
-      // Explicitly construct backend payload with only UserProfile fields
-      const backendProfile: UserProfile = {
-        name: profile.name,
-        username: profile.username,
-        mobileNumber: profile.mobileNumber,
-        email: profile.email,
-        role: profile.role,
-      };
-      
-      try {
-        // Password is sent to backend for validation but never logged
-        const result = await actor.signupAdmin(backendProfile, password);
-        logSignupFlow('Admin signup mutation success');
-        return result;
-      } catch (error) {
-        // Log error without password (sanitizeErrorMessage ensures this)
-        logSignupFlow('Admin signup mutation error', {
-          error: sanitizeErrorMessage(error),
-        });
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      logSignupFlow('Invalidating queries after admin signup');
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
-    },
   });
 }
 
@@ -186,35 +48,94 @@ export function useSaveCallerUserProfile() {
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
       if (!actor) throw new Error('Actor not available');
-      // Ensure only UserProfile fields are sent to backend (no password field)
-      const backendProfile: UserProfile = {
+      return actor.saveCallerUserProfile(profile);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
+export function useSignupWithRole() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ profile, requestedRole }: { profile: UserProfile; requestedRole: Role }) => {
+      if (!actor) throw new Error('Actor not available');
+      
+      const payload = {
         name: profile.name,
         username: profile.username,
         mobileNumber: profile.mobileNumber,
         email: profile.email,
         role: profile.role,
       };
-      return actor.saveCallerUserProfile(backendProfile);
+      
+      return actor.signupWithRole(payload, requestedRole);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingSignupsCount'] });
     },
   });
 }
 
-// Admin User Management Queries
+export function useSignupAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ profile, password }: { profile: UserProfile; password: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      
+      const payload = {
+        name: profile.name,
+        username: profile.username,
+        mobileNumber: profile.mobileNumber,
+        email: profile.email,
+        role: profile.role,
+      };
+      
+      return actor.signupAdmin(payload, password);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingSignupsCount'] });
+    },
+  });
+}
+
+// ============================================================================
+// User Management Queries
+// ============================================================================
+
+export function useIsCallerAdmin() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isCallerAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !actorFetching,
+    retry: false,
+  });
+}
+
 export function useListUsers() {
   const { actor, isFetching: actorFetching } = useActor();
-  const { data: isAdmin, isFetched: adminCheckFetched } = useIsCallerAdmin();
+  const { data: isAdmin } = useIsCallerAdmin();
 
-  return useQuery<Array<[Principal, UserProfile]>>({
+  return useQuery<[Principal, UserProfile][]>({
     queryKey: ['users'],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error('Actor not available');
       return actor.listUsers();
     },
-    enabled: !!actor && !actorFetching && adminCheckFetched && isAdmin === true,
+    enabled: !!actor && !actorFetching && isAdmin === true,
+    retry: false,
   });
 }
 
@@ -234,64 +155,40 @@ export function useDeleteUser() {
   });
 }
 
-export function usePurgeLegacyReportsAndUsers() {
+export function useGetPendingSignupsCount() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { data: isAdmin } = useIsCallerAdmin();
+
+  return useQuery<bigint>({
+    queryKey: ['pendingSignupsCount'],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return actor.getPendingSignupsCount();
+    },
+    enabled: !!actor && !actorFetching && isAdmin === true,
+    refetchInterval: 30000,
+  });
+}
+
+export function useProcessPendingSignups() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.purgeLegacyReportsAndUsers();
+      return actor.processPendingSignups();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingSignupsCount'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
     },
   });
 }
 
-export function useResetToFreshApp() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.resetToFreshApp();
-    },
-    onSuccess: () => {
-      queryClient.clear();
-    },
-  });
-}
-
+// ============================================================================
 // Report Queries
-export function useListReports() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<DailyServiceReport[]>({
-    queryKey: ['reports'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.listReports();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-}
-
-export function useGetReportById(id: string) {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<DailyServiceReport | null>({
-    queryKey: ['report', id],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getReportById(id);
-    },
-    enabled: !!actor && !actorFetching && !!id,
-  });
-}
+// ============================================================================
 
 export function useCreateReport() {
   const { actor } = useActor();
@@ -308,9 +205,34 @@ export function useCreateReport() {
   });
 }
 
-// Download Reports Query (for admin download functionality)
-export function useGetReportsForDownload() {
+export function useListReports() {
   const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<DailyServiceReport[]>({
+    queryKey: ['reports'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.listReports();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useGetReportById(id: string | undefined) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<DailyServiceReport | null>({
+    queryKey: ['report', id],
+    queryFn: async () => {
+      if (!actor || !id) return null;
+      return actor.getReportById(id);
+    },
+    enabled: !!actor && !actorFetching && !!id,
+  });
+}
+
+export function useGetReportsForDownload() {
+  const { actor } = useActor();
 
   return useQuery<DailyServiceReport[]>({
     queryKey: ['reportsForDownload'],
@@ -318,7 +240,40 @@ export function useGetReportsForDownload() {
       if (!actor) return [];
       return actor.getReportsForDownload();
     },
-    enabled: !!actor && !actorFetching,
-    staleTime: 0, // Always fetch fresh data for downloads
+    enabled: false,
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+// ============================================================================
+// Admin Data Management
+// ============================================================================
+
+export function usePurgeLegacyReportsAndUsers() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.purgeLegacyReportsAndUsers();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+export function useResetToFreshApp() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.resetToFreshApp();
+    },
+    // Do NOT invalidate queries here - let the UI handle cleanup after success
   });
 }

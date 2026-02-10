@@ -43,18 +43,23 @@ Before deploying to production, verify:
 
 ⚠️ **WARNING**: This will create a new canister with no existing data.
 
-1. **Deploy to mainnet**:
+1. **Set build version** (for deterministic versioning):
+   ```bash
+   export VITE_BUILD_VERSION="$(date +%Y%m%d-%H%M%S)"
+   ```
+
+2. **Deploy to mainnet**:
    ```bash
    dfx deploy --network ic
    ```
 
-2. **Note your canister IDs**:
+3. **Note your canister IDs**:
    ```bash
    dfx canister --network ic id backend
    dfx canister --network ic id frontend
    ```
 
-3. **Access your production app**:
+4. **Access your production app**:
    ```
    https://<frontend-canister-id>.ic0.app
    ```
@@ -69,17 +74,27 @@ Before deploying to production, verify:
    dfx canister --network ic call backend listReports
    ```
 
-2. **Upgrade backend** (preserves state):
+2. **Set build version** (for deterministic versioning and cache invalidation):
+   ```bash
+   export VITE_BUILD_VERSION="$(date +%Y%m%d-%H%M%S)"
+   ```
+   
+   This ensures:
+   - The footer build indicator shows a new version after publish
+   - Service worker detects the update and shows the update banner
+   - Users can reload to get the latest version
+
+3. **Upgrade backend** (preserves state):
    ```bash
    dfx deploy --network ic backend --mode upgrade
    ```
 
-3. **Upgrade frontend**:
+4. **Upgrade frontend** (with build version):
    ```bash
    dfx deploy --network ic frontend
    ```
 
-4. **Verify upgrade success** (see Post-Deploy Smoke Tests below)
+5. **Verify upgrade success** (see Post-Deploy Smoke Tests below)
 
 ### Post-Deploy Smoke Tests
 
@@ -114,6 +129,12 @@ After deployment, verify critical functionality:
    - [ ] "Add to Home screen" prompt appears in Chrome Android
    - [ ] Offline banner appears when network disconnected
 
+6. **Build Version & Service Worker Update** (for upgrades):
+   - [ ] Footer build indicator shows new version (different from pre-publish value)
+   - [ ] After publishing a new version, the update banner appears for users on old version
+   - [ ] Clicking "Reload to Update" activates the new version without errors
+   - [ ] No admin-only cache reset required for normal updates
+
 ### Rollback Procedure
 
 If issues are discovered after deployment:
@@ -126,6 +147,7 @@ If issues are discovered after deployment:
 2. **Quick fix** (if possible):
    - Make code changes locally
    - Test thoroughly
+   - Set new build version: `export VITE_BUILD_VERSION="$(date +%Y%m%d-%H%M%S)-hotfix"`
    - Deploy upgrade: `dfx deploy --network ic --mode upgrade`
 
 3. **Full rollback** (if needed):
@@ -176,6 +198,14 @@ The Android app wraps the production web app URL and provides:
 - Verify `sw.js` is accessible at production URL root
 - Check browser console for service worker errors
 - Ensure HTTPS is enabled (required for service workers)
+- Verify `VITE_BUILD_VERSION` was set during build
+
+### Service worker update not appearing after publish
+- Verify footer build indicator shows a new version
+- Check browser console for service worker registration logs
+- Ensure `VITE_BUILD_VERSION` was set to a new value during build
+- Wait up to 60 seconds for automatic update check
+- Hard refresh (Ctrl+Shift+R) to force service worker update check
 
 ### PWA not installable on Android
 - Verify manifest is accessible and valid JSON

@@ -8,7 +8,7 @@ function convertReportsToCSV(reports: DailyServiceReport[]): string {
     return '';
   }
 
-  // Define CSV headers including geolocation fields
+  // Define CSV headers without geolocation fields
   const headers = [
     'Report ID',
     'Date',
@@ -26,8 +26,6 @@ function convertReportsToCSV(reports: DailyServiceReport[]): string {
     'Next Plan of Action',
     'Spares Required',
     'Customer Feedback',
-    'Latitude',
-    'Longitude',
     'Created By (Principal)',
   ];
 
@@ -63,8 +61,6 @@ function convertReportsToCSV(reports: DailyServiceReport[]): string {
       escapeCSVField(report.nextPlanOfAction || ''),
       escapeCSVField(report.sparesRequired),
       escapeCSVField(report.customerFeedback),
-      escapeCSVField(report.geolocation?.latitude ?? ''),
-      escapeCSVField(report.geolocation?.longitude ?? ''),
       escapeCSVField(report.createdBy.toString()),
     ].join(',');
   });
