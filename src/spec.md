@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Package an Android TWA build that uses a custom app icon by adding the required icon assets, ensuring the PWA manifest references them, and documenting the Bubblewrap build steps.
+**Goal:** Capture optional geolocation when submitting a daily service report, store it with the report, and show/export it wherever reports are viewed or downloaded.
 
 **Planned changes:**
-- Add Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact manifest-referenced filenames: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.
-- Ensure `frontend/public/manifest.webmanifest` includes icon entries for sizes 192x192 and 512x512 pointing to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`.
-- Update `frontend/ANDROID_TWA_BUILD.md` with explicit Bubblewrap packaging instructions, including the exact icon URLs to provide and a short pre-build verification checklist (confirming manifest and icon URLs return HTTP 200).
+- Extend the backend `DailyServiceReport` model to include optional geolocation fields (at least latitude/longitude, optionally accuracy and captured timestamp) and persist them on report creation when provided.
+- Add a backend migration to keep existing stored reports readable by initializing new geolocation fields to null/none.
+- Update the report submission UI to optionally capture the user’s current location via the browser Geolocation API and include it in the `useCreateReport` payload, with clear non-blocking error handling when unavailable/denied/timeouts.
+- Update report viewing and export surfaces to display location when present and include geolocation columns in CSV downloads (blank when not available), without breaking existing report browsing/filtering.
 
-**User-visible outcome:** The Android TWA (Bubblewrap/Android Studio flow) uses the custom app icon from the PWA manifest, and the repo contains clear instructions to verify icon URLs and build an APK/AAB.
+**User-visible outcome:** Users can attach their current location to a service report at submission time (optional), see the captured coordinates when viewing a report, and download CSVs that include location columns when available.

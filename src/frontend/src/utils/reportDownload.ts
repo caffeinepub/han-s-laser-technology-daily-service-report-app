@@ -8,7 +8,7 @@ function convertReportsToCSV(reports: DailyServiceReport[]): string {
     return '';
   }
 
-  // Define CSV headers
+  // Define CSV headers including geolocation fields
   const headers = [
     'Report ID',
     'Date',
@@ -26,11 +26,13 @@ function convertReportsToCSV(reports: DailyServiceReport[]): string {
     'Next Plan of Action',
     'Spares Required',
     'Customer Feedback',
+    'Latitude',
+    'Longitude',
     'Created By (Principal)',
   ];
 
   // Escape CSV field (handle commas, quotes, newlines)
-  const escapeCSVField = (field: string | boolean | undefined | null): string => {
+  const escapeCSVField = (field: string | boolean | number | undefined | null): string => {
     if (field === undefined || field === null) {
       return '';
     }
@@ -61,6 +63,8 @@ function convertReportsToCSV(reports: DailyServiceReport[]): string {
       escapeCSVField(report.nextPlanOfAction || ''),
       escapeCSVField(report.sparesRequired),
       escapeCSVField(report.customerFeedback),
+      escapeCSVField(report.geolocation?.latitude ?? ''),
+      escapeCSVField(report.geolocation?.longitude ?? ''),
       escapeCSVField(report.createdBy.toString()),
     ].join(',');
   });

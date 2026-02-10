@@ -1,55 +1,74 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T17:21:43.787Z",
+  "generatedAt": "2026-02-10T17:30:55.828Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 1,
+    "total": 4,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Generate and add the required Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact filenames referenced by the PWA manifest: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/public/assets/generated/android-app-icon.dim_192x192.png",
-          "frontend/public/assets/generated/android-app-icon.dim_512x512.png"
-        ],
+        "summary": "Extend the backend DailyServiceReport data model to store optional geolocation captured at report submission time, and persist it with each report.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the PWA manifest continues to reference the custom Android icons at `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, so the Android TWA wrapper (Bubblewrap/Android Studio flow) uses the custom icon from the manifest.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/public/manifest.webmanifest"
-        ],
+        "summary": "Add a conditional state migration for existing deployments so previously stored reports remain readable after adding the new geolocation fields.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
+        "summary": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/ANDROID_TWA_BUILD.md"
+          "frontend/src/hooks/useGeolocation.ts",
+          "frontend/src/backend.d.ts",
+          "frontend/src/pages/ReportEntryPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/ANDROID_TWA_BUILD.md"
+          "frontend/src/hooks/useGeolocation.ts",
+          "frontend/src/backend.d.ts",
+          "frontend/src/pages/ReportEntryPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/ReportDetailPage.tsx",
+          "frontend/src/utils/reportDownload.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/ReportDetailPage.tsx",
+          "frontend/src/utils/reportDownload.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/ANDROID_TWA_BUILD.md",
-    "frontend/public/assets/generated/android-app-icon.dim_192x192.png, 192x192",
-    "frontend/public/assets/generated/android-app-icon.dim_512x512.png, 512x512",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useGeolocation.ts",
+    "frontend/src/pages/ReportDetailPage.tsx",
+    "frontend/src/pages/ReportEntryPage.tsx",
+    "frontend/src/utils/reportDownload.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

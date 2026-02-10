@@ -5,13 +5,20 @@
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
-  "imageRequirements": "## Required Images\n- Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png, 192x192)\n- Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png, 512x512)",
   "existing_features": [
     {
-      "id": "feature-update-frontend-android-twa-build-md-to-explicitly-instruct-how-to-package-the-android-app-using-the-custom-icon-bubblewrap-prompt-values-and-the-exact-icon-urls-and-include-a-short-verification-checklist-confirming-the-manifest-and-icon-urls-return-http-200-before-building-the-apk-aab",
-      "title": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
+      "id": "feature-update-the-report-submission-ui-to-capture-the-user-s-current-geolocation-using-the-browser-geolocation-api-and-include-it-in-the-report-payload-when-submitting",
+      "title": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-display-captured-geolocation-on-report-viewing-surfaces-and-include-it-in-csv-exports",
+      "title": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -19,13 +26,13 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Package Android build with a custom app icon",
+      "summary": "Add geolocation capture to report submission",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Generate and add the required Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact filenames referenced by the PWA manifest: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.",
+      "summary": "Extend the backend DailyServiceReport data model to store optional geolocation captured at report submission time, and persist it with each report.",
       "reqIds": [
         "REQ-1"
       ],
@@ -33,14 +40,14 @@
     },
     {
       "id": "AR-3",
-      "summary": "Ensure the PWA manifest continues to reference the custom Android icons at `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, so the Android TWA wrapper (Bubblewrap/Android Studio flow) uses the custom icon from the manifest.",
+      "summary": "Add a conditional state migration for existing deployments so previously stored reports remain readable after adding the new geolocation fields.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Package Android TWA build with custom app icon",
+  "projectName": "Add geolocation capture to service report submission",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

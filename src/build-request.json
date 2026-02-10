@@ -1,73 +1,93 @@
 {
   "kind": "build_request",
-  "title": "Package Android TWA build with custom app icon",
+  "title": "Add geolocation capture to service report submission",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Generate and add the required Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact filenames referenced by the PWA manifest: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.",
-      "target": "frontend",
+      "text": "Extend the backend DailyServiceReport data model to store optional geolocation captured at report submission time, and persist it with each report.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-7"
         ],
         "quotes": [
-          "yes"
+          "want to add geo location for report submission."
         ]
       },
       "acceptanceCriteria": [
-        "The files `frontend/public/assets/generated/android-app-icon.dim_192x192.png` and `frontend/public/assets/generated/android-app-icon.dim_512x512.png` exist in the repo.",
-        "Loading `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the browser returns HTTP 200 and displays valid PNG images."
+        "DailyServiceReport includes optional geolocation fields (at minimum latitude and longitude; may also include accuracy and captured timestamp) without breaking report creation for users who do not grant location permission.",
+        "createReport stores the submitted geolocation (when provided) and continues to set createdBy to the caller as it does today.",
+        "listReports, getReportById, and getReportsForDownload return geolocation fields as part of the report payload."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the PWA manifest continues to reference the custom Android icons at `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, so the Android TWA wrapper (Bubblewrap/Android Studio flow) uses the custom icon from the manifest.",
-      "target": "frontend",
+      "text": "Add a conditional state migration for existing deployments so previously stored reports remain readable after adding the new geolocation fields.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-7"
         ],
         "quotes": [
-          "yes"
+          "want to add geo location for report submission."
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/public/manifest.webmanifest` contains icon entries for sizes 192x192 and 512x512 pointing to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`.",
-        "The manifest remains valid JSON and is served at `/manifest.webmanifest`."
+        "A backend migration is provided (per the project migration policy) that upgrades existing stored DailyServiceReport entries by initializing new geolocation fields to null/none.",
+        "After upgrade, existing reports can still be listed and viewed without traps or decoding errors."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
+      "text": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-7"
         ],
         "quotes": [
-          "yes"
+          "want to add geo location for report submission."
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/ANDROID_TWA_BUILD.md` includes the exact icon URL paths `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the steps/checklist.",
-        "The guide clearly states to use the 512x512 icon URL when Bubblewrap requests the icon, and to ensure the manifest icon URLs are accessible before building."
+        "ReportEntryPage includes a clearly labeled geolocation section (e.g., “Location”) with a control to capture/refresh location and an indicator showing whether location is attached to the report.",
+        "If the user denies permission, location is unavailable, or the request times out, the report can still be submitted successfully without location and the UI shows a clear, non-blocking error message in English.",
+        "When location capture succeeds, the submitted report includes the captured latitude/longitude (and any additional captured fields) sent to the backend via useCreateReport.",
+        "No changes are made to frontend immutable paths listed in SYSTEM_CONTEXT."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-7"
+        ],
+        "quotes": [
+          "want to add geo location for report submission."
+        ]
+      },
+      "acceptanceCriteria": [
+        "ReportDetailPage displays location information when present (e.g., latitude/longitude and accuracy if available) and hides the section when not present.",
+        "CSV download (frontend/src/utils/reportDownload.ts) includes additional column(s) for geolocation, leaving values blank when a report has no location.",
+        "Existing report history browsing and filtering continues to work without runtime errors after the DailyServiceReport type changes."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under `frontend/src/components/ui`.",
-    "Do not modify `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, or `frontend/src/main.tsx`."
+    "Backend must remain a single Motoko actor with all logic in backend/main.mo; only add backend/migration.mo if required for upgrade compatibility.",
+    "Do not edit files under frontend/src/components/ui, frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx (compose around them instead).",
+    "Use English for all user-facing UI strings."
   ],
   "nonGoals": [
-    "Implementing native Android features beyond packaging the existing PWA via TWA.",
-    "Setting up automated CI signing/release pipelines for APK/AAB generation."
+    "Implementing map views, reverse geocoding, or address lookup.",
+    "Adding third-party location services, GPS/map SDKs, or external databases.",
+    "Adding real-time location tracking; only capture location for report submission."
   ],
   "imageRequirements": {
-    "required": [
-      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png, 192x192)",
-      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png, 512x512)"
-    ],
+    "required": [],
     "edits": []
   }
 }

@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-frontend-android-twa-build-md-to-explicitly-instruct-how-to-package-the-android-app-using-the-custom-icon-bubblewrap-prompt-values-and-the-exact-icon-urls-and-include-a-short-verification-checklist-confirming-the-manifest-and-icon-urls-return-http-200-before-building-the-apk-aab",
-      "featureTitle": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
+      "featureId": "feature-update-the-report-submission-ui-to-capture-the-user-s-current-geolocation-using-the-browser-geolocation-api-and-include-it-in-the-report-payload-when-submitting",
+      "featureTitle": "Update the report submission UI to capture the user’s current geolocation using the browser geolocation API and include it in the report payload when submitting.",
       "files": [
-        "frontend/ANDROID_TWA_BUILD.md"
+        "frontend/src/hooks/useGeolocation.ts",
+        "frontend/src/pages/ReportEntryPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,6 +18,26 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-display-captured-geolocation-on-report-viewing-surfaces-and-include-it-in-csv-exports",
+      "featureTitle": "Display captured geolocation on report viewing surfaces and include it in CSV exports.",
+      "files": [
+        "frontend/src/pages/ReportDetailPage.tsx",
+        "frontend/src/utils/reportDownload.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

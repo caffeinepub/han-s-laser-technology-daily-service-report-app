@@ -12,6 +12,7 @@ export interface DailyServiceReport {
     customerName: string;
     issueResolved: boolean;
     issueFoundByEngineer: string;
+    geolocation?: Geolocation;
     nextPlanOfAction?: string;
     machineModel: string;
     date: string;
@@ -25,6 +26,10 @@ export interface DailyServiceReport {
     machineSerialNo: string;
     warrantyStatus: string;
     issueDescribedByCustomer: string;
+}
+export interface Geolocation {
+    latitude: number;
+    longitude: number;
 }
 export interface UserProfile {
     username: string;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useCreateReport } from '../hooks/useQueries';
+import { useGeolocation } from '../hooks/useGeolocation';
 import type { DailyServiceReport } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
 import { Button } from '@/components/ui/button';
@@ -11,11 +12,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, MapPin, RefreshCw, X } from 'lucide-react';
 
 export function ReportEntryPage() {
   const navigate = useNavigate();
   const createReport = useCreateReport();
+  const { data: locationData, status: locationStatus, error: locationError, captureLocation, clearLocation } = useGeolocation();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -87,6 +89,10 @@ export function ReportEntryPage() {
       nextPlanOfAction: formData.issueResolved ? undefined : formData.nextPlanOfAction.trim(),
       sparesRequired: formData.sparesRequired.trim(),
       customerFeedback: formData.customerFeedback.trim(),
+      geolocation: locationData ? {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+      } : undefined,
     };
 
     try {
@@ -202,6 +208,99 @@ export function ReportEntryPage() {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold border-b pb-2">Location</h3>
+              
+              <Card className="bg-muted/30">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <Label className="flex items-center gap-2 mb-2">
+                          <MapPin className="h-4 w-4" />
+                          Service Location (Optional)
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Attach your current location to this report for better tracking.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        {locationData && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearLocation}
+                            disabled={locationStatus === 'loading'}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={captureLocation}
+                          disabled={locationStatus === 'loading'}
+                        >
+                          {locationStatus === 'loading' ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Capturing...
+                            </>
+                          ) : locationData ? (
+                            <>
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Refresh
+                            </>
+                          ) : (
+                            <>
+                              <MapPin className="mr-2 h-4 w-4" />
+                              Capture Location
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {locationStatus === 'success' && locationData && (
+                      <Alert className="border-success bg-success/10">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        <AlertDescription className="text-success-foreground">
+                          <div className="space-y-1">
+                            <p className="font-medium">Location captured successfully</p>
+                            <p className="text-sm">
+                              Coordinates: {locationData.latitude.toFixed(6)}, {locationData.longitude.toFixed(6)}
+                              {locationData.accuracy && ` (±${Math.round(locationData.accuracy)}m)`}
+                            </p>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {locationStatus === 'error' && locationError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {locationError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {locationStatus === 'idle' && !locationData && (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          No location attached. You can still submit the report without location information.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Machine Information */}
@@ -435,6 +534,15 @@ export function ReportEntryPage() {
                 Cancel
               </Button>
             </div>
+
+            {createReport.isError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Failed to submit report. Please try again.
+                </AlertDescription>
+              </Alert>
+            )}
           </form>
         </CardContent>
       </Card>

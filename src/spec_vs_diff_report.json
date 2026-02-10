@@ -1,71 +1,44 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T17:21:43.785Z",
-  "summary": "REQ-3 (Android TWA build guide updates) appears to be implemented in frontend/ANDROID_TWA_BUILD.md, including explicit icon URLs and an HTTP 200 verification checklist. REQ-1 and REQ-2 are not evidenced in the diff summary: no icon PNG assets were added and no manifest changes are shown. The diff summary also indicates many unrelated frontend feature/UI changes that were not requested by the BuildRequest.",
+  "generatedAt": "2026-02-10T17:30:55.825Z",
+  "summary": "Diff adds optional geolocation to the backend report type, provides a migration initializing the new field to null, adds a frontend geolocation hook, conditionally displays geolocation in report detail, and adds latitude/longitude columns to CSV export. However, the diff summary does not provide clear evidence that the report creation flow actually accepts/persists submitted geolocation end-to-end (backend createReport storage and frontend submit payload).",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Generate and add the required Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact filenames `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.",
-      "reason": "Diff summary shows no added files, and does not list the required PNG assets under `frontend/public/assets/generated/`.",
+      "requirement": "createReport stores the submitted geolocation (when provided) and continues to set createdBy to the caller as it does today.",
+      "reason": "backend/main.mo shows the DailyServiceReport type extended with geolocation, but the provided truncation does not include any createReport logic demonstrating that geolocation is accepted in the input and persisted, nor that createdBy behavior is preserved.",
       "evidence": [
-        "<file-diff>: Added: 0",
-        "Diff summary ADDED FILES: none"
+        "backend/main.mo (truncated)"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Ensure `frontend/public/manifest.webmanifest` references `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` for 192x192 and 512x512 icons.",
-      "reason": "`frontend/public/manifest.webmanifest` is not shown as modified in the diff summary, so there is no evidence the manifest contains or was updated to contain the required icon entries.",
+      "id": "REQ-3",
+      "requirement": "When location capture succeeds, the submitted report includes the captured latitude/longitude (and any additional captured fields) sent to the backend via useCreateReport.",
+      "reason": "ReportEntryPage.tsx shows useGeolocation is imported/used and a report object is constructed, but the truncated snippet does not show geolocation being attached to the report payload passed to useCreateReport.",
       "evidence": [
-        "<file-diff>: MODIFIED FILES list does not include frontend/public/manifest.webmanifest"
+        "frontend/src/pages/ReportEntryPage.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Large-scale UI/theming updates (industrial-themed OKLCH color system, Tailwind token extensions).",
-      "reason": "Not requested by any BuildRequest requirement; scope was limited to Android TWA packaging guidance and icon assets/manifest references.",
+      "description": "Adds a Google Maps link in the ReportDetailPage geolocation section.",
+      "reason": "REQ-4 only asks to display captured geolocation on viewing surfaces; a Google Maps link is an extra behavior not requested in the BuildRequest.",
       "evidence": [
-        "frontend/src/index.css (via frontend-file-summaries.txt)",
-        "frontend/tailwind.config.js (via frontend-file-summaries.txt)"
-      ]
-    },
-    {
-      "description": "New/expanded React Query hooks and backend integration behaviors (admin signup, report download hook, cache invalidation, debug logging).",
-      "reason": "Not requested; unrelated to TWA packaging and app icon tasks.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts (via frontend-file-summaries.txt)"
-      ]
-    },
-    {
-      "description": "Multiple new/changed application pages and components (header/layout/login/profile setup/report pages/admin user management, access denied screen, router/auth flow changes).",
-      "reason": "Not requested; BuildRequest does not ask for feature development or UI changes beyond packaging documentation and icon assets.",
-      "evidence": [
-        "frontend/src/components/AppHeader.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/components/AppLayout.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/components/LoginScreen.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/components/ProfileSetup.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/pages/ReportEntryPage.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/pages/ReportHistoryPage.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/pages/ReportDetailPage.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/pages/AdminUsersPage.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/components/AccessDeniedScreen.tsx (via frontend-file-summaries.txt)",
-        "frontend/src/App.tsx (via frontend-file-summaries.txt)"
-      ]
-    },
-    {
-      "description": "Deployment documentation changes.",
-      "reason": "Not requested by the BuildRequest.",
-      "evidence": [
-        "frontend/DEPLOYMENT.md (via frontend-file-summaries.txt)"
+        "frontend-file-summaries.txt (\"ReportDetailPage.tsx\": \"...conditional geolocation section displaying coordinates with Google Maps link...\")"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.63,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/ANDROID_TWA_BUILD.md",
+    "frontend/src/hooks/useGeolocation.ts",
+    "frontend/src/pages/ReportDetailPage.tsx",
+    "frontend/src/pages/ReportEntryPage.tsx",
+    "frontend/src/utils/reportDownload.ts",
     "project_state.json"
   ]
 }

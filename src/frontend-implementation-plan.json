@@ -1,55 +1,53 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Android TWA packaging: custom app icon assets and manifest wiring",
+  "title": "Geolocation capture and display for service reports (frontend)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add the required Android app icon PNG assets under frontend public generated assets with exact manifest filenames.",
+      "id": "REQ-3",
+      "summary": "Capture the user’s current geolocation on ReportEntryPage and submit it with the report when available, without blocking submission on errors/denial.",
       "acceptanceCriteria": [
-        "The files `frontend/public/assets/generated/android-app-icon.dim_192x192.png` and `frontend/public/assets/generated/android-app-icon.dim_512x512.png` exist in the repo.",
-        "Loading `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the browser returns HTTP 200 and displays valid PNG images."
+        "ReportEntryPage includes a clearly labeled geolocation section (e.g., “Location”) with a control to capture/refresh location and an indicator showing whether location is attached to the report.",
+        "If the user denies permission, location is unavailable, or the request times out, the report can still be submitted successfully without location and the UI shows a clear, non-blocking error message in English.",
+        "When location capture succeeds, the submitted report includes the captured latitude/longitude (and any additional captured fields) sent to the backend via useCreateReport.",
+        "No changes are made to frontend immutable paths listed in SYSTEM_CONTEXT."
       ],
       "file_operations": [
         {
-          "path": "frontend/public/assets/generated/android-app-icon.dim_192x192.png",
+          "path": "frontend/src/hooks/useGeolocation.ts",
           "operation": "create",
-          "description": "Add the generated 192x192 square Android app icon PNG asset at the exact required path/filename: `frontend/public/assets/generated/android-app-icon.dim_192x192.png`."
+          "description": "Create a small reusable geolocation helper hook that wraps the browser geolocation API (one-shot capture only), supports a configurable timeout, returns status (idle/loading/success/error), and provides a user-friendly English error string suitable for non-blocking UI display."
         },
         {
-          "path": "frontend/public/assets/generated/android-app-icon.dim_512x512.png",
-          "operation": "create",
-          "description": "Add the generated 512x512 square Android app icon PNG asset at the exact required path/filename: `frontend/public/assets/generated/android-app-icon.dim_512x512.png`."
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Update frontend TypeScript types to reflect the new optional geolocation payload shape returned/accepted by the backend: keep latitude/longitude and add optional fields such as accuracy and captured timestamp if supported. Ensure DailyServiceReport.geolocation remains optional so reports can be submitted without location."
+        },
+        {
+          "path": "frontend/src/pages/ReportEntryPage.tsx",
+          "operation": "modify",
+          "description": "Add a “Location” section to the report submission form using existing shadcn/ui components already used on the page (e.g., Card/Alert/Button) (Verify the component's usage instructions before implementing.). Provide a Capture/Refresh control, show whether location is currently attached, show a non-blocking English error message on denial/unavailable/timeout, and include the captured geolocation object in the DailyServiceReport payload passed to useCreateReport when available."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Ensure the PWA manifest references the custom Android icons using the required generated asset URLs.",
+      "id": "REQ-4",
+      "summary": "Show captured geolocation on report detail views and include geolocation fields in CSV exports while keeping browsing/filtering stable.",
       "acceptanceCriteria": [
-        "`frontend/public/manifest.webmanifest` contains icon entries for sizes 192x192 and 512x512 pointing to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`.",
-        "The manifest remains valid JSON and is served at `/manifest.webmanifest`."
+        "ReportDetailPage displays location information when present (e.g., latitude/longitude and accuracy if available) and hides the section when not present.",
+        "CSV download (frontend/src/utils/reportDownload.ts) includes additional column(s) for geolocation, leaving values blank when a report has no location.",
+        "Existing report history browsing and filtering continues to work without runtime errors after the DailyServiceReport type changes."
       ],
       "file_operations": [
         {
-          "path": "frontend/public/manifest.webmanifest",
+          "path": "frontend/src/pages/ReportDetailPage.tsx",
           "operation": "modify",
-          "description": "Confirm (and if necessary, update) the manifest `icons` array to include entries for sizes `192x192` and `512x512` with `src` exactly set to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, keeping the manifest valid JSON."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Update the Android TWA build guide to explicitly instruct Bubblewrap icon prompt values and include a pre-build HTTP 200 verification checklist.",
-      "acceptanceCriteria": [
-        "`frontend/ANDROID_TWA_BUILD.md` includes the exact icon URL paths `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the steps/checklist.",
-        "The guide clearly states to use the 512x512 icon URL when Bubblewrap requests the icon, and to ensure the manifest icon URLs are accessible before building."
-      ],
-      "file_operations": [
+          "description": "Add a conditional “Location” section that renders only when report.geolocation is present, displaying latitude/longitude and any additional optional fields (e.g., accuracy, captured timestamp) when available. Use existing shadcn/ui building blocks already present on the page (e.g., Card/Separator/Badge/Alert) (Verify the component's usage instructions before implementing.)."
+        },
         {
-          "path": "frontend/ANDROID_TWA_BUILD.md",
+          "path": "frontend/src/utils/reportDownload.ts",
           "operation": "modify",
-          "description": "Update the documentation to: (1) explicitly list the exact icon URL paths `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, (2) state clearly that Bubblewrap's icon prompt should use the 512x512 icon URL, and (3) add a short verification checklist that confirms `/manifest.webmanifest` and both icon URLs return HTTP 200 before building APK/AAB."
+          "description": "Extend CSV export headers and row generation to include geolocation columns (e.g., Latitude, Longitude, Accuracy, Captured At). Leave fields blank when geolocation is missing and ensure CSV escaping remains correct."
         }
       ]
     }

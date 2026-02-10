@@ -13,11 +13,16 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const Geolocation = IDL.Record({
+  'latitude' : IDL.Float64,
+  'longitude' : IDL.Float64,
+});
 export const DailyServiceReport = IDL.Record({
   'id' : IDL.Text,
   'customerName' : IDL.Text,
   'issueResolved' : IDL.Bool,
   'issueFoundByEngineer' : IDL.Text,
+  'geolocation' : IDL.Opt(Geolocation),
   'nextPlanOfAction' : IDL.Opt(IDL.Text),
   'machineModel' : IDL.Text,
   'date' : IDL.Text,
@@ -88,11 +93,16 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const Geolocation = IDL.Record({
+    'latitude' : IDL.Float64,
+    'longitude' : IDL.Float64,
+  });
   const DailyServiceReport = IDL.Record({
     'id' : IDL.Text,
     'customerName' : IDL.Text,
     'issueResolved' : IDL.Bool,
     'issueFoundByEngineer' : IDL.Text,
+    'geolocation' : IDL.Opt(Geolocation),
     'nextPlanOfAction' : IDL.Opt(IDL.Text),
     'machineModel' : IDL.Text,
     'date' : IDL.Text,

@@ -1,3 +1,4 @@
+import Migration "migration";
 import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Iter "mo:core/Iter";
@@ -6,6 +7,8 @@ import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Specify the migration module
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -21,6 +24,11 @@ actor {
     mobileNumber : Text;
     email : Text;
     role : Role;
+  };
+
+  public type Geolocation = {
+    latitude : Float;
+    longitude : Float;
   };
 
   public type DailyServiceReport = {
@@ -41,11 +49,12 @@ actor {
     nextPlanOfAction : ?Text;
     sparesRequired : Text;
     customerFeedback : Text;
+    geolocation : ?Geolocation;
   };
 
   func createAllowlist() : Map.Map<Text, ()> {
     let allowlist = Map.empty<Text, ()>();
-    let names = ["sayed baquar", "Bharat Nikam"];
+    let names = ["Admin Name1", "Admin Name2"];
     for (name in names.values()) {
       allowlist.add(name, ());
     };
@@ -53,7 +62,7 @@ actor {
   };
 
   let adminAllowlist = createAllowlist();
-  let adminSignupPassword = "Hans@987123";
+  let adminSignupPassword = "SecurePassword123";
 
   func isAllowlistedAdmin(profile : UserProfile) : Bool {
     let trimmedName = profile.name.trim(#text(" "));
@@ -361,4 +370,3 @@ actor {
     );
   };
 };
-
