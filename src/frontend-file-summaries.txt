@@ -31,5 +31,5 @@
   "frontend/src/main.tsx": "Application entry point with React providers and service worker registration in production mode for PWA functionality.",
   "frontend/src/hooks/useNetworkStatus.ts": "Custom React hook tracking online/offline network status via browser events for offline UI state management.",
   "frontend/src/components/OfflineBanner.tsx": "Alert banner component displaying offline status message when network connection is unavailable.",
-  "frontend/ANDROID_TWA_BUILD.md": "Comprehensive documentation for packaging the PWA as an Android app using Trusted Web Activity (TWA) approach, including Bubblewrap CLI and manual Android Studio setup instructions, digital asset links configuration, debug APK build steps, and troubleshooting guidance."
+  "frontend/ANDROID_TWA_BUILD.md": "Comprehensive documentation for packaging the PWA as an Android app using Trusted Web Activity (TWA) approach, now including explicit icon URL paths (/assets/generated/android-app-icon.dim_192x192.png and /assets/generated/android-app-icon.dim_512x512.png), clear instruction to use the 512x512 icon URL when Bubblewrap requests the icon, and a detailed pre-build HTTP 200 verification checklist to ensure manifest and icon accessibility before building APK/AAB."
 }

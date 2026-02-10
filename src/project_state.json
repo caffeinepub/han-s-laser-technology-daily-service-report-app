@@ -1,33 +1,15 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to build/deploy an application, including generating an Android app build.",
-  "architectural_notes": [
-    "Plan for Android packaging/build pipeline (e.g., APK/AAB generation and signing)."
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
-  "imageRequirements": "## Required Images\n- Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png)\n- Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png)",
+  "imageRequirements": "## Required Images\n- Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png, 192x192)\n- Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png, 512x512)",
   "existing_features": [
     {
-      "id": "feature-add-progressive-web-app-pwa-support-to-the-existing-react-frontend-so-it-can-be-installed-and-used-from-an-android-device-home-screen-including-an-app-manifest-required-icons-and-offline-capable-service-worker-behavior",
-      "title": "Add Progressive Web App (PWA) support to the existing React frontend so it can be installed and used from an Android device home screen, including an app manifest, required icons, and offline-capable service worker behavior.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-android-build-guidance-no-backend-changes-describing-how-to-package-the-existing-deployed-internet-computer-url-into-an-android-apk-aab-using-a-trusted-web-activity-twa-wrapper-including-required-parameters-start-url-manifest-url-build-steps-and-how-to-produce-a-debug-apk",
-      "title": "Create Android build guidance (no backend changes) describing how to package the existing deployed Internet Computer URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including required parameters (start URL, manifest URL), build steps, and how to produce a debug APK.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-and-reference-android-appropriate-app-icons-in-the-frontend-static-assets-so-the-pwa-twa-wrapper-uses-consistent-branding-on-android",
-      "title": "Add and reference Android-appropriate app icons in the frontend static assets so the PWA/TWA wrapper uses consistent branding on Android.",
+      "id": "feature-update-frontend-android-twa-build-md-to-explicitly-instruct-how-to-package-the-android-app-using-the-custom-icon-bubblewrap-prompt-values-and-the-exact-icon-urls-and-include-a-short-verification-checklist-confirming-the-manifest-and-icon-urls-return-http-200-before-building-the-apk-aab",
+      "title": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
       "reqIds": [
         "REQ-3"
       ],
@@ -37,13 +19,28 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Generate an Android app build/package for the application",
+      "summary": "Package Android build with a custom app icon",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Generate and add the required Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact filenames referenced by the PWA manifest: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Ensure the PWA manifest continues to reference the custom Android icons at `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, so the Android TWA wrapper (Bubblewrap/Android Studio flow) uses the custom icon from the manifest.",
+      "reqIds": [
+        "REQ-2"
+      ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Generate an Android app package for the existing web application",
+  "projectName": "Package Android TWA build with custom app icon",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

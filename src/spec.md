@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Make the existing web app installable and usable like an Android app via PWA support, and provide guidance to package it into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper.
+**Goal:** Package an Android TWA build that uses a custom app icon by adding the required icon assets, ensuring the PWA manifest references them, and documenting the Bubblewrap build steps.
 
 **Planned changes:**
-- Add a web app manifest linked from the HTML entrypoint with required fields (name, short_name, start_url, standalone display, theme/background colors, and 192x192 + 512x512 icons).
-- Add offline-capable service worker registration and offline behavior that preserves authenticated navigation (app shell loads and shows an English offline state/message when the network is unavailable).
-- Add Android-appropriate app icon assets under `frontend/public/assets/generated` and reference them from the manifest.
-- Add frontend repository documentation with step-by-step instructions to build an Android TWA wrapper for the production URL, including parameters, verification steps for manifest/icons, and how to produce a debug APK (not covering Play Store publishing/signing).
+- Add Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact manifest-referenced filenames: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.
+- Ensure `frontend/public/manifest.webmanifest` includes icon entries for sizes 192x192 and 512x512 pointing to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`.
+- Update `frontend/ANDROID_TWA_BUILD.md` with explicit Bubblewrap packaging instructions, including the exact icon URLs to provide and a short pre-build verification checklist (confirming manifest and icon URLs return HTTP 200).
 
-**User-visible outcome:** Users can install the app from Chrome on Android (“Add to Home screen”) and launch it in standalone mode with basic offline behavior; developers have written guidance to wrap the deployed app URL into an Android APK/AAB using TWA.
+**User-visible outcome:** The Android TWA (Bubblewrap/Android Studio flow) uses the custom app icon from the PWA manifest, and the repo contains clear instructions to verify icon URLs and build an APK/AAB.

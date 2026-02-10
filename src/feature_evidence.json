@@ -2,55 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-progressive-web-app-pwa-support-to-the-existing-react-frontend-so-it-can-be-installed-and-used-from-an-android-device-home-screen-including-an-app-manifest-required-icons-and-offline-capable-service-worker-behavior",
-      "featureTitle": "Add Progressive Web App (PWA) support to the existing React frontend so it can be installed and used from an Android device home screen, including an app manifest, required icons, and offline-capable service worker behavior.",
+      "featureId": "feature-update-frontend-android-twa-build-md-to-explicitly-instruct-how-to-package-the-android-app-using-the-custom-icon-bubblewrap-prompt-values-and-the-exact-icon-urls-and-include-a-short-verification-checklist-confirming-the-manifest-and-icon-urls-return-http-200-before-building-the-apk-aab",
+      "featureTitle": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
       "files": [
-        "frontend/index.html",
-        "frontend/public/manifest.webmanifest",
-        "frontend/public/sw.js",
-        "frontend/src/App.tsx",
-        "frontend/src/components/AppLayout.tsx",
-        "frontend/src/components/OfflineBanner.tsx",
-        "frontend/src/hooks/useNetworkStatus.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-create-android-build-guidance-no-backend-changes-describing-how-to-package-the-existing-deployed-internet-computer-url-into-an-android-apk-aab-using-a-trusted-web-activity-twa-wrapper-including-required-parameters-start-url-manifest-url-build-steps-and-how-to-produce-a-debug-apk",
-      "featureTitle": "Create Android build guidance (no backend changes) describing how to package the existing deployed Internet Computer URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including required parameters (start URL, manifest URL), build steps, and how to produce a debug APK.",
-      "files": [
-        "frontend/ANDROID_TWA_BUILD.md",
-        "frontend/DEPLOYMENT.md"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-and-reference-android-appropriate-app-icons-in-the-frontend-static-assets-so-the-pwa-twa-wrapper-uses-consistent-branding-on-android",
-      "featureTitle": "Add and reference Android-appropriate app icons in the frontend static assets so the PWA/TWA wrapper uses consistent branding on Android.",
-      "files": [
-        "frontend/public/manifest.webmanifest"
+        "frontend/ANDROID_TWA_BUILD.md"
       ],
       "components": [
         "authorization@4.0.0",

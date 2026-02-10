@@ -1,105 +1,55 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add PWA installability and Android TWA packaging guidance",
+  "title": "Android TWA packaging: custom app icon assets and manifest wiring",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add PWA manifest, service worker registration, and offline-capable behavior suitable for Android home-screen install without breaking authenticated navigation.",
+      "summary": "Add the required Android app icon PNG assets under frontend public generated assets with exact manifest filenames.",
       "acceptanceCriteria": [
-        "A web app manifest is present and linked from the HTML entrypoint so Android/Chrome recognizes the app as installable.",
-        "At minimum, the manifest includes: name, short_name, start_url, display=standalone, background_color, theme_color, and icon entries for 192x192 and 512x512 PNGs.",
-        "A service worker is registered and provides offline behavior that does not break authenticated navigation (e.g., app shell loads and shows a reasonable offline message/state when network is unavailable).",
-        "The app can be installed from Chrome on Android (“Add to Home screen”) and launches in standalone mode without browser chrome.",
-        "All user-facing text introduced for install/offline states is in English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/index.html",
-          "operation": "modify",
-          "description": "Link the PWA manifest and set theme-color metadata so Chrome/Android recognizes installability; ensure the manifest reference points to frontend/public/manifest.webmanifest."
-        },
-        {
-          "path": "frontend/public/manifest.webmanifest",
-          "operation": "create",
-          "description": "Add a web app manifest defining name, short_name, start_url, display=standalone, background_color, theme_color, and icon entries referencing the generated Android icon assets under frontend/public/assets/generated."
-        },
-        {
-          "path": "frontend/public/sw.js",
-          "operation": "create",
-          "description": "Implement an offline-capable service worker that caches the app shell/static assets and provides a safe offline fallback so the shell loads even when network is unavailable (without interfering with authenticated flows)."
-        },
-        {
-          "path": "frontend/src/main.tsx",
-          "operation": "modify",
-          "description": "Register the service worker on app startup (in production contexts) and add basic update/error logging to avoid breaking the current React boot sequence."
-        },
-        {
-          "path": "frontend/src/hooks/useNetworkStatus.ts",
-          "operation": "create",
-          "description": "Add a small hook to track online/offline state via browser events so the UI can display a reasonable offline state without altering existing auth/actor hooks."
-        },
-        {
-          "path": "frontend/src/components/OfflineBanner.tsx",
-          "operation": "create",
-          "description": "Add an English-only offline banner/message component shown when the device is offline (e.g., 'You are offline. Some features may not be available.')."
-        },
-        {
-          "path": "frontend/src/components/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Wire OfflineBanner into the shared layout so offline status is visible across authenticated and unauthenticated screens without changing any read-only shadcn/ui source files under frontend/src/components/ui."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Adjust existing fallback/error UI to include an English offline hint when the device is offline (e.g., on profile-load failures), ensuring authenticated navigation remains understandable when offline."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add documentation describing how to package the production IC URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including debug APK steps.",
-      "acceptanceCriteria": [
-        "Documentation exists in the frontend repo (e.g., a new markdown file) with step-by-step instructions to generate an Android app wrapper using a TWA approach.",
-        "The documentation explicitly states what URL to use for start_url (the production app URL) and how to verify the PWA manifest and icon availability.",
-        "The documentation includes steps to build a debug APK locally and notes what is out of scope (e.g., Play Store publishing/signing) unless configured by the developer."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/ANDROID_TWA_BUILD.md",
-          "operation": "create",
-          "description": "Create TWA build guidance documenting required parameters (production start URL and manifest URL), how to verify manifest/icon availability in production, how to generate Android wrapper artifacts (APK/AAB) via a TWA approach, and how to produce a local debug APK; explicitly note Play Store publishing/signing is out of scope unless configured."
-        },
-        {
-          "path": "frontend/DEPLOYMENT.md",
-          "operation": "modify",
-          "description": "Add a short reference/link to frontend/ANDROID_TWA_BUILD.md in the existing deployment documentation so developers can discover the Android packaging instructions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add Android-appropriate 192x192 and 512x512 app icon assets and reference them from the web manifest for consistent branding.",
-      "acceptanceCriteria": [
-        "Two new icon assets are available under frontend/public/assets/generated and referenced by the web manifest: a 192x192 PNG and a 512x512 PNG.",
-        "The manifest icon paths resolve correctly when the app is deployed (HTTP 200 for icon URLs).",
-        "Icons are visually consistent with the existing Han’s Laser branding already used by the site favicon/apple-touch-icon."
+        "The files `frontend/public/assets/generated/android-app-icon.dim_192x192.png` and `frontend/public/assets/generated/android-app-icon.dim_512x512.png` exist in the repo.",
+        "Loading `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the browser returns HTTP 200 and displays valid PNG images."
       ],
       "file_operations": [
         {
           "path": "frontend/public/assets/generated/android-app-icon.dim_192x192.png",
           "operation": "create",
-          "description": "Add the generated 192x192 PNG Android app icon asset at frontend/public/assets/generated/android-app-icon.dim_192x192.png (Han’s Laser themed, high-contrast, simplified mark)."
+          "description": "Add the generated 192x192 square Android app icon PNG asset at the exact required path/filename: `frontend/public/assets/generated/android-app-icon.dim_192x192.png`."
         },
         {
           "path": "frontend/public/assets/generated/android-app-icon.dim_512x512.png",
           "operation": "create",
-          "description": "Add the generated 512x512 PNG Android app icon asset at frontend/public/assets/generated/android-app-icon.dim_512x512.png (Han’s Laser themed, high-contrast, simplified mark)."
-        },
+          "description": "Add the generated 512x512 square Android app icon PNG asset at the exact required path/filename: `frontend/public/assets/generated/android-app-icon.dim_512x512.png`."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Ensure the PWA manifest references the custom Android icons using the required generated asset URLs.",
+      "acceptanceCriteria": [
+        "`frontend/public/manifest.webmanifest` contains icon entries for sizes 192x192 and 512x512 pointing to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`.",
+        "The manifest remains valid JSON and is served at `/manifest.webmanifest`."
+      ],
+      "file_operations": [
         {
           "path": "frontend/public/manifest.webmanifest",
           "operation": "modify",
-          "description": "Ensure the manifest icon entries reference the exact generated files frontend/public/assets/generated/android-app-icon.dim_192x192.png and frontend/public/assets/generated/android-app-icon.dim_512x512.png with correct sizes and types."
+          "description": "Confirm (and if necessary, update) the manifest `icons` array to include entries for sizes `192x192` and `512x512` with `src` exactly set to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, keeping the manifest valid JSON."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Update the Android TWA build guide to explicitly instruct Bubblewrap icon prompt values and include a pre-build HTTP 200 verification checklist.",
+      "acceptanceCriteria": [
+        "`frontend/ANDROID_TWA_BUILD.md` includes the exact icon URL paths `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the steps/checklist.",
+        "The guide clearly states to use the 512x512 icon URL when Bubblewrap requests the icon, and to ensure the manifest icon URLs are accessible before building."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/ANDROID_TWA_BUILD.md",
+          "operation": "modify",
+          "description": "Update the documentation to: (1) explicitly list the exact icon URL paths `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, (2) state clearly that Bubblewrap's icon prompt should use the 512x512 icon URL, and (3) add a short verification checklist that confirms `/manifest.webmanifest` and both icon URLs return HTTP 200 before building APK/AAB."
         }
       ]
     }

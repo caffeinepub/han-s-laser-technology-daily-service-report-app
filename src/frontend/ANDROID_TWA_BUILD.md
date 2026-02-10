@@ -13,20 +13,35 @@ Before you begin, ensure you have:
 
 ## Step 1: Verify PWA Manifest and Icons
 
-Before building the Android app, verify that your PWA assets are accessible in production:
+**CRITICAL**: Before building the Android app, verify that your PWA assets are accessible in production. This pre-build verification prevents common build failures.
 
-1. **Check the manifest**: Visit `https://your-production-url.ic0.app/manifest.webmanifest`
-   - Verify it returns a valid JSON response (HTTP 200)
-   - Confirm `start_url`, `name`, `short_name`, and `display` fields are present
+### Pre-Build Verification Checklist
 
-2. **Check the icons**: Verify both icon URLs are accessible:
-   - `https://your-production-url.ic0.app/assets/generated/android-app-icon.dim_192x192.png`
-   - `https://your-production-url.ic0.app/assets/generated/android-app-icon.dim_512x512.png`
-   - Both should return HTTP 200 with valid PNG images
+Run through this checklist to ensure all required assets return HTTP 200:
 
-3. **Test PWA installability**: Open your production URL in Chrome on Android
-   - You should see an "Add to Home screen" or "Install app" prompt
+1. **Manifest accessibility**:
+   - Visit: `https://your-production-url.ic0.app/manifest.webmanifest`
+   - ✅ Verify it returns HTTP 200 with valid JSON
+   - ✅ Confirm `start_url`, `name`, `short_name`, `display`, and `icons` fields are present
+
+2. **Icon accessibility** (both icons must be accessible):
+   - **192x192 icon**: `https://your-production-url.ic0.app/assets/generated/android-app-icon.dim_192x192.png`
+     - ✅ Returns HTTP 200
+     - ✅ Displays a valid PNG image (192x192 pixels)
+   - **512x512 icon**: `https://your-production-url.ic0.app/assets/generated/android-app-icon.dim_512x512.png`
+     - ✅ Returns HTTP 200
+     - ✅ Displays a valid PNG image (512x512 pixels)
+
+3. **PWA installability test**:
+   - Open your production URL in Chrome on Android
+   - ✅ You should see an "Add to Home screen" or "Install app" prompt
    - If not, use Chrome DevTools Lighthouse to diagnose PWA issues
+
+**Note**: The exact icon URLs you must use are:
+- `/assets/generated/android-app-icon.dim_192x192.png` (192x192)
+- `/assets/generated/android-app-icon.dim_512x512.png` (512x512)
+
+These paths are already configured in your `manifest.webmanifest`.
 
 ## Step 2: Set Up Android Studio Project
 
@@ -44,12 +59,14 @@ Bubblewrap is a command-line tool that automates TWA project creation:
    bubblewrap init --manifest https://your-production-url.ic0.app/manifest.webmanifest
    ```
 
-3. **Follow the prompts**:
+3. **Follow the prompts** (use these exact values):
    - Application name: `Han's Laser Reports`
    - Package name: `com.hanslaser.reports` (or your preferred package name)
    - Host: `your-production-url.ic0.app`
    - Start URL: `/`
-   - Icon URL: Use the 512x512 icon from your manifest
+   - **Icon URL**: `https://your-production-url.ic0.app/assets/generated/android-app-icon.dim_512x512.png`
+     - ⚠️ **IMPORTANT**: When Bubblewrap prompts for the icon URL, use the **512x512** icon path shown above
+     - This is the full production URL to the 512x512 icon asset
    - Theme color: `#1a1a1a`
    - Background color: `#1a1a1a`
    - Display mode: `standalone`
@@ -123,10 +140,16 @@ If you prefer manual control or need custom configuration:
    </string>
    ```
 
-5. **Replace app icons**: Copy your 192x192 and 512x512 PNG icons to the appropriate `res/mipmap-*` directories
+5. **Replace app icons**: 
+   - Download the icons from your production URLs:
+     - `/assets/generated/android-app-icon.dim_192x192.png`
+     - `/assets/generated/android-app-icon.dim_512x512.png`
+   - Copy them to the appropriate `res/mipmap-*` directories in your Android project
+   - Use Android Studio's Image Asset tool to generate all required densities
 
 ## Step 3: Build Debug APK
 
 For local testing without signing:
 
 ### Using Bubblewrap:
+

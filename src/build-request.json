@@ -1,80 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Generate an Android app package for the existing web application",
+  "title": "Package Android TWA build with custom app icon",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add Progressive Web App (PWA) support to the existing React frontend so it can be installed and used from an Android device home screen, including an app manifest, required icons, and offline-capable service worker behavior.",
+      "text": "Generate and add the required Android app icon PNG assets as static files under `frontend/public/assets/generated/` using the exact filenames referenced by the PWA manifest: `android-app-icon.dim_192x192.png` and `android-app-icon.dim_512x512.png`.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "generate android app for this application"
+          "yes"
         ]
       },
       "acceptanceCriteria": [
-        "A web app manifest is present and linked from the HTML entrypoint so Android/Chrome recognizes the app as installable.",
-        "At minimum, the manifest includes: name, short_name, start_url, display=standalone, background_color, theme_color, and icon entries for 192x192 and 512x512 PNGs.",
-        "A service worker is registered and provides offline behavior that does not break authenticated navigation (e.g., app shell loads and shows a reasonable offline message/state when network is unavailable).",
-        "The app can be installed from Chrome on Android (“Add to Home screen”) and launches in standalone mode without browser chrome.",
-        "All user-facing text introduced for install/offline states is in English."
+        "The files `frontend/public/assets/generated/android-app-icon.dim_192x192.png` and `frontend/public/assets/generated/android-app-icon.dim_512x512.png` exist in the repo.",
+        "Loading `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the browser returns HTTP 200 and displays valid PNG images."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Create Android build guidance (no backend changes) describing how to package the existing deployed Internet Computer URL into an Android APK/AAB using a Trusted Web Activity (TWA) wrapper, including required parameters (start URL, manifest URL), build steps, and how to produce a debug APK.",
+      "text": "Ensure the PWA manifest continues to reference the custom Android icons at `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`, so the Android TWA wrapper (Bubblewrap/Android Studio flow) uses the custom icon from the manifest.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "generate android app for this application"
+          "yes"
         ]
       },
       "acceptanceCriteria": [
-        "Documentation exists in the frontend repo (e.g., a new markdown file) with step-by-step instructions to generate an Android app wrapper using a TWA approach.",
-        "The documentation explicitly states what URL to use for start_url (the production app URL) and how to verify the PWA manifest and icon availability.",
-        "The documentation includes steps to build a debug APK locally and notes what is out of scope (e.g., Play Store publishing/signing) unless configured by the developer."
+        "`frontend/public/manifest.webmanifest` contains icon entries for sizes 192x192 and 512x512 pointing to `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png`.",
+        "The manifest remains valid JSON and is served at `/manifest.webmanifest`."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add and reference Android-appropriate app icons in the frontend static assets so the PWA/TWA wrapper uses consistent branding on Android.",
+      "text": "Update `frontend/ANDROID_TWA_BUILD.md` to explicitly instruct how to package the Android app using the custom icon (Bubblewrap prompt values and the exact icon URLs), and include a short verification checklist confirming the manifest and icon URLs return HTTP 200 before building the APK/AAB.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "generate android app for this application"
+          "yes"
         ]
       },
       "acceptanceCriteria": [
-        "Two new icon assets are available under frontend/public/assets/generated and referenced by the web manifest: a 192x192 PNG and a 512x512 PNG.",
-        "The manifest icon paths resolve correctly when the app is deployed (HTTP 200 for icon URLs).",
-        "Icons are visually consistent with the existing Han’s Laser branding already used by the site favicon/apple-touch-icon."
+        "`frontend/ANDROID_TWA_BUILD.md` includes the exact icon URL paths `/assets/generated/android-app-icon.dim_192x192.png` and `/assets/generated/android-app-icon.dim_512x512.png` in the steps/checklist.",
+        "The guide clearly states to use the 512x512 icon URL when Bubblewrap requests the icon, and to ensure the manifest icon URLs are accessible before building."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/components/ui (Shadcn UI sources are read-only and must be composed, not edited).",
-    "Do not modify the immutable frontend auth/actor hook files listed in SYSTEM_CONTEXT (compose around them instead).",
-    "Backend remains a single Motoko actor in backend/main.mo; do not introduce additional backend services.",
-    "Do not introduce third-party authentication providers; Internet Identity remains the only auth mechanism."
+    "Do not modify files under `frontend/src/components/ui`.",
+    "Do not modify `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, or `frontend/src/main.tsx`."
   ],
   "nonGoals": [
-    "Publishing the Android app to the Google Play Store.",
-    "Implementing native Android-only features (push notifications, deep native integrations, background services).",
-    "Adding non-IC hosting or external databases/services."
+    "Implementing native Android features beyond packaging the existing PWA via TWA.",
+    "Setting up automated CI signing/release pipelines for APK/AAB generation."
   ],
   "imageRequirements": {
     "required": [
-      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png)",
-      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png)"
+      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_192x192.png, 192x192)",
+      "Square app icon, Han’s Laser themed, high-contrast, simplified mark on solid background (android-app-icon.dim_512x512.png, 512x512)"
     ],
     "edits": []
   }
