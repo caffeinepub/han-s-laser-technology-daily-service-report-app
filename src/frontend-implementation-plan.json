@@ -1,26 +1,104 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Mainnet publish readiness: deterministic build version + service worker update verification",
+  "title": "Fix auth/signup/logout state leakage and stale cached auto-login (frontend-only)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure the frontend publish process produces a new deterministic build/version identifier and that the PWA service worker update banner reliably appears after a mainnet publish, aligned with the DEPLOYMENT.md runbook.",
+      "summary": "Ensure post-signup the UI immediately binds to the newly authenticated principal and refreshes all user-scoped data (no reuse of previous user cache).",
       "acceptanceCriteria": [
-        "Frontend build/version identifier is deterministic on production builds via VITE_BUILD_VERSION and is visibly reflected in the UI build indicator.",
-        "Service worker is registered with a versioned URL tied to the build identifier, so a new publish triggers an update flow for existing users.",
-        "DEPLOYMENT.md provides clear, executable mainnet publish and post-deploy smoke test steps, including service worker update verification."
+        "With a never-before-seen Internet Identity principal, after Internet Identity authentication the app shows the Profile Setup screen, signup succeeds, and the user can access the main app without seeing an Unauthorized/session-invalid error loop.",
+        "After signup completes, fetching the caller profile succeeds and returns the newly created profile for that principal (not a previous user).",
+        "Engineer accounts can create and view their own reports immediately after completing signup (without requiring an admin-only background step)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/buildInfo.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add a production-time safeguard that warns (console-only) when VITE_BUILD_VERSION is missing during a production build, while keeping existing version derivation behavior unchanged; this helps prevent accidental publishes without a new deterministic build/version identifier."
+          "description": "Use the authorization component’s guidance on user-scoped caching to prevent cross-principal reuse: include the current principal (or an unauthenticated marker) in all user-specific React Query keys (e.g., currentUserProfile, isCallerAdmin, reports, report detail) and ensure signup mutations trigger refetch/invalidation of all principal-scoped queries needed for immediate app use (profile, role/admin flag, reports). Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/DEPLOYMENT.md",
+          "path": "frontend/src/components/ProfileSetup.tsx",
           "operation": "modify",
-          "description": "Tighten the mainnet publish runbook to explicitly require setting a new VITE_BUILD_VERSION for each production publish, and add/clarify verification steps for: (1) build indicator changed, (2) service worker registered successfully, and (3) users on the old version see the ServiceWorkerUpdateBanner and can apply the update to reload into the new version."
+          "description": "After successful signup, force a clean post-signup data refresh for the active principal (invalidate/refetch principal-scoped profile/admin/reports queries) and prevent any UI reliance on previously cached profile data. Keep error handling user-friendly via existing translateSignupError. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Use the authorization component’s recommended pattern to prevent profile setup flash and stale data: adjust authenticated rendering gates to rely on principal-scoped profile query state (isFetched/isLoading tied to the current identity) so the main app never renders with an old principal’s cached profile. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Remove insecure client-side admin signup password validation and rely on backend rejection with clear UI messaging.",
+      "acceptanceCriteria": [
+        "Admin signup can succeed when the correct admin signup password is provided (as defined/checked by the backend).",
+        "The frontend no longer contains a hardcoded admin signup password value comparison for validation; entering any non-empty value is allowed, and incorrect passwords are rejected by the backend with a user-facing error.",
+        "When admin signup is attempted with an incorrect password, the user sees a clear English error message and no privileged access is granted."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ProfileSetup.tsx",
+          "operation": "modify",
+          "description": "Remove the hardcoded admin signup password comparison and only validate that an admin signup password is non-empty on the client; rely on backend response for correctness and display the translated error (e.g., 'Invalid admin signup password.') when rejected. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/signupErrorMessaging.ts",
+          "operation": "modify",
+          "description": "Harden admin password error messaging to ensure incorrect admin signup passwords are surfaced as a clear English message without leaking any sensitive details; keep behavior aligned with backend trap/reject patterns. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Strengthen full logout so identity/session and all cached user-specific UI state are cleared across refreshes (no auto-login to a prior user).",
+      "acceptanceCriteria": [
+        "After clicking the app’s logout / switch-account action, the app reloads to an unauthenticated state and shows the Login screen (no automatic re-authentication).",
+        "After logout, previously viewed user-specific data (e.g., profile/report lists) is not shown again unless the user logs back in; switching to a different Internet Identity results in seeing only the new user’s data.",
+        "If the app detects a stale/invalid session state, the user is guided to perform a full logout and the flow results in a clean unauthenticated start state."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useFullLogout.ts",
+          "operation": "modify",
+          "description": "Use the authorization component’s logout guidance to ensure full cleanup: cancel in-flight queries, clear/remove all React Query cached data, clear persisted AuthClient/II storage (existing utilities), and perform a deterministic reload that avoids restoring stale app state. Add brief in-code regression test notes for logout + account switching verification. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AppHeader.tsx",
+          "operation": "modify",
+          "description": "Ensure logout UX uses the strengthened full logout path consistently (including disabling navigation/actions during logout) so no user-specific data can render during the transition. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/LoginScreen.tsx",
+          "operation": "modify",
+          "description": "Ensure the switch-account / stale-session cleanup flow uses the strengthened logout cleanup (skip-reload mode where appropriate) and does not allow any stale authenticated state to persist before a fresh login attempt. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add defensive UI/cache/actor-binding measures to prevent cross-account data exposure during identity transitions; document regression checks.",
+      "acceptanceCriteria": [
+        "It is not possible to observe another user’s cached data after switching accounts (even briefly) during login/logout transitions.",
+        "Backend endpoints that return user-specific data enforce caller-based access correctly (non-admins cannot access other users’ profiles or reports).",
+        "Regression test steps are documented (in code comments or a short internal note) describing how to verify no stale identity/session persists after logout and account switching."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Add identity-transition defenses: when the principal changes, immediately cancel and clear/remove all non-actor cached queries to prevent any stale user data from rendering while the new actor/profile loads; keep actor recreation keyed by principal. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Ensure every user-specific query is principal-scoped (query keys include principal) and avoids leaking previous principal data via shared keys; where applicable, disable 'keep previous data' behavior for identity-changing queries to prevent brief cross-account flashes. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add additional rendering guards so the app never renders user-specific pages while the current principal’s profile state is unresolved; keep SessionInvalidScreen as the guided recovery path for genuine auth errors. Add short regression verification comments (logout -> login as different II -> confirm no stale profile/reports shown). Verify the component's usage instructions before implementing."
         }
       ]
     }

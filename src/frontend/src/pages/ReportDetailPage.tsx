@@ -10,8 +10,8 @@ import { ArrowLeft, Calendar, User, Phone, Wrench, CheckCircle2, XCircle, AlertC
 
 export function ReportDetailPage() {
   const navigate = useNavigate();
-  const { id } = useParams({ from: '/report/$id' });
-  const { data: report, isLoading, isError } = useGetReportById(id);
+  const { reportId } = useParams({ from: '/report/$reportId' });
+  const { data: report, isLoading, isError } = useGetReportById(reportId);
 
   if (isLoading) {
     return (

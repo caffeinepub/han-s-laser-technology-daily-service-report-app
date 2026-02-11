@@ -61,7 +61,6 @@ export interface backendInterface {
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
     processPendingSignups(): Promise<bigint>;
-    purgeLegacyReportsAndUsers(): Promise<void>;
     resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     signupAdmin(profile: UserProfile, password: string): Promise<void>;

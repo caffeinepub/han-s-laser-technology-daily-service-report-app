@@ -27,7 +27,7 @@ export function ReportHistoryPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
 
-  const filterUserPrincipalString = search?.userPrincipal;
+  const filterUserPrincipalString = search.userPrincipal;
   const filterUserPrincipal = filterUserPrincipalString ? Principal.fromText(filterUserPrincipalString) : null;
   const { data: filteredUserProfile } = useGetUserProfile(filterUserPrincipal);
 
@@ -277,31 +277,24 @@ export function ReportHistoryPage() {
             <Card
               key={report.id}
               className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate({ to: '/report/$id', params: { id: report.id } })}
+              onClick={() => navigate({ to: '/report/$reportId', params: { reportId: report.id } })}
             >
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <CardTitle className="text-xl mb-2">{report.customerName}</CardTitle>
-                    <CardDescription className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{report.machineModel}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span>S/N: {report.machineSerialNo}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(report.date).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </div>
+                    <CardDescription className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(report.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
                     </CardDescription>
                   </div>
                   <Badge
-                    variant={report.issueResolved ? 'default' : 'secondary'}
-                    className="ml-4 flex-shrink-0"
+                    variant={report.issueResolved ? 'default' : 'destructive'}
+                    className={report.issueResolved ? 'bg-success hover:bg-success/90' : ''}
                   >
                     {report.issueResolved ? (
                       <>
@@ -318,17 +311,19 @@ export function ReportHistoryPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Issue Described:</p>
-                    <p className="text-sm line-clamp-2">{report.issueDescribedByCustomer}</p>
+                    <p className="text-muted-foreground">Machine Model</p>
+                    <p className="font-medium">{report.machineModel}</p>
                   </div>
-                  {report.issueFoundByEngineer && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Issue Found:</p>
-                      <p className="text-sm line-clamp-2">{report.issueFoundByEngineer}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-muted-foreground">Serial Number</p>
+                    <p className="font-medium">{report.machineSerialNo}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-muted-foreground">Issue</p>
+                    <p className="font-medium line-clamp-2">{report.issueDescribedByCustomer}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

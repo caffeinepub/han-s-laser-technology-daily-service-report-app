@@ -144,7 +144,6 @@ export interface backendInterface {
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
     processPendingSignups(): Promise<bigint>;
-    purgeLegacyReportsAndUsers(): Promise<void>;
     resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     signupAdmin(profile: UserProfile, password: string): Promise<void>;
@@ -347,20 +346,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.processPendingSignups();
-            return result;
-        }
-    }
-    async purgeLegacyReportsAndUsers(): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.purgeLegacyReportsAndUsers();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.purgeLegacyReportsAndUsers();
             return result;
         }
     }

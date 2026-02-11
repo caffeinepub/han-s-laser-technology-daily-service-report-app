@@ -58,7 +58,6 @@ export interface _SERVICE {
   'listReports' : ActorMethod<[], Array<DailyServiceReport>>,
   'listUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
   'processPendingSignups' : ActorMethod<[], bigint>,
-  'purgeLegacyReportsAndUsers' : ActorMethod<[], undefined>,
   'resetToFreshApp' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'signupAdmin' : ActorMethod<[UserProfile, string], undefined>,

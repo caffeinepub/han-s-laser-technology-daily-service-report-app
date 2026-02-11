@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useListUsers, useDeleteUser, useIsCallerAdmin, usePurgeLegacyReportsAndUsers, useResetToFreshApp } from '../hooks/useQueries';
+import { useListUsers, useDeleteUser, useIsCallerAdmin, useResetToFreshApp } from '../hooks/useQueries';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useFullLogout } from '../hooks/useFullLogout';
 import { copyToClipboard } from '../utils/copyToClipboard';
@@ -17,7 +17,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Trash2, Users, ShieldCheck, Wrench, AlertTriangle, XCircle, FileText, Copy, Check } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Trash2, Users, ShieldCheck, Wrench, XCircle, FileText, Copy, Check, AlertTriangle } from 'lucide-react';
 import { AccessDeniedScreen } from '../components/AccessDeniedScreen';
 import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
@@ -28,14 +29,11 @@ export function AdminUsersPage() {
   const { data: isAdmin, isLoading: adminCheckLoading, isFetched: adminCheckFetched } = useIsCallerAdmin();
   const { data: users, isLoading: usersLoading, error } = useListUsers();
   const deleteUser = useDeleteUser();
-  const purgeLegacyData = usePurgeLegacyReportsAndUsers();
   const resetToFreshApp = useResetToFreshApp();
   const { identity } = useInternetIdentity();
   const { performLogout } = useFullLogout();
   const [userToDelete, setUserToDelete] = useState<Principal | null>(null);
-  const [showPurgeDialog, setShowPurgeDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [purgeError, setPurgeError] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
 
@@ -76,30 +74,30 @@ export function AdminUsersPage() {
     }
   };
 
-  const handlePurgeConfirm = async () => {
-    setPurgeError(null);
-    try {
-      await purgeLegacyData.mutateAsync();
-      setShowPurgeDialog(false);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete all old data. Please try again.';
-      setPurgeError(errorMessage);
-    }
-  };
-
   const handleResetConfirm = async () => {
     setResetError(null);
     try {
       // Call backend reset
       await resetToFreshApp.mutateAsync();
       
-      // On success: clear auth, storage, cache, PWA caches, and reload
+      // On success: close dialog and perform full cleanup with reload
       setShowResetDialog(false);
+      
+      // Perform complete logout with PWA cleanup and deterministic reload
       await performLogout({ isReset: true });
     } catch (error) {
       // On failure: show error, do NOT log out
-      const errorMessage = error instanceof Error ? error.message : 'Failed to reset system. Please try again.';
-      setResetError(errorMessage);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'System reset failed. Please try again or contact support.';
+      
+      // Clean up technical details from error message
+      const cleanMessage = errorMessage
+        .replace(/^Error:\s*/i, '')
+        .replace(/\s*\(.*?\)\s*$/g, '')
+        .trim();
+      
+      setResetError(cleanMessage || 'System reset failed. Please try again.');
     }
   };
 
@@ -310,71 +308,40 @@ export function AdminUsersPage() {
       </Card>
 
       {/* Admin Actions */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              Delete All Old Data
-            </CardTitle>
-            <CardDescription>
-              Remove all reports and users except your own account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              onClick={() => setShowPurgeDialog(true)}
-              disabled={purgeLegacyData.isPending}
-              className="w-full"
-            >
-              {purgeLegacyData.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Delete All Old Data
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-destructive" />
-              Reset System
-            </CardTitle>
-            <CardDescription>
-              Complete system reset - permanently deletes all users and reports
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="destructive"
-              onClick={() => setShowResetDialog(true)}
-              disabled={resetToFreshApp.isPending}
-              className="w-full"
-            >
-              {resetToFreshApp.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetting...
-                </>
-              ) : (
-                <>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Reset System (Full Wipe)
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <XCircle className="h-5 w-5 text-destructive" />
+            Reset System
+          </CardTitle>
+          <CardDescription>
+            Complete system reset - permanently deletes all users and reports
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setResetError(null);
+              setShowResetDialog(true);
+            }}
+            disabled={resetToFreshApp.isPending}
+            className="w-full"
+          >
+            {resetToFreshApp.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Resetting...
+              </>
+            ) : (
+              <>
+                <XCircle className="mr-2 h-4 w-4" />
+                Reset System (Full Wipe)
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Delete User Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
@@ -391,53 +358,7 @@ export function AdminUsersPage() {
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteUser.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete User'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Purge Legacy Data Confirmation Dialog */}
-      <AlertDialog open={showPurgeDialog} onOpenChange={setShowPurgeDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete All Old Data</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>All service reports</li>
-                <li>All user accounts except yours</li>
-              </ul>
-              <p className="mt-2 font-medium">This action cannot be undone.</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {purgeError && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded p-3 text-sm text-destructive">
-              {purgeError}
-            </div>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={purgeLegacyData.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handlePurgeConfirm}
-              disabled={purgeLegacyData.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {purgeLegacyData.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete All Old Data'
-              )}
+              Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -447,26 +368,40 @@ export function AdminUsersPage() {
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reset System (Full Wipe)</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>All service reports</li>
-                <li>All user accounts (including yours)</li>
-                <li>All system data</li>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Reset Entire System?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p className="font-semibold text-foreground">
+                This action will permanently delete:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All user accounts (including your admin account)</li>
+                <li>All service reports and history</li>
+                <li>All pending signups</li>
+                <li>All access permissions</li>
               </ul>
-              <p className="mt-2 font-medium text-destructive">
-                You will be logged out and the system will return to its initial state. This action cannot be undone.
+              <p className="font-semibold text-destructive">
+                You will be logged out and the app will restart as a fresh installation.
+              </p>
+              <p className="text-sm">
+                This action cannot be undone. Are you absolutely sure?
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
           {resetError && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded p-3 text-sm text-destructive">
-              {resetError}
-            </div>
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{resetError}</AlertDescription>
+            </Alert>
           )}
+          
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetToFreshApp.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={resetToFreshApp.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleResetConfirm}
               disabled={resetToFreshApp.isPending}
@@ -478,7 +413,7 @@ export function AdminUsersPage() {
                   Resetting...
                 </>
               ) : (
-                'Reset System (Full Wipe)'
+                'Yes, Reset Everything'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

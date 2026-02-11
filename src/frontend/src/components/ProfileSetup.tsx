@@ -49,12 +49,10 @@ export function ProfileSetup() {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
-    // Validate admin password if admin account type is selected
+    // Validate admin password if admin account type is selected (only check non-empty)
     if (accountType === 'admin') {
-      if (!adminPassword) {
+      if (!adminPassword || adminPassword.trim() === '') {
         newErrors.adminPassword = 'Admin signup password is required';
-      } else if (adminPassword !== 'Hans@987123') {
-        newErrors.adminPassword = 'Invalid admin signup password';
       }
     }
     
@@ -80,7 +78,7 @@ export function ProfileSetup() {
       };
 
       if (accountType === 'admin') {
-        // Use admin signup mutation with password
+        // Use admin signup mutation with password (backend validates correctness)
         await signupAdminMutation.mutateAsync({
           profile,
           password: adminPassword,
@@ -94,11 +92,15 @@ export function ProfileSetup() {
           requestedRole: Role.engineer,
         });
       }
+      
+      // Success - mutations will trigger profile refetch and UI will update automatically
     } catch (error: any) {
       const errorMessage = translateSignupError(error);
       setBackendError(errorMessage);
       // Clear admin password on error to prevent resubmission with stale password
-      setAdminPassword('');
+      if (accountType === 'admin') {
+        setAdminPassword('');
+      }
     }
   };
 
@@ -272,6 +274,12 @@ export function ProfileSetup() {
                   required
                   disabled={isPending}
                 />
+                <div className="flex items-start gap-2 text-xs text-muted-foreground mt-1">
+                  <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                  <p>
+                    Admin accounts require a special signup password. Contact your system administrator if you don't have it.
+                  </p>
+                </div>
                 {errors.adminPassword && (
                   <p className="text-sm text-destructive">{errors.adminPassword}</p>
                 )}
@@ -279,32 +287,28 @@ export function ProfileSetup() {
             )}
 
             {accountType === 'engineer' && (
-              <Alert className="bg-muted/50 border-muted">
-                <Wrench className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  <strong>Engineer Access:</strong> Create and view your own service reports.
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Engineer Account:</strong> You can create and view your own service reports.
                 </AlertDescription>
               </Alert>
             )}
 
             {accountType === 'admin' && (
-              <Alert className="bg-muted/50 border-muted">
+              <Alert>
                 <ShieldCheck className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  <strong>Admin Access:</strong> View all reports, manage users, and access administrative functions. Admin accounts require a special signup password and are restricted to pre-approved names.
+                <AlertDescription>
+                  <strong>Admin Account:</strong> Full access to view all reports, manage users, and system settings. Requires admin signup password.
                 </AlertDescription>
               </Alert>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isPending}
-            >
+            <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Creating Account...
                 </>
               ) : (
                 'Complete Signup'

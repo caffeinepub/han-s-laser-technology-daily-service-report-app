@@ -63,7 +63,10 @@ function sanitizeBackendMessage(message: string): string {
 
 /**
  * Translates backend signup errors into user-friendly messages
- * without exposing internal backend method names or the admin password.
+ * without exposing internal backend method names or sensitive information.
+ * 
+ * SECURITY: Admin signup password validation is now backend-only.
+ * Frontend only validates non-empty; backend rejects incorrect passwords.
  */
 export function translateSignupError(error: any): string {
   const errorMessage = error?.message || '';
@@ -71,9 +74,9 @@ export function translateSignupError(error: any): string {
   // Try to extract a meaningful backend message first
   const backendMessage = extractBackendMessage(error);
   if (backendMessage) {
-    // Handle admin signup password errors specifically
+    // Handle admin signup password errors specifically (without exposing the password)
     if (backendMessage.toLowerCase().includes('incorrect signup password')) {
-      return 'Invalid admin signup password.';
+      return 'Invalid admin signup password. Please contact your system administrator if you need the correct password.';
     }
     
     // Handle profile already exists with custom message

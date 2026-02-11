@@ -51,7 +51,10 @@ actor {
 
   func createAllowlist() : Map.Map<Text, ()> {
     let allowlist = Map.empty<Text, ()>();
-    let names = ["Admin Name1", "Admin Name2"];
+    let names = [
+      "Admin Name1",
+      "Admin Name2",
+    ];
     for (name in names.values()) {
       allowlist.add(name, ());
     };
@@ -60,6 +63,9 @@ actor {
 
   let adminAllowlist = createAllowlist();
   let adminSignupPassword = "SecurePassword123";
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let reports = Map.empty<Text, DailyServiceReport>();
+  let pendingSignups = Map.empty<Principal, UserProfile>();
 
   func isAllowlistedAdmin(profile : UserProfile) : Bool {
     let trimmedName = profile.name.trim(#text(" "));
@@ -75,28 +81,43 @@ actor {
     } else { #user };
   };
 
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let reports = Map.empty<Text, DailyServiceReport>();
-  let pendingSignups = Map.empty<Principal, UserProfile>();
-
   public shared ({ caller }) func resetToFreshApp() : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admin can perform a full system reset");
     };
 
-    reports.clear();
+    // Collect all known principals before clearing data structures
+    let allPrincipals = Map.empty<Principal, ()>();
 
-    let allUsers = userProfiles.keys().toArray();
-    userProfiles.clear();
-
-    for (user in allUsers.values()) {
-      // Preserve the caller's admin role to prevent system lockout
-      if (user != caller) {
-        AccessControl.assignRole(accessControlState, caller, user, #guest);
-      };
+    // Add all principals from userProfiles
+    for ((principal, _) in userProfiles.entries()) {
+      allPrincipals.add(principal, ());
     };
 
+    // Add all principals from pendingSignups
+    for ((principal, _) in pendingSignups.entries()) {
+      allPrincipals.add(principal, ());
+    };
+
+    // Add all principals from reports (createdBy field)
+    for ((_, report) in reports.entries()) {
+      allPrincipals.add(report.createdBy, ());
+    };
+
+    // Add the caller to ensure their role is also revoked
+    allPrincipals.add(caller, ());
+
+    // Clear all data structures
+    reports.clear();
+    userProfiles.clear();
     pendingSignups.clear();
+
+    // Revoke access-control roles for all known principals including the caller
+    // We need an admin to perform the role assignment, so we temporarily use the caller
+    // who is still an admin at this point
+    for ((principal, _) in allPrincipals.entries()) {
+      AccessControl.assignRole(accessControlState, caller, principal, #guest);
+    };
   };
 
   public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role) : async () {
@@ -188,7 +209,7 @@ actor {
 
     let existingProfile = switch (userProfiles.get(caller)) {
       case (null) {
-        Runtime.trap("User profile does not exist. Please complete sign up first.");
+        Runtime.trap("User profile does not exist. Please complete signup first.");
       };
       case (?p) { p };
     };
@@ -332,29 +353,6 @@ actor {
     );
   };
 
-  public shared ({ caller }) func purgeLegacyReportsAndUsers() : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admin can purge data");
-    };
-
-    reports.clear();
-
-    let filteredUser = Map.empty<Principal, UserProfile>();
-    for ((principal, user_profile) in userProfiles.entries()) {
-      if (principal == caller) {
-        filteredUser.add(principal, user_profile);
-      } else {
-        AccessControl.assignRole(accessControlState, caller, principal, #guest);
-      };
-    };
-
-    userProfiles.clear();
-    pendingSignups.clear();
-    for ((principal, user_profile) in filteredUser.entries()) {
-      userProfiles.add(principal, user_profile);
-    };
-  };
-
   // Securely fetch reports for CSV download (non-admins only get their own reports)
   public query ({ caller }) func getReportsForDownload() : async [DailyServiceReport] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -370,3 +368,4 @@ actor {
     );
   };
 };
+

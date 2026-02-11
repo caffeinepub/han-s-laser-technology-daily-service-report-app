@@ -1,66 +1,56 @@
 import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useIsCallerAdmin } from './hooks/useQueries';
-import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { AppLayout } from './components/AppLayout';
 import { LoginScreen } from './components/LoginScreen';
 import { ProfileSetup } from './components/ProfileSetup';
+import { AccessDeniedScreen } from './components/AccessDeniedScreen';
 import { SessionInvalidScreen } from './components/SessionInvalidScreen';
 import { ReportEntryPage } from './pages/ReportEntryPage';
 import { ReportHistoryPage } from './pages/ReportHistoryPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
-import { AccessDeniedScreen } from './components/AccessDeniedScreen';
+import { Toaster } from '@/components/ui/sonner';
+import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { isAuthError, isMissingProfileError } from './utils/authErrorDetection';
-import { logSignupFlow, sanitizeErrorMessage } from './utils/signupFlowDebug';
-import { Loader2, WifiOff } from 'lucide-react';
-import { useEffect } from 'react';
 
-function RootComponent() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+function AppContent() {
   const { identity, isInitializing } = useInternetIdentity();
-  const { data: userProfile, isLoading: profileLoading, isFetched, error: profileError } = useGetCallerUserProfile();
-  const { isOnline } = useNetworkStatus();
+  const { data: userProfile, isLoading: profileLoading, error: profileError, isFetched: profileFetched } = useGetCallerUserProfile();
+  const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
+  const isOnline = useNetworkStatus();
 
   const isAuthenticated = !!identity;
 
-  // Debug logging for authentication state
-  useEffect(() => {
-    logSignupFlow('Auth state changed', {
-      isAuthenticated,
-      isInitializing,
-      profileLoading,
-      isFetched,
-      hasProfile: userProfile !== null && userProfile !== undefined,
-      hasError: !!profileError,
-    });
-  }, [isAuthenticated, isInitializing, profileLoading, isFetched, userProfile, profileError]);
+  // Regression verification: After logout -> login as different II -> confirm no stale profile/reports shown
+  // All queries are now principal-scoped, preventing cross-account data leakage
 
-  // Log profile errors with sanitization
-  useEffect(() => {
-    if (profileError) {
-      logSignupFlow('Profile fetch error', {
-        error: sanitizeErrorMessage(profileError),
-        isAuthError: isAuthError(profileError),
-        isMissingProfile: isMissingProfileError(profileError),
-      });
-    }
-  }, [profileError]);
-
-  // Show loading during initialization
+  // Show loading while initializing or fetching actor/profile
   if (isInitializing || (isAuthenticated && profileLoading)) {
-    logSignupFlow('Showing loading state', { isInitializing, profileLoading });
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </div>
         </div>
       </AppLayout>
     );
   }
 
-  // Show login if not authenticated
+  // Not authenticated - show login screen
   if (!isAuthenticated) {
-    logSignupFlow('Showing login screen', { isAuthenticated: false });
     return (
       <AppLayout>
         <LoginScreen />
@@ -68,58 +58,40 @@ function RootComponent() {
     );
   }
 
-  // Show profile setup if authenticated but no profile exists
-  // This includes: userProfile === null (backend returned null) OR missing profile error
-  const showProfileSetup = 
-    isAuthenticated && 
-    !profileLoading && 
-    isFetched && 
-    (userProfile === null || (profileError && isMissingProfileError(profileError)));
-    
-  if (showProfileSetup) {
-    logSignupFlow('Showing profile setup', {
-      userProfileIsNull: userProfile === null,
-      hasMissingProfileError: profileError && isMissingProfileError(profileError),
-    });
-    return (
-      <AppLayout>
-        <ProfileSetup />
-      </AppLayout>
-    );
-  }
+  // Handle profile load errors with offline awareness
+  if (profileError) {
+    // Check if it's a genuine auth error (not just missing profile)
+    if (isAuthError(profileError) && !isMissingProfileError(profileError)) {
+      return (
+        <AppLayout>
+          <SessionInvalidScreen />
+        </AppLayout>
+      );
+    }
 
-  // Detect stale/invalid session: authenticated but profile fetch fails with genuine auth error
-  // (NOT a missing profile error, which is expected for new users)
-  // (NOT a non-auth runtime/initialization error like "Actor not available")
-  if (isAuthenticated && isFetched && profileError && isAuthError(profileError)) {
-    logSignupFlow('Showing session invalid screen', {
-      error: sanitizeErrorMessage(profileError),
-    });
-    return (
-      <AppLayout>
-        <SessionInvalidScreen />
-      </AppLayout>
-    );
-  }
+    // For other errors, show user-friendly message with offline context
+    if (!isOnline) {
+      return (
+        <AppLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-md">
+              <h2 className="text-2xl font-bold mb-2">You're Offline</h2>
+              <p className="text-muted-foreground">
+                Unable to load your profile. Please check your internet connection and try again.
+              </p>
+            </div>
+          </div>
+        </AppLayout>
+      );
+    }
 
-  // Handle non-auth profile load errors (transient/initialization issues)
-  // Show a safe fallback without triggering SessionInvalidScreen
-  if (isAuthenticated && isFetched && profileError && !isAuthError(profileError)) {
-    logSignupFlow('Non-auth profile error, showing fallback', {
-      error: sanitizeErrorMessage(profileError),
-    });
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-4 max-w-md">
-            {!isOnline && (
-              <div className="flex items-center justify-center gap-2 text-warning mb-4">
-                <WifiOff className="h-5 w-5" />
-                <span className="font-medium">You are currently offline</span>
-              </div>
-            )}
+          <div className="text-center max-w-md">
+            <h2 className="text-2xl font-bold mb-2">Error Loading Profile</h2>
             <p className="text-muted-foreground">
-              Unable to load your profile. {!isOnline ? 'Please check your internet connection and try again.' : 'Please refresh the page or try again later.'}
+              {profileError instanceof Error ? profileError.message : 'An unexpected error occurred'}
             </p>
           </div>
         </div>
@@ -127,17 +99,47 @@ function RootComponent() {
     );
   }
 
-  // Show main app
-  logSignupFlow('Showing main app', { hasProfile: !!userProfile });
-  return (
+  // Wait for profile to be fetched before deciding on signup vs main app
+  // This prevents profile setup modal flash when switching accounts
+  if (!profileFetched) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Authenticated but no profile - show signup
+  if (userProfile === null) {
+    return (
+      <AppLayout>
+        <ProfileSetup />
+      </AppLayout>
+    );
+  }
+
+  // Authenticated with profile - render router
+  return <RouterProvider router={router} context={{ isAdmin: isAdmin || false, adminLoading }} />;
+}
+
+// Router context type
+interface RouterContext {
+  isAdmin: boolean;
+  adminLoading: boolean;
+}
+
+// Router setup
+const rootRoute = createRootRoute<RouterContext>({
+  component: () => (
     <AppLayout>
       <Outlet />
     </AppLayout>
-  );
-}
-
-const rootRoute = createRootRoute({
-  component: RootComponent,
+  ),
 });
 
 const indexRoute = createRoute({
@@ -149,47 +151,61 @@ const indexRoute = createRoute({
 const historyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/history',
-  component: ReportHistoryPage,
   validateSearch: (search: Record<string, unknown>): { userPrincipal?: string } => {
     return {
       userPrincipal: typeof search.userPrincipal === 'string' ? search.userPrincipal : undefined,
     };
   },
+  component: ReportHistoryPage,
 });
 
 const reportDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/report/$id',
+  path: '/report/$reportId',
   component: ReportDetailPage,
 });
-
-function AdminUsersRouteComponent() {
-  const { data: isAdmin, isLoading } = useIsCallerAdmin();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return <AccessDeniedScreen />;
-  }
-
-  return <AdminUsersPage />;
-}
 
 const adminUsersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/users',
-  component: AdminUsersRouteComponent,
+  component: () => {
+    // Access context with proper type assertion
+    const context = adminUsersRoute.useRouteContext() as RouterContext;
+    
+    if (context.adminLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Checking permissions...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (!context.isAdmin) {
+      return <AccessDeniedScreen />;
+    }
+    
+    return <AdminUsersPage />;
+  },
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, historyRoute, reportDetailRoute, adminUsersRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  historyRoute,
+  reportDetailRoute,
+  adminUsersRoute,
+]);
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+  context: {
+    isAdmin: false,
+    adminLoading: false,
+  },
+});
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -198,5 +214,10 @@ declare module '@tanstack/react-router' {
 }
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+      <Toaster />
+    </QueryClientProvider>
+  );
 }
