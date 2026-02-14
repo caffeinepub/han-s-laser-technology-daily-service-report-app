@@ -1,32 +1,36 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to deploy an app with signup/login that should not require Internet Identity.",
-  "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "summary": "Project aims to remove Internet Identity as a requirement for user signup/login.",
+  "architectural_notes": [
+    "Authentication must not require Internet Identity for signup/login."
+  ],
+  "known_issues": [
+    "Signup/login still requires Internet Identity; user requests removal."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-all-internet-identity-gated-signup-login-flows-so-the-core-app-pages-can-be-used-without-any-signup-or-login-specifically-anonymous-users-must-be-able-to-access-and-use-the-main-routes-reportentrypage-reporthistorypage-reportdetailpage-without-being-redirected-to-or-blocked-by-loginscreen-profilesetup-or-signuppendingaccessscreen",
-      "title": "Remove all Internet Identity-gated signup/login flows so the core app pages can be used without any signup or login. Specifically, anonymous users must be able to access and use the main routes (ReportEntryPage, ReportHistoryPage, ReportDetailPage) without being redirected to or blocked by LoginScreen, ProfileSetup, or SignupPendingAccessScreen.",
+      "id": "feature-remove-internet-identity-as-a-required-step-for-using-the-app-by-ensuring-anonymous-users-can-access-and-use-the-core-routes-history-and-report-reportid-without-being-redirected-to-blocked-by-or-prompted-with-any-internet-identity-login-or-signup-ui",
+      "title": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-admin-only-routes-remain-protected-from-anonymous-access-e-g-admin-users-anonymous-users-attempting-to-access-admin-routes-must-see-an-access-denied-screen-and-must-not-be-prompted-to-log-in-with-internet-identity",
-      "title": "Ensure admin-only routes remain protected from anonymous access (e.g., /admin/users). Anonymous users attempting to access admin routes must see an access denied screen and must not be prompted to log in with Internet Identity.",
+      "id": "feature-remove-all-internet-identity-login-signup-user-experiences-from-the-ui-the-app-must-not-render-or-link-to-internet-identity-specific-screens-or-actions-e-g-loginscreen-s-sign-in-with-internet-identity-button-and-related-messaging-anywhere-in-the-app-flow",
+      "title": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
       "reqIds": [
-        "REQ-3"
+        "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-apply-a-coherent-consistent-visual-theme-across-the-updated-anonymous-mode-screens-and-navigation-colors-typography-spacing-and-component-styling-aligned-with-an-industrial-service-reporting-app-aesthetic-avoiding-blue-purple-as-primary-brand-colors",
-      "title": "Apply a coherent, consistent visual theme across the updated anonymous-mode screens and navigation (colors, typography, spacing, and component styling) aligned with an industrial/service-reporting app aesthetic, avoiding blue/purple as primary brand colors.",
+      "id": "feature-keep-admin-only-routes-protected-without-prompting-for-internet-identity-anonymous-users-attempting-to-access-admin-users-must-see-an-access-denied-screen-not-a-login-signup-prompt",
+      "title": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
       "reqIds": [
-        "REQ-4"
+        "REQ-3"
       ],
       "version": 1
     }
@@ -34,20 +38,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove Internet Identity requirement from signup/login (do not use Internet Identity authentication).",
+      "summary": "Remove Internet Identity requirement from signup/login (no Internet Identity auth flow)",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Update the app header/navigation to behave correctly in anonymous mode by hiding identity-dependent UI. Specifically: do not show the user name block when no profile is available; hide/remove the \"Sign Out\" action for anonymous users; keep admin navigation hidden unless admin status is positively confirmed, and ensure anonymous users never see admin navigation.",
-      "reqIds": [
-        "REQ-2"
-      ],
       "status": "pending"
     }
   ],
-  "projectName": "Remove Internet Identity requirement and run app in anonymous mode",
+  "projectName": "Remove all Internet Identity login/signup prompts and flows",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

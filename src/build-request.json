@@ -1,88 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Remove Internet Identity requirement and run app in anonymous mode",
+  "title": "Remove all Internet Identity login/signup prompts and flows",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove all Internet Identity-gated signup/login flows so the core app pages can be used without any signup or login. Specifically, anonymous users must be able to access and use the main routes (ReportEntryPage, ReportHistoryPage, ReportDetailPage) without being redirected to or blocked by LoginScreen, ProfileSetup, or SignupPendingAccessScreen.",
+      "text": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "why still internet identity is required for signup or login. I do not want this function"
+          "do not want internet identity login or signup"
         ]
       },
       "acceptanceCriteria": [
-        "When opening the app in a fresh browser (no stored Internet Identity session), navigating to / renders the report entry UI (not a login/signup screen).",
-        "/history and /report/:reportId render without requiring Internet Identity.",
-        "No UI flow forces the user to authenticate via Internet Identity in order to create/view reports.",
-        "No user-facing text on these anonymous flows says or implies that signing in/signing up is required."
+        "When not authenticated with Internet Identity (no identity present), the user can navigate to \"/\" and create a report without seeing any login/signup-required screen.",
+        "When not authenticated with Internet Identity, the user can navigate to \"/history\" and view the history screen without seeing any login/signup-required screen.",
+        "When not authenticated with Internet Identity, the user can navigate to a valid \"/report/$reportId\" URL and view the report detail screen without seeing any login/signup-required screen.",
+        "No UI copy on the core routes instructs the user to sign in with Internet Identity."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the app header/navigation to behave correctly in anonymous mode by hiding identity-dependent UI. Specifically: do not show the user name block when no profile is available; hide/remove the \"Sign Out\" action for anonymous users; keep admin navigation hidden unless admin status is positively confirmed, and ensure anonymous users never see admin navigation.",
+      "text": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "I do not want this function"
+          "do not want internet identity login or signup"
         ]
       },
       "acceptanceCriteria": [
-        "In anonymous mode, the header does not show a user name/username block.",
-        "In anonymous mode, the header does not show a \"Sign Out\" button/menu item.",
-        "The \"Users\" (admin) navigation is not visible unless admin status is positively confirmed; it is never visible for anonymous users."
+        "There is no navigation path in the UI that leads to an Internet Identity login screen.",
+        "No visible button/CTA in the app triggers `useInternetIdentity().login()`.",
+        "All user-facing text that mentions “Internet Identity” is removed from screens reachable through normal app navigation."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Ensure admin-only routes remain protected from anonymous access (e.g., /admin/users). Anonymous users attempting to access admin routes must see an access denied screen and must not be prompted to log in with Internet Identity.",
+      "text": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "why still internet identity is required for signup or login. I do not want this function"
+          "do not want internet identity login or signup"
         ]
       },
       "acceptanceCriteria": [
-        "Visiting /admin/users while anonymous shows an access denied UI (not an Internet Identity login prompt).",
-        "Admin routes remain accessible only when the existing admin-check logic positively confirms admin status."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Apply a coherent, consistent visual theme across the updated anonymous-mode screens and navigation (colors, typography, spacing, and component styling) aligned with an industrial/service-reporting app aesthetic, avoiding blue/purple as primary brand colors.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "I do not want this function"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Anonymous-mode pages and navigation look visually consistent (shared typography, spacing, and component styling).",
-        "Primary theme does not use blue/purple as the main brand colors."
+        "When not authenticated with Internet Identity, visiting \"/admin/users\" shows AccessDeniedScreen.",
+        "Anonymous users do not see any Internet Identity login prompt when attempting to access admin routes.",
+        "Admin navigation items remain hidden unless admin status is positively confirmed."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files in frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui.",
-    "Backend must remain a single Motoko actor in backend/main.mo; add backend/migration.mo only if a stable-state upgrade is required."
+    "Do not edit files under frontend/immutablePaths (including frontend/src/main.tsx, frontend/src/hooks/useInternetIdentity.ts, and frontend/src/hooks/useActor.ts); implement changes by updating non-immutable components/pages and routing/conditional rendering.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Implementing a custom username/password authentication system to replace Internet Identity.",
-    "Adding third-party authentication providers or external databases.",
-    "Changing report storage semantics beyond what is required to remove Internet Identity-gated access."
+    "Implementing a new authentication provider to replace Internet Identity (e.g., email/password auth).",
+    "Adding third-party auth or external database-backed user management.",
+    "Changing backend authorization model beyond what is required to stop Internet Identity prompts in the UI."
   ],
   "imageRequirements": {
     "required": [],

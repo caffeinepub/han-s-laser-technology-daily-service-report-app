@@ -8,6 +8,38 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Calendar, User, Phone, Wrench, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
+function DetailField({ 
+  label, 
+  value, 
+  icon, 
+  multiline = false,
+  badge = false 
+}: { 
+  label: string; 
+  value: string; 
+  icon?: React.ReactNode;
+  multiline?: boolean;
+  badge?: boolean;
+}) {
+  return (
+    <div className={multiline ? 'space-y-2' : ''}>
+      <p className="text-sm text-muted-foreground flex items-center gap-1">
+        {icon}
+        {label}
+      </p>
+      {badge ? (
+        <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className="mt-1">
+          {value}
+        </Badge>
+      ) : multiline ? (
+        <p className="text-sm bg-muted/30 p-3 rounded-md whitespace-pre-wrap">{value}</p>
+      ) : (
+        <p className="font-medium">{value}</p>
+      )}
+    </div>
+  );
+}
+
 export function ReportDetailPage() {
   const navigate = useNavigate();
   const { reportId } = useParams({ from: '/report/$reportId' });
@@ -148,61 +180,46 @@ export function ReportDetailPage() {
             </div>
           </div>
 
-          <Separator />
-
-          {/* Additional Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
-            <div className="space-y-4">
-              {!report.issueResolved && report.nextPlanOfAction && (
+          {!report.issueResolved && report.nextPlanOfAction && (
+            <>
+              <Separator />
+              <div>
                 <DetailField
                   label="Next Plan of Action"
                   value={report.nextPlanOfAction}
                   multiline
                 />
-              )}
-              <DetailField
-                label="Spares Required"
-                value={report.sparesRequired}
-                multiline
-              />
-              <DetailField
-                label="Customer Feedback"
-                value={report.customerFeedback}
-                multiline
-              />
-            </div>
-          </div>
+              </div>
+            </>
+          )}
+
+          {report.sparesRequired && (
+            <>
+              <Separator />
+              <div>
+                <DetailField
+                  label="Spares Required"
+                  value={report.sparesRequired}
+                  multiline
+                />
+              </div>
+            </>
+          )}
+
+          {report.customerFeedback && (
+            <>
+              <Separator />
+              <div>
+                <DetailField
+                  label="Customer Feedback"
+                  value={report.customerFeedback}
+                  multiline
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-interface DetailFieldProps {
-  label: string;
-  value: string;
-  icon?: React.ReactNode;
-  multiline?: boolean;
-  badge?: boolean;
-}
-
-function DetailField({ label, value, icon, multiline, badge }: DetailFieldProps) {
-  return (
-    <div>
-      <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-        {icon}
-        {label}
-      </p>
-      {badge ? (
-        <Badge variant="default" className="bg-success hover:bg-success/90">
-          {value}
-        </Badge>
-      ) : multiline ? (
-        <p className="text-base whitespace-pre-wrap">{value}</p>
-      ) : (
-        <p className="text-base font-medium">{value}</p>
-      )}
     </div>
   );
 }

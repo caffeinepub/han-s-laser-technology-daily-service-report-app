@@ -1,123 +1,94 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Anonymous-mode core usage (remove Internet Identity gating) + industrial theme refresh",
+  "title": "Remove Internet Identity login/signup prompts and keep admin routes access-denied for anonymous users",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Make core report routes usable anonymously by removing any auth-gated redirects/blocks and ensuring report entry/history/detail render without login/signup flows.",
+      "summary": "Ensure core routes (/, /history, /report/$reportId) remain usable for anonymous users without redirects or Internet Identity prompts.",
       "acceptanceCriteria": [
-        "When opening the app in a fresh browser (no stored Internet Identity session), navigating to / renders the report entry UI (not a login/signup screen).",
-        "/history and /report/:reportId render without requiring Internet Identity.",
-        "No UI flow forces the user to authenticate via Internet Identity in order to create/view reports.",
-        "No user-facing text on these anonymous flows says or implies that signing in/signing up is required."
+        "When not authenticated with Internet Identity (no identity present), the user can navigate to \"/\" and create a report without seeing any login/signup-required screen.",
+        "When not authenticated with Internet Identity, the user can navigate to \"/history\" and view the history screen without seeing any login/signup-required screen.",
+        "When not authenticated with Internet Identity, the user can navigate to a valid \"/report/$reportId\" URL and view the report detail screen without seeing any login/signup-required screen.",
+        "No UI copy on the core routes instructs the user to sign in with Internet Identity."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Refactor route composition to ensure the main routes (/, /history, /report/$reportId) are always reachable in anonymous mode (no redirect/render to LoginScreen/ProfileSetup/SignupPendingAccessScreen for these routes). Keep admin route guard behavior separate and unchanged for admin-only paths."
+          "description": "Audit and ensure routing/guards only restrict admin routes; confirm no global auth gate is applied to core routes, and keep anonymous access unblocked for /, /history, and /report/$reportId."
         },
         {
-          "path": "frontend/src/components/AnonymousModeGate.tsx",
-          "operation": "create",
-          "description": "Add a small routing/UI gate component that explicitly prioritizes anonymous access for core pages and only allows authenticated-only UI (e.g., profile setup / approval screens) to appear when the user is positively authenticated and the app is intentionally in an authenticated flow (never as a blocker for core report pages)."
-        },
-        {
-          "path": "frontend/src/components/AppLayout.tsx",
+          "path": "frontend/src/pages/ReportEntryPage.tsx",
           "operation": "modify",
-          "description": "Wire AnonymousModeGate into the app shell so core content always renders for anonymous users while still allowing authenticated-only flows to be shown when relevant."
+          "description": "Ensure anonymous report creation flow does not trigger or suggest any Internet Identity login/signup UI; handle createReport errors with non-auth, non-Internet-Identity messaging on the page."
         },
         {
-          "path": "frontend/src/components/LoginScreen.tsx",
+          "path": "frontend/src/pages/ReportHistoryPage.tsx",
           "operation": "modify",
-          "description": "Update copy so it does not imply login is required for core report usage, and ensure the component is not used as a blocker for core routes in anonymous mode."
+          "description": "Ensure anonymous users can view history without any login/signup-required UI; verify empty/loading/error states do not mention Internet Identity."
         },
         {
-          "path": "frontend/src/components/ProfileSetup.tsx",
+          "path": "frontend/src/pages/ReportDetailPage.tsx",
           "operation": "modify",
-          "description": "Ensure ProfileSetup is not auto-invoked as a blocker for core report routes; keep it usable only for explicit authenticated/profile flows if still needed elsewhere."
-        },
-        {
-          "path": "frontend/src/components/SignupPendingAccessScreen.tsx",
-          "operation": "modify",
-          "description": "Ensure pending-access UI is not auto-invoked as a blocker for core report routes; keep it usable only for explicit authenticated/approval flows if still needed elsewhere."
+          "description": "Ensure anonymous users can view report details without any login/signup-required UI; verify error states do not mention Internet Identity."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Update header/navigation for anonymous mode by hiding identity-dependent UI and ensuring admin navigation stays hidden unless admin is positively confirmed.",
+      "summary": "Remove Internet Identity login/signup UX from the UI and eliminate any triggers for useInternetIdentity().login() in normal app navigation.",
       "acceptanceCriteria": [
-        "In anonymous mode, the header does not show a user name/username block.",
-        "In anonymous mode, the header does not show a \"Sign Out\" button/menu item.",
-        "The \"Users\" (admin) navigation is not visible unless admin status is positively confirmed; it is never visible for anonymous users."
+        "There is no navigation path in the UI that leads to an Internet Identity login screen.",
+        "No visible button/CTA in the app triggers `useInternetIdentity().login()`.",
+        "All user-facing text that mentions “Internet Identity” is removed from screens reachable through normal app navigation."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/LoginScreen.tsx",
+          "operation": "delete",
+          "description": "Remove the Internet Identity login screen component entirely to prevent any possibility of rendering, linking, or invoking Internet Identity login from the UI."
+        },
+        {
           "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Adjust header rendering rules so identity-dependent UI (user name/username block, sign-out actions) only appears when a profile is available; keep admin navigation hidden unless admin status is positively confirmed and never visible to anonymous users."
+          "description": "Audit header navigation for any sign-in related CTAs or Internet Identity references; ensure no UI control triggers `useInternetIdentity().login()` and no visible copy mentions Internet Identity. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Audit layout-level banners/containers to ensure no login/signup-required wrappers or Internet Identity references are introduced around routed content; keep core pages reachable without auth prompts."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Keep admin-only routes protected from anonymous access by showing access denied (without prompting Internet Identity login).",
+      "summary": "Keep /admin/users protected for anonymous users by showing an access denied screen (not a login/signup prompt) and keep admin nav hidden unless admin status is confirmed.",
       "acceptanceCriteria": [
-        "Visiting /admin/users while anonymous shows an access denied UI (not an Internet Identity login prompt).",
-        "Admin routes remain accessible only when the existing admin-check logic positively confirms admin status."
+        "When not authenticated with Internet Identity, visiting \"/admin/users\" shows AccessDeniedScreen.",
+        "Anonymous users do not see any Internet Identity login prompt when attempting to access admin routes.",
+        "Admin navigation items remain hidden unless admin status is positively confirmed."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Ensure the /admin/users route remains guarded by positive admin confirmation and that anonymous users are routed to an access denied UI without any login/signup prompt."
+          "description": "Maintain the existing AdminRouteGuard behavior: if no identity is present, render AccessDeniedScreen (never LoginScreen); if admin status is not positively confirmed, render AccessDeniedScreen."
         },
         {
           "path": "frontend/src/components/AccessDeniedScreen.tsx",
           "operation": "modify",
-          "description": "Update AccessDeniedScreen messaging to be action-oriented (return home) and explicitly avoid any Internet Identity login prompt or language implying authentication is required."
-        },
-        {
-          "path": "frontend/src/pages/AdminUsersPage.tsx",
-          "operation": "modify",
-          "description": "Confirm admin-only page behavior remains consistent with anonymous-mode: if user is not positively confirmed admin, show AccessDeniedScreen without any login/signup prompt."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Apply a consistent industrial/service-reporting theme across anonymous-mode screens and navigation, avoiding blue/purple as primary brand colors.",
-      "acceptanceCriteria": [
-        "Anonymous-mode pages and navigation look visually consistent (shared typography, spacing, and component styling).",
-        "Primary theme does not use blue/purple as the main brand colors."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Adjust global design tokens (colors/typography/spacing defaults) to an industrial/service-reporting aesthetic (e.g., neutral grays + safety/amber accents) and ensure primary branding avoids blue/purple."
-        },
-        {
-          "path": "frontend/index.css",
-          "operation": "modify",
-          "description": "Align any non-src global Tailwind base/theme variables with the updated industrial palette to keep anonymous-mode navigation and screens visually consistent."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
-          "operation": "modify",
-          "description": "Update Tailwind theme mappings (primary/accent/success/warning tokens as applicable) to support the new industrial palette without introducing blue/purple as the primary brand colors."
+          "description": "Verify AccessDeniedScreen messaging remains neutral (no sign-in/signup prompts, no Internet Identity references) and continues to provide a safe navigation option back to '/'."
         },
         {
           "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Ensure header styling (background, borders, typography emphasis) uses the updated industrial palette consistently across anonymous and authenticated states."
+          "description": "Ensure admin navigation items remain hidden unless admin status is positively confirmed (do not infer admin from authentication alone). Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/AppLayout.tsx",
+          "path": "frontend/src/pages/AdminUsersPage.tsx",
           "operation": "modify",
-          "description": "Ensure layout spacing and container styling remains consistent with the updated theme across anonymous-mode core pages and navigation."
+          "description": "Ensure any unauthorized/anonymous access results in AccessDeniedScreen and never a login/signup prompt; remove any dead/unused auth-related logic that could surface Internet Identity UI text indirectly."
         }
       ]
     }

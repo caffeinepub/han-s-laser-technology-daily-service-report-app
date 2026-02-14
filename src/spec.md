@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Remove Internet Identity signup/login requirements so the core reporting pages work fully in anonymous mode, while keeping admin areas protected.
+**Goal:** Remove all Internet Identity login/signup prompts and flows from the app so anonymous users can use core routes without being blocked or redirected.
 
 **Planned changes:**
-- Remove/disable any route guards and redirects that force Internet Identity flows for core routes (/, /history, /report/:reportId), ensuring they render directly for anonymous users.
-- Update header/navigation for anonymous mode: hide user/profile display, remove “Sign Out”, and ensure admin navigation never appears unless admin status is positively confirmed.
-- Keep admin-only routes (e.g., /admin/users) protected: show an access denied screen for anonymous users without prompting Internet Identity login.
-- Apply a consistent industrial/service-reporting visual theme across anonymous-mode pages and navigation, avoiding blue/purple as primary brand colors.
+- Update routing/guards/conditional rendering (outside immutable paths) so anonymous users can access and use core routes: `/`, `/history`, and `/report/$reportId` without any Internet Identity prompts or redirects.
+- Remove any UI elements, navigation paths, buttons/CTAs, and user-facing copy that reference or trigger Internet Identity login/signup flows.
+- Keep admin-only routes protected by showing an access denied screen for anonymous users on `/admin/users`, and keep admin navigation hidden unless admin status is positively confirmed.
 
-**User-visible outcome:** Users can open the app and create/view reports on the main pages without signing in, while admin sections remain inaccessible unless the app confirms the user is an admin.
+**User-visible outcome:** Users can create and view reports (home, history, and report detail pages) without seeing any Internet Identity login/signup messaging or screens, while admin pages remain inaccessible and show an access denied screen to non-admin/anonymous users.

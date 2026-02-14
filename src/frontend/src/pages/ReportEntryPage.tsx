@@ -140,266 +140,222 @@ export function ReportEntryPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Date */}
+            <div className="space-y-2">
+              <Label htmlFor="date">Service Date *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => updateField('date', e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Customer Information Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Basic Information</h3>
+              <h3 className="text-lg font-semibold border-b pb-2">Customer Information</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => updateField('date', e.target.value)}
-                    required
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Customer Name *</Label>
+                <Input
+                  id="customerName"
+                  value={formData.customerName}
+                  onChange={(e) => updateField('customerName', e.target.value)}
+                  placeholder="Enter customer name"
+                  className={errors.customerName ? 'border-destructive' : ''}
+                />
+                {errors.customerName && (
+                  <p className="text-sm text-destructive">{errors.customerName}</p>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="customerName">Customer Name *</Label>
-                  <Input
-                    id="customerName"
-                    value={formData.customerName}
-                    onChange={(e) => updateField('customerName', e.target.value)}
-                    placeholder="Enter customer name"
-                    className={errors.customerName ? 'border-destructive' : ''}
-                  />
-                  {errors.customerName && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.customerName}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson">Contact Person *</Label>
+                <Input
+                  id="contactPerson"
+                  value={formData.contactPerson}
+                  onChange={(e) => updateField('contactPerson', e.target.value)}
+                  placeholder="Enter contact person name"
+                  className={errors.contactPerson ? 'border-destructive' : ''}
+                />
+                {errors.contactPerson && (
+                  <p className="text-sm text-destructive">{errors.contactPerson}</p>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="contactPerson">Contact Person *</Label>
-                  <Input
-                    id="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={(e) => updateField('contactPerson', e.target.value)}
-                    placeholder="Enter contact person name"
-                    className={errors.contactPerson ? 'border-destructive' : ''}
-                  />
-                  {errors.contactPerson && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.contactPerson}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="mobileNumber">Mobile Number *</Label>
-                  <Input
-                    id="mobileNumber"
-                    value={formData.mobileNumber}
-                    onChange={(e) => updateField('mobileNumber', e.target.value)}
-                    placeholder="+1 234 567 8900"
-                    className={errors.mobileNumber ? 'border-destructive' : ''}
-                  />
-                  {errors.mobileNumber && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.mobileNumber}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="mobileNumber">Mobile Number *</Label>
+                <Input
+                  id="mobileNumber"
+                  type="tel"
+                  value={formData.mobileNumber}
+                  onChange={(e) => updateField('mobileNumber', e.target.value)}
+                  placeholder="Enter mobile number"
+                  className={errors.mobileNumber ? 'border-destructive' : ''}
+                />
+                {errors.mobileNumber && (
+                  <p className="text-sm text-destructive">{errors.mobileNumber}</p>
+                )}
               </div>
             </div>
 
-            {/* Machine Information */}
+            {/* Machine Information Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b pb-2">Machine Information</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="machineModel">Machine Model *</Label>
-                  <Input
-                    id="machineModel"
-                    value={formData.machineModel}
-                    onChange={(e) => updateField('machineModel', e.target.value)}
-                    placeholder="Enter machine model"
-                    className={errors.machineModel ? 'border-destructive' : ''}
-                  />
-                  {errors.machineModel && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.machineModel}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="machineModel">Machine Model *</Label>
+                <Input
+                  id="machineModel"
+                  value={formData.machineModel}
+                  onChange={(e) => updateField('machineModel', e.target.value)}
+                  placeholder="Enter machine model"
+                  className={errors.machineModel ? 'border-destructive' : ''}
+                />
+                {errors.machineModel && (
+                  <p className="text-sm text-destructive">{errors.machineModel}</p>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="machineSerialNo">Machine Serial No. *</Label>
-                  <Input
-                    id="machineSerialNo"
-                    value={formData.machineSerialNo}
-                    onChange={(e) => updateField('machineSerialNo', e.target.value)}
-                    placeholder="Enter serial number"
-                    className={errors.machineSerialNo ? 'border-destructive' : ''}
-                  />
-                  {errors.machineSerialNo && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.machineSerialNo}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="machineSerialNo">Machine Serial Number *</Label>
+                <Input
+                  id="machineSerialNo"
+                  value={formData.machineSerialNo}
+                  onChange={(e) => updateField('machineSerialNo', e.target.value)}
+                  placeholder="Enter serial number"
+                  className={errors.machineSerialNo ? 'border-destructive' : ''}
+                />
+                {errors.machineSerialNo && (
+                  <p className="text-sm text-destructive">{errors.machineSerialNo}</p>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Warranty Status *</Label>
-                  <RadioGroup
-                    value={formData.warrantyStatus}
-                    onValueChange={(value) => updateField('warrantyStatus', value)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Warranty" id="warranty" />
-                      <Label htmlFor="warranty" className="font-normal cursor-pointer">Under Warranty</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Out of Warranty" id="out-of-warranty" />
-                      <Label htmlFor="out-of-warranty" className="font-normal cursor-pointer">Out of Warranty</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="travelingExpensePaid" className="flex items-center gap-2">
-                    Traveling Expense Paid
-                  </Label>
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Switch
-                      id="travelingExpensePaid"
-                      checked={formData.travelingExpensePaid}
-                      onCheckedChange={(checked) => updateField('travelingExpensePaid', checked)}
-                    />
-                    <Label htmlFor="travelingExpensePaid" className="font-normal cursor-pointer">
-                      {formData.travelingExpensePaid ? 'Yes' : 'No'}
+              <div className="space-y-2">
+                <Label>Warranty Status *</Label>
+                <RadioGroup
+                  value={formData.warrantyStatus}
+                  onValueChange={(value) => updateField('warrantyStatus', value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Warranty" id="warranty" />
+                    <Label htmlFor="warranty" className="font-normal cursor-pointer">
+                      Under Warranty
                     </Label>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Issue Details */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Issue Details</h3>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="issueDescribedByCustomer">Issue Described by Customer *</Label>
-                  <Textarea
-                    id="issueDescribedByCustomer"
-                    value={formData.issueDescribedByCustomer}
-                    onChange={(e) => updateField('issueDescribedByCustomer', e.target.value)}
-                    placeholder="Describe the issue as reported by the customer"
-                    rows={3}
-                    className={errors.issueDescribedByCustomer ? 'border-destructive' : ''}
-                  />
-                  {errors.issueDescribedByCustomer && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.issueDescribedByCustomer}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="issueFoundByEngineer">Issue Found by Engineer *</Label>
-                  <Textarea
-                    id="issueFoundByEngineer"
-                    value={formData.issueFoundByEngineer}
-                    onChange={(e) => updateField('issueFoundByEngineer', e.target.value)}
-                    placeholder="Describe the actual issue found during inspection"
-                    rows={3}
-                    className={errors.issueFoundByEngineer ? 'border-destructive' : ''}
-                  />
-                  {errors.issueFoundByEngineer && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.issueFoundByEngineer}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="solution">Solution Applied *</Label>
-                  <Textarea
-                    id="solution"
-                    value={formData.solution}
-                    onChange={(e) => updateField('solution', e.target.value)}
-                    placeholder="Describe the solution or action taken"
-                    rows={3}
-                    className={errors.solution ? 'border-destructive' : ''}
-                  />
-                  {errors.solution && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.solution}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Resolution Status */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Resolution Status</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="issueResolved"
-                    checked={formData.issueResolved}
-                    onCheckedChange={(checked) => updateField('issueResolved', checked)}
-                  />
-                  <Label htmlFor="issueResolved" className="cursor-pointer">
-                    Issue Resolved
-                  </Label>
-                </div>
-
-                {!formData.issueResolved && (
-                  <div className="space-y-2">
-                    <Label htmlFor="nextPlanOfAction">Next Plan of Action *</Label>
-                    <Textarea
-                      id="nextPlanOfAction"
-                      value={formData.nextPlanOfAction}
-                      onChange={(e) => updateField('nextPlanOfAction', e.target.value)}
-                      placeholder="Describe the next steps to resolve the issue"
-                      rows={3}
-                      className={errors.nextPlanOfAction ? 'border-destructive' : ''}
-                    />
-                    {errors.nextPlanOfAction && (
-                      <p className="text-sm text-destructive flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {errors.nextPlanOfAction}
-                      </p>
-                    )}
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Out of Warranty" id="out-of-warranty" />
+                    <Label htmlFor="out-of-warranty" className="font-normal cursor-pointer">
+                      Out of Warranty
+                    </Label>
                   </div>
-                )}
+                </RadioGroup>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="sparesRequired">Spares Required</Label>
-                  <Textarea
-                    id="sparesRequired"
-                    value={formData.sparesRequired}
-                    onChange={(e) => updateField('sparesRequired', e.target.value)}
-                    placeholder="List any spare parts needed (optional)"
-                    rows={2}
-                  />
-                </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="travelingExpensePaid"
+                  checked={formData.travelingExpensePaid}
+                  onCheckedChange={(checked) => updateField('travelingExpensePaid', checked)}
+                />
+                <Label htmlFor="travelingExpensePaid" className="font-normal cursor-pointer">
+                  Traveling Expense Paid
+                </Label>
               </div>
             </div>
 
-            {/* Customer Feedback */}
+            {/* Service Details Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Customer Feedback</h3>
+              <h3 className="text-lg font-semibold border-b pb-2">Service Details</h3>
               
               <div className="space-y-2">
-                <Label htmlFor="customerFeedback">Feedback</Label>
+                <Label htmlFor="issueDescribedByCustomer">Issue Described by Customer *</Label>
+                <Textarea
+                  id="issueDescribedByCustomer"
+                  value={formData.issueDescribedByCustomer}
+                  onChange={(e) => updateField('issueDescribedByCustomer', e.target.value)}
+                  placeholder="Describe the issue as reported by the customer"
+                  rows={4}
+                  className={errors.issueDescribedByCustomer ? 'border-destructive' : ''}
+                />
+                {errors.issueDescribedByCustomer && (
+                  <p className="text-sm text-destructive">{errors.issueDescribedByCustomer}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="issueFoundByEngineer">Issue Found by Engineer *</Label>
+                <Textarea
+                  id="issueFoundByEngineer"
+                  value={formData.issueFoundByEngineer}
+                  onChange={(e) => updateField('issueFoundByEngineer', e.target.value)}
+                  placeholder="Describe the actual issue found during inspection"
+                  rows={4}
+                  className={errors.issueFoundByEngineer ? 'border-destructive' : ''}
+                />
+                {errors.issueFoundByEngineer && (
+                  <p className="text-sm text-destructive">{errors.issueFoundByEngineer}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="solution">Solution *</Label>
+                <Textarea
+                  id="solution"
+                  value={formData.solution}
+                  onChange={(e) => updateField('solution', e.target.value)}
+                  placeholder="Describe the solution or work performed"
+                  rows={4}
+                  className={errors.solution ? 'border-destructive' : ''}
+                />
+                {errors.solution && (
+                  <p className="text-sm text-destructive">{errors.solution}</p>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="issueResolved"
+                  checked={formData.issueResolved}
+                  onCheckedChange={(checked) => updateField('issueResolved', checked)}
+                />
+                <Label htmlFor="issueResolved" className="font-normal cursor-pointer">
+                  Issue Resolved
+                </Label>
+              </div>
+
+              {!formData.issueResolved && (
+                <div className="space-y-2">
+                  <Label htmlFor="nextPlanOfAction">Next Plan of Action *</Label>
+                  <Textarea
+                    id="nextPlanOfAction"
+                    value={formData.nextPlanOfAction}
+                    onChange={(e) => updateField('nextPlanOfAction', e.target.value)}
+                    placeholder="Describe the next steps to resolve the issue"
+                    rows={3}
+                    className={errors.nextPlanOfAction ? 'border-destructive' : ''}
+                  />
+                  {errors.nextPlanOfAction && (
+                    <p className="text-sm text-destructive">{errors.nextPlanOfAction}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="sparesRequired">Spares Required</Label>
+                <Textarea
+                  id="sparesRequired"
+                  value={formData.sparesRequired}
+                  onChange={(e) => updateField('sparesRequired', e.target.value)}
+                  placeholder="List any spare parts required (optional)"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerFeedback">Customer Feedback</Label>
                 <Textarea
                   id="customerFeedback"
                   value={formData.customerFeedback}
@@ -410,20 +366,21 @@ export function ReportEntryPage() {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate({ to: '/history' })}
-                disabled={createReport.isPending}
-              >
-                Cancel
-              </Button>
+            {createReport.isError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Failed to submit report. Please try again.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-4">
               <Button
                 type="submit"
                 disabled={createReport.isPending}
                 className="flex-1"
+                size="lg"
               >
                 {createReport.isPending ? (
                   <>
@@ -433,6 +390,15 @@ export function ReportEntryPage() {
                 ) : (
                   'Submit Report'
                 )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate({ to: '/history' })}
+                disabled={createReport.isPending}
+                size="lg"
+              >
+                Cancel
               </Button>
             </div>
           </form>

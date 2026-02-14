@@ -1,68 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T14:44:23.293Z",
+  "generatedAt": "2026-02-14T16:34:02.625Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
+    "total": 3,
     "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Remove all Internet Identity-gated signup/login flows so the core app pages can be used without any signup or login. Specifically, anonymous users must be able to access and use the main routes (ReportEntryPage, ReportHistoryPage, ReportDetailPage) without being redirected to or blocked by LoginScreen, ProfileSetup, or SignupPendingAccessScreen.",
+        "summary": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/App.tsx",
-          "frontend/src/components/AnonymousModeGate.tsx",
-          "frontend/src/components/AppLayout.tsx",
-          "frontend/src/components/LoginScreen.tsx",
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/components/SignupPendingAccessScreen.tsx"
+          "frontend/src/pages/ReportEntryPage.tsx",
+          "frontend/src/pages/ReportHistoryPage.tsx",
+          "frontend/src/pages/ReportDetailPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/pages/ReportEntryPage.tsx",
+          "frontend/src/pages/ReportDetailPage.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Update the app header/navigation to behave correctly in anonymous mode by hiding identity-dependent UI. Specifically: do not show the user name block when no profile is available; hide/remove the \"Sign Out\" action for anonymous users; keep admin navigation hidden unless admin status is positively confirmed, and ensure anonymous users never see admin navigation.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/components/AppHeader.tsx"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Ensure admin-only routes remain protected from anonymous access (e.g., /admin/users). Anonymous users attempting to access admin routes must see an access denied screen and must not be prompted to log in with Internet Identity.",
+        "summary": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/AccessDeniedScreen.tsx",
-          "frontend/src/pages/AdminUsersPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/AccessDeniedScreen.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Apply a coherent, consistent visual theme across the updated anonymous-mode screens and navigation (colors, typography, spacing, and component styling) aligned with an industrial/service-reporting app aesthetic, avoiding blue/purple as primary brand colors.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/index.css",
-          "frontend/index.css",
-          "frontend/tailwind.config.js",
+          "frontend/src/components/LoginScreen.tsx",
           "frontend/src/components/AppHeader.tsx",
           "frontend/src/components/AppLayout.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/index.css",
-          "frontend/tailwind.config.js"
+          "frontend/src/components/LoginScreen.tsx",
+          "frontend/src/components/AppHeader.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/components/AccessDeniedScreen.tsx",
+          "frontend/src/components/AppHeader.tsx",
+          "frontend/src/pages/AdminUsersPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/AppHeader.tsx"
         ]
       }
     ]
@@ -72,10 +60,10 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/AccessDeniedScreen.tsx",
-    "frontend/src/index.css",
-    "frontend/tailwind.config.js",
+    "frontend/src/components/AppHeader.tsx",
+    "frontend/src/components/LoginScreen.tsx",
+    "frontend/src/pages/ReportDetailPage.tsx",
+    "frontend/src/pages/ReportEntryPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
