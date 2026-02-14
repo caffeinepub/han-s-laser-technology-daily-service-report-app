@@ -10,6 +10,9 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export type ApprovalStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export interface DailyServiceReport {
   'id' : string,
   'customerName' : string,
@@ -33,6 +36,10 @@ export interface DailyServiceReport {
 export interface Geolocation { 'latitude' : number, 'longitude' : number }
 export type Role = { 'admin' : null } |
   { 'engineer' : null };
+export interface UserApprovalInfo {
+  'status' : ApprovalStatus,
+  'principal' : Principal,
+}
 export interface UserProfile {
   'username' : string,
   'name' : string,
@@ -55,11 +62,15 @@ export interface _SERVICE {
   'getReportsForDownload' : ActorMethod<[], Array<DailyServiceReport>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isCallerApproved' : ActorMethod<[], boolean>,
+  'listApprovals' : ActorMethod<[], Array<UserApprovalInfo>>,
   'listReports' : ActorMethod<[], Array<DailyServiceReport>>,
   'listUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
   'processPendingSignups' : ActorMethod<[], bigint>,
+  'requestApproval' : ActorMethod<[], undefined>,
   'resetToFreshApp' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
   'signupAdmin' : ActorMethod<[UserProfile, string], undefined>,
   'signupWithRole' : ActorMethod<[UserProfile, Role], undefined>,
   'updateUserRole' : ActorMethod<[Principal, Role], undefined>,

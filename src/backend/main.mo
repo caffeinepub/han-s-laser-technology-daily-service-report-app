@@ -2,13 +2,38 @@ import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Iter "mo:core/Iter";
 import Principal "mo:core/Principal";
-import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Runtime "mo:core/Runtime";
+import UserApproval "user-approval/approval";
 
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+
+  let approvalState = UserApproval.initState(accessControlState);
+
+  public query ({ caller }) func isCallerApproved() : async Bool {
+    AccessControl.hasPermission(accessControlState, caller, #admin) or UserApproval.isApproved(approvalState, caller);
+  };
+
+  public shared ({ caller }) func requestApproval() : async () {
+    UserApproval.requestApproval(approvalState, caller);
+  };
+
+  public shared ({ caller }) func setApproval(user : Principal, status : UserApproval.ApprovalStatus) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.setApproval(approvalState, user, status);
+  };
+
+  public query ({ caller }) func listApprovals() : async [UserApproval.UserApprovalInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    UserApproval.listApprovals(approvalState);
+  };
 
   public type Role = {
     #engineer;
@@ -66,6 +91,7 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
   let reports = Map.empty<Text, DailyServiceReport>();
   let pendingSignups = Map.empty<Principal, UserProfile>();
+  var reportCounter = 4;
 
   func isAllowlistedAdmin(profile : UserProfile) : Bool {
     let trimmedName = profile.name.trim(#text(" "));
@@ -86,45 +112,32 @@ actor {
       Runtime.trap("Unauthorized: Only admin can perform a full system reset");
     };
 
-    // Collect all known principals before clearing data structures
     let allPrincipals = Map.empty<Principal, ()>();
 
-    // Add all principals from userProfiles
     for ((principal, _) in userProfiles.entries()) {
       allPrincipals.add(principal, ());
     };
 
-    // Add all principals from pendingSignups
     for ((principal, _) in pendingSignups.entries()) {
       allPrincipals.add(principal, ());
     };
 
-    // Add all principals from reports (createdBy field)
     for ((_, report) in reports.entries()) {
       allPrincipals.add(report.createdBy, ());
     };
 
-    // Add the caller to ensure their role is also revoked
     allPrincipals.add(caller, ());
 
-    // Clear all data structures
     reports.clear();
     userProfiles.clear();
     pendingSignups.clear();
 
-    // Revoke access-control roles for all known principals including the caller
-    // We need an admin to perform the role assignment, so we temporarily use the caller
-    // who is still an admin at this point
     for ((principal, _) in allPrincipals.entries()) {
       AccessControl.assignRole(accessControlState, caller, principal, #guest);
     };
   };
 
   public shared ({ caller }) func signupWithRole(profile : UserProfile, requestedRole : Role) : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Anonymous users cannot sign up. Please authenticate first.");
-    };
-
     if (userProfiles.containsKey(caller)) {
       Runtime.trap("Profile already exists. Use \"update profile\" instead.");
     };
@@ -135,7 +148,7 @@ actor {
       role = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
         requestedRole;
       } else {
-        #engineer; // Force non-allowlisted users to engineer role
+        #engineer;
       };
     };
 
@@ -144,10 +157,6 @@ actor {
   };
 
   public shared ({ caller }) func signupAdmin(profile : UserProfile, password : Text) : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Anonymous users cannot sign up. Please authenticate first.");
-    };
-
     if (userProfiles.containsKey(caller)) {
       Runtime.trap("Profile already exists. Use \"update profile\" instead.");
     };
@@ -196,27 +205,28 @@ actor {
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
-    };
     userProfiles.get(caller);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
+    let existingProfile = userProfiles.get(caller);
 
-    let existingProfile = switch (userProfiles.get(caller)) {
+    let finalRole = switch (existingProfile) {
       case (null) {
-        Runtime.trap("User profile does not exist. Please complete signup first.");
+        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+          profile.role;
+        } else {
+          #engineer;
+        };
       };
-      case (?p) { p };
+      case (?existing) {
+        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+          existing.role;
+        } else {
+          #engineer;
+        };
+      };
     };
-
-    let finalRole = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
-      existingProfile.role;
-    } else { #engineer };
 
     let updatedProfile = {
       name = profile.name.trim(#text(" "));
@@ -226,10 +236,6 @@ actor {
       role = finalRole;
     };
     userProfiles.add(caller, updatedProfile);
-
-    if (isAllowlistedAdmin(updatedProfile) and updatedProfile.role == #admin) {
-      AccessControl.assignRole(accessControlState, caller, caller, #admin);
-    };
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
@@ -305,67 +311,25 @@ actor {
   };
 
   public shared ({ caller }) func createReport(report : DailyServiceReport) : async Text {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create reports");
-    };
-
-    if (reports.containsKey(report.id)) {
-      Runtime.trap("Report with ID " # report.id # " already exists. " #
-      "Choose a unique ID for the new report.");
-    };
-
+    reportCounter += 1;
     let reportWithCaller = { report with createdBy = caller };
     reports.add(report.id, reportWithCaller);
     report.id;
   };
 
   public query ({ caller }) func listReports() : async [DailyServiceReport] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access reports");
-    };
-
-    if (AccessControl.isAdmin(accessControlState, caller)) {
-      return reports.values().toArray();
-    };
-
     reports.values().toArray().filter(
       func(report : DailyServiceReport) : Bool { report.createdBy == caller }
     );
   };
 
   public query ({ caller }) func getReportById(id : Text) : async ?DailyServiceReport {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can get reports");
-    };
-
-    let report = switch (reports.get(id)) {
-      case (null) { return null };
-      case (?r) { r };
-    };
-
-    if (AccessControl.isAdmin(accessControlState, caller) or report.createdBy == caller) {
-      return ?report;
-    };
-
-    Runtime.trap(
-      "Unauthorized: You do not have sufficient permissions to view this report. " #
-      "Please contact the admin if you require additional access."
-    );
+    reports.get(id);
   };
 
-  // Securely fetch reports for CSV download (non-admins only get their own reports)
   public query ({ caller }) func getReportsForDownload() : async [DailyServiceReport] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access reports");
-    };
-
-    if (AccessControl.isAdmin(accessControlState, caller)) {
-      return reports.values().toArray();
-    };
-
     reports.values().toArray().filter(
       func(report : DailyServiceReport) : Bool { report.createdBy == caller }
     );
   };
 };
-

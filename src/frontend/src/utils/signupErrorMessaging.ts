@@ -1,113 +1,69 @@
-import { isAuthError, isMissingProfileError } from './authErrorDetection';
-
 /**
- * Extracts a human-readable error message from backend failures,
- * sanitizing internal implementation details while preserving actionable information.
+ * Translates backend signup errors into user-friendly messages.
+ * Sanitizes error messages to avoid exposing sensitive information.
  */
-function extractBackendMessage(error: any): string | null {
-  if (!error) return null;
-  
-  const errorMessage = error?.message || String(error);
-  
-  // Common backend trap/reject patterns
-  const trapPatterns = [
-    /Unauthorized:\s*(.+?)(?:\n|$)/i,
-    /Profile already exists[.:]\s*(.+?)(?:\n|$)/i,
-    /User profile[^:]*:\s*(.+?)(?:\n|$)/i,
-    /Anonymous users[^:]*:\s*(.+?)(?:\n|$)/i,
-    /Cannot[^:]*:\s*(.+?)(?:\n|$)/i,
-    /Only admins[^:]*:\s*(.+?)(?:\n|$)/i,
-    /Admin signup failed:\s*(.+?)(?:\n|$)/i,
-  ];
-  
-  for (const pattern of trapPatterns) {
-    const match = errorMessage.match(pattern);
-    if (match && match[1]) {
-      // Return the captured human-readable reason, sanitized
-      return sanitizeBackendMessage(match[1].trim());
-    }
-  }
-  
-  // If the error message itself looks human-readable (no stack traces, no internal method names)
-  if (errorMessage && !errorMessage.includes('at ') && !errorMessage.includes('Error:') && errorMessage.length < 200) {
-    return sanitizeBackendMessage(errorMessage);
-  }
-  
-  return null;
-}
+export function translateSignupError(error: unknown): string {
+  if (!error) return 'An unexpected error occurred during signup';
 
-/**
- * Sanitizes backend error messages by removing stack traces,
- * internal method/function names, and sensitive tokens.
- */
-function sanitizeBackendMessage(message: string): string {
-  let sanitized = message;
-  
-  // Remove stack trace lines
-  sanitized = sanitized.split('\n')[0];
-  
-  // Remove internal method/function references
-  sanitized = sanitized.replace(/\b(at|in)\s+\w+\.\w+/gi, '');
-  sanitized = sanitized.replace(/\bfunction\s+\w+/gi, '');
-  sanitized = sanitized.replace(/\bmethod\s+\w+/gi, '');
-  
-  // Remove file paths and line numbers
-  sanitized = sanitized.replace(/\([^)]*\.mo:\d+:\d+\)/g, '');
-  sanitized = sanitized.replace(/\([^)]*\.ts:\d+:\d+\)/g, '');
-  
-  // Clean up extra whitespace
-  sanitized = sanitized.replace(/\s+/g, ' ').trim();
-  
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const lowerMessage = errorMessage.toLowerCase();
+
+  // Anonymous/guest user trying to signup
+  if (
+    lowerMessage.includes('unauthorized') ||
+    lowerMessage.includes('only users') ||
+    lowerMessage.includes('guest') ||
+    lowerMessage.includes('anonymous')
+  ) {
+    return 'Please sign in with Internet Identity before creating your profile.';
+  }
+
+  // Profile already exists
+  if (lowerMessage.includes('profile already exists')) {
+    return 'You already have a profile. Please contact support if you need to update your information.';
+  }
+
+  // Admin signup password error (without exposing the password)
+  if (lowerMessage.includes('incorrect signup password')) {
+    return 'The admin signup password is incorrect. Please contact your system administrator.';
+  }
+
+  // Admin allowlist error
+  if (lowerMessage.includes('not on the allowlist')) {
+    return 'Your name is not authorized for admin access. Please contact your system administrator for additional permissions.';
+  }
+
+  // Validation errors
+  if (lowerMessage.includes('required') || lowerMessage.includes('invalid')) {
+    return 'Please check that all required fields are filled in correctly.';
+  }
+
+  // Network/connection errors
+  if (
+    lowerMessage.includes('network') ||
+    lowerMessage.includes('connection') ||
+    lowerMessage.includes('timeout')
+  ) {
+    return 'Network error. Please check your connection and try again.';
+  }
+
+  // Sanitize the error message to remove stack traces and internal method names
+  const sanitized = errorMessage
+    .split('\n')[0] // Take only the first line
+    .replace(/at\s+\w+\s*\(.*\)/g, '') // Remove stack trace patterns
+    .replace(/\s+in\s+\w+/g, '') // Remove "in MethodName" patterns
+    .replace(/\s{2,}/g, ' ') // Collapse multiple spaces
+    .trim();
+
+  // If the sanitized message is too technical or empty, return a generic message
+  if (
+    !sanitized ||
+    sanitized.length < 10 ||
+    sanitized.includes('trap') ||
+    sanitized.includes('canister')
+  ) {
+    return 'Unable to complete signup. Please try again or contact support.';
+  }
+
   return sanitized;
-}
-
-/**
- * Translates backend signup errors into user-friendly messages
- * without exposing internal backend method names or sensitive information.
- * 
- * SECURITY: Admin signup password validation is now backend-only.
- * Frontend only validates non-empty; backend rejects incorrect passwords.
- */
-export function translateSignupError(error: any): string {
-  const errorMessage = error?.message || '';
-
-  // Try to extract a meaningful backend message first
-  const backendMessage = extractBackendMessage(error);
-  if (backendMessage) {
-    // Handle admin signup password errors specifically (without exposing the password)
-    if (backendMessage.toLowerCase().includes('incorrect signup password')) {
-      return 'Invalid admin signup password. Please contact your system administrator if you need the correct password.';
-    }
-    
-    // Handle profile already exists with custom message
-    if (backendMessage.toLowerCase().includes('profile already exists')) {
-      return 'You already have an account. Please log out and log in again if you need to update your profile.';
-    }
-    
-    // Handle anonymous user attempts
-    if (backendMessage.toLowerCase().includes('anonymous')) {
-      return 'Please authenticate with Internet Identity before signing up.';
-    }
-    
-    // Handle admin role assignment errors
-    if (backendMessage.toLowerCase().includes('admin') && backendMessage.toLowerCase().includes('role')) {
-      return 'Admin accounts are restricted and pre-approved. All new signups are assigned the Engineer role.';
-    }
-
-    // Handle admin allowlist errors
-    if (backendMessage.toLowerCase().includes('allowlist')) {
-      return 'Admin signup failed: Your name is not on the admin allowlist. Please contact your system administrator.';
-    }
-    
-    // Return the sanitized backend message for other cases
-    return backendMessage;
-  }
-
-  // Handle genuine auth/session errors only (not missing profile)
-  if (isAuthError(error) && !isMissingProfileError(error)) {
-    return 'There was an authorization issue. Please try logging out and signing up again.';
-  }
-
-  // Generic fallback only when no meaningful message can be extracted
-  return 'Signup failed. Please check your information and try again.';
 }

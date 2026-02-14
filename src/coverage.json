@@ -1,85 +1,81 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T04:29:27.582Z",
+  "generatedAt": "2026-02-14T14:44:23.293Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 4,
-    "implemented": 4,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the signup flow so newly authenticated users can successfully complete signup and then immediately use the app with the correct account (no accidental reuse of a previous user). This includes: (1) ensure engineer signup results in the caller receiving whatever access-control permission is required to call user endpoints (e.g., getCallerUserProfile/listReports/createReport) right after signup, and (2) ensure signup does not leave the app in a state where it keeps showing/using an old user’s data.",
+        "summary": "Remove all Internet Identity-gated signup/login flows so the core app pages can be used without any signup or login. Specifically, anonymous users must be able to access and use the main routes (ReportEntryPage, ReportHistoryPage, ReportDetailPage) without being redirected to or blocked by LoginScreen, ProfileSetup, or SignupPendingAccessScreen.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/AnonymousModeGate.tsx",
+          "frontend/src/components/AppLayout.tsx",
+          "frontend/src/components/LoginScreen.tsx",
           "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/SignupPendingAccessScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/ProfileSetup.tsx",
           "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix admin signup credential mismatch and remove insecure client-side admin password validation: align the admin signup password behavior between frontend and backend so admin signup can succeed when valid, and ensure the frontend does not hardcode or validate the admin signup password value locally (it should only require a value and rely on the backend response).",
-        "status": "implemented",
+        "summary": "Update the app header/navigation to behave correctly in anonymous mode by hiding identity-dependent UI. Specifically: do not show the user name block when no profile is available; hide/remove the \"Sign Out\" action for anonymous users; keep admin navigation hidden unless admin status is positively confirmed, and ensure anonymous users never see admin navigation.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/utils/signupErrorMessaging.ts"
+          "frontend/src/components/AppHeader.tsx"
         ],
-        "matchedFiles": [
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/utils/signupErrorMessaging.ts"
-        ]
+        "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Ensure logout fully clears client-side authentication state and app data so the next app load does not automatically log into a previous user and does not show stale cached data. Strengthen the existing full logout flow to reliably reset identity/session state and invalidate all cached user-specific UI state across refreshes.",
+        "summary": "Ensure admin-only routes remain protected from anonymous access (e.g., /admin/users). Anonymous users attempting to access admin routes must see an access denied screen and must not be prompted to log in with Internet Identity.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useFullLogout.ts",
-          "frontend/src/components/AppHeader.tsx",
-          "frontend/src/components/LoginScreen.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/components/AccessDeniedScreen.tsx",
+          "frontend/src/pages/AdminUsersPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useFullLogout.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/components/AccessDeniedScreen.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Investigate and remediate the reported security vulnerability caused by the current auth/signup/logout behavior, focusing on preventing cross-account data exposure (e.g., a new user seeing an old user’s data, or unintended persistence of authenticated state). Add defensive checks so that UI state, cached queries, and actor bindings cannot leak data across identity changes.",
+        "summary": "Apply a coherent, consistent visual theme across the updated anonymous-mode screens and navigation (colors, typography, spacing, and component styling) aligned with an industrial/service-reporting app aesthetic, avoiding blue/purple as primary brand colors.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/index.css",
+          "frontend/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/AppHeader.tsx",
+          "frontend/src/components/AppLayout.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/App.tsx",
-    "frontend/src/components/ProfileSetup.tsx",
-    "frontend/src/hooks/useFullLogout.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/ReportDetailPage.tsx",
-    "frontend/src/pages/ReportHistoryPage.tsx",
-    "frontend/src/utils/signupErrorMessaging.ts",
+    "frontend/src/components/AccessDeniedScreen.tsx",
+    "frontend/src/index.css",
+    "frontend/tailwind.config.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -45,6 +45,15 @@ export const UserProfile = IDL.Record({
   'mobileNumber' : IDL.Text,
   'email' : IDL.Text,
 });
+export const ApprovalStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'approved' : IDL.Null,
+  'rejected' : IDL.Null,
+});
+export const UserApprovalInfo = IDL.Record({
+  'status' : ApprovalStatus,
+  'principal' : IDL.Principal,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -70,6 +79,8 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+  'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
   'listReports' : IDL.Func([], [IDL.Vec(DailyServiceReport)], ['query']),
   'listUsers' : IDL.Func(
       [],
@@ -77,8 +88,10 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'processPendingSignups' : IDL.Func([], [IDL.Nat], []),
+  'requestApproval' : IDL.Func([], [], []),
   'resetToFreshApp' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
   'signupAdmin' : IDL.Func([UserProfile, IDL.Text], [], []),
   'signupWithRole' : IDL.Func([UserProfile, Role], [], []),
   'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
@@ -124,6 +137,15 @@ export const idlFactory = ({ IDL }) => {
     'mobileNumber' : IDL.Text,
     'email' : IDL.Text,
   });
+  const ApprovalStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  });
+  const UserApprovalInfo = IDL.Record({
+    'status' : ApprovalStatus,
+    'principal' : IDL.Principal,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -149,6 +171,8 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isCallerApproved' : IDL.Func([], [IDL.Bool], ['query']),
+    'listApprovals' : IDL.Func([], [IDL.Vec(UserApprovalInfo)], ['query']),
     'listReports' : IDL.Func([], [IDL.Vec(DailyServiceReport)], ['query']),
     'listUsers' : IDL.Func(
         [],
@@ -156,8 +180,10 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'processPendingSignups' : IDL.Func([], [IDL.Nat], []),
+    'requestApproval' : IDL.Func([], [], []),
     'resetToFreshApp' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
     'signupAdmin' : IDL.Func([UserProfile, IDL.Text], [], []),
     'signupWithRole' : IDL.Func([UserProfile, Role], [], []),
     'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),

@@ -83,10 +83,10 @@ export function AdminUsersPage() {
       // On success: close dialog and perform full cleanup with reload
       setShowResetDialog(false);
       
-      // Perform complete logout with PWA cleanup and deterministic reload
+      // Perform complete cleanup with PWA cache clearing and deterministic reload
       await performLogout({ isReset: true });
     } catch (error) {
-      // On failure: show error, do NOT log out
+      // On failure: show error, do NOT clear local data
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'System reset failed. Please try again or contact support.';
@@ -319,14 +319,16 @@ export function AdminUsersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Warning:</strong> This action cannot be undone. All user accounts, service reports, and application data will be permanently deleted.
+            </AlertDescription>
+          </Alert>
           <Button
             variant="destructive"
-            onClick={() => {
-              setResetError(null);
-              setShowResetDialog(true);
-            }}
+            onClick={() => setShowResetDialog(true)}
             disabled={resetToFreshApp.isPending}
-            className="w-full"
           >
             {resetToFreshApp.isPending ? (
               <>
@@ -336,7 +338,7 @@ export function AdminUsersPage() {
             ) : (
               <>
                 <XCircle className="mr-2 h-4 w-4" />
-                Reset System (Full Wipe)
+                Reset System
               </>
             )}
           </Button>
@@ -344,21 +346,29 @@ export function AdminUsersPage() {
       </Card>
 
       {/* Delete User Confirmation Dialog */}
-      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this user? This will permanently remove their account and all associated reports. This action cannot be undone.
+              Are you sure you want to delete this user? This will permanently remove their account and all associated service reports. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteUser.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              disabled={deleteUser.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete User
+              {deleteUser.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete User'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -370,34 +380,28 @@ export function AdminUsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
-              Reset Entire System?
+              Confirm System Reset
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <p className="font-semibold text-foreground">
-                This action will permanently delete:
+              <p className="font-semibold">
+                This will permanently delete:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>All user accounts (including your admin account)</li>
-                <li>All service reports and history</li>
-                <li>All pending signups</li>
-                <li>All access permissions</li>
+                <li>All user accounts ({users?.length || 0} users)</li>
+                <li>All service reports</li>
+                <li>All application data</li>
               </ul>
               <p className="font-semibold text-destructive">
-                You will be logged out and the app will restart as a fresh installation.
-              </p>
-              <p className="text-sm">
-                This action cannot be undone. Are you absolutely sure?
+                This action cannot be undone. The application will restart with a fresh state.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
           {resetError && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>{resetError}</AlertDescription>
             </Alert>
           )}
-          
           <AlertDialogFooter>
             <AlertDialogCancel disabled={resetToFreshApp.isPending}>
               Cancel
@@ -410,10 +414,10 @@ export function AdminUsersPage() {
               {resetToFreshApp.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetting...
+                  Resetting System...
                 </>
               ) : (
-                'Yes, Reset Everything'
+                'Reset System'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

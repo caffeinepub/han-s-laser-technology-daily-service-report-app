@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-signup-flow-so-newly-authenticated-users-can-successfully-complete-signup-and-then-immediately-use-the-app-with-the-correct-account-no-accidental-reuse-of-a-previous-user-this-includes-1-ensure-engineer-signup-results-in-the-caller-receiving-whatever-access-control-permission-is-required-to-call-user-endpoints-e-g-getcalleruserprofile-listreports-createreport-right-after-signup-and-2-ensure-signup-does-not-leave-the-app-in-a-state-where-it-keeps-showing-using-an-old-user-s-data",
-      "featureTitle": "Fix the signup flow so newly authenticated users can successfully complete signup and then immediately use the app with the correct account (no accidental reuse of a previous user). This includes: (1) ensure engineer signup results in the caller receiving whatever access-control permission is required to call user endpoints (e.g., getCallerUserProfile/listReports/createReport) right after signup, and (2) ensure signup does not leave the app in a state where it keeps showing/using an old user’s data.",
+      "featureId": "feature-remove-all-internet-identity-gated-signup-login-flows-so-the-core-app-pages-can-be-used-without-any-signup-or-login-specifically-anonymous-users-must-be-able-to-access-and-use-the-main-routes-reportentrypage-reporthistorypage-reportdetailpage-without-being-redirected-to-or-blocked-by-loginscreen-profilesetup-or-signuppendingaccessscreen",
+      "featureTitle": "Remove all Internet Identity-gated signup/login flows so the core app pages can be used without any signup or login. Specifically, anonymous users must be able to access and use the main routes (ReportEntryPage, ReportHistoryPage, ReportDetailPage) without being redirected to or blocked by LoginScreen, ProfileSetup, or SignupPendingAccessScreen.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/ProfileSetup.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/App.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -15,7 +13,8 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
         "REQ-1"
@@ -23,11 +22,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-admin-signup-credential-mismatch-and-remove-insecure-client-side-admin-password-validation-align-the-admin-signup-password-behavior-between-frontend-and-backend-so-admin-signup-can-succeed-when-valid-and-ensure-the-frontend-does-not-hardcode-or-validate-the-admin-signup-password-value-locally-it-should-only-require-a-value-and-rely-on-the-backend-response",
-      "featureTitle": "Fix admin signup credential mismatch and remove insecure client-side admin password validation: align the admin signup password behavior between frontend and backend so admin signup can succeed when valid, and ensure the frontend does not hardcode or validate the admin signup password value locally (it should only require a value and rely on the backend response).",
+      "featureId": "feature-ensure-admin-only-routes-remain-protected-from-anonymous-access-e-g-admin-users-anonymous-users-attempting-to-access-admin-routes-must-see-an-access-denied-screen-and-must-not-be-prompted-to-log-in-with-internet-identity",
+      "featureTitle": "Ensure admin-only routes remain protected from anonymous access (e.g., /admin/users). Anonymous users attempting to access admin routes must see an access denied screen and must not be prompted to log in with Internet Identity.",
       "files": [
-        "frontend/src/components/ProfileSetup.tsx",
-        "frontend/src/utils/signupErrorMessaging.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/AccessDeniedScreen.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -35,26 +34,8 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-logout-fully-clears-client-side-authentication-state-and-app-data-so-the-next-app-load-does-not-automatically-log-into-a-previous-user-and-does-not-show-stale-cached-data-strengthen-the-existing-full-logout-flow-to-reliably-reset-identity-session-state-and-invalidate-all-cached-user-specific-ui-state-across-refreshes",
-      "featureTitle": "Ensure logout fully clears client-side authentication state and app data so the next app load does not automatically log into a previous user and does not show stale cached data. Strengthen the existing full logout flow to reliably reset identity/session state and invalidate all cached user-specific UI state across refreshes.",
-      "files": [
-        "frontend/src/hooks/useFullLogout.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
         "REQ-3"
@@ -62,11 +43,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-investigate-and-remediate-the-reported-security-vulnerability-caused-by-the-current-auth-signup-logout-behavior-focusing-on-preventing-cross-account-data-exposure-e-g-a-new-user-seeing-an-old-user-s-data-or-unintended-persistence-of-authenticated-state-add-defensive-checks-so-that-ui-state-cached-queries-and-actor-bindings-cannot-leak-data-across-identity-changes",
-      "featureTitle": "Investigate and remediate the reported security vulnerability caused by the current auth/signup/logout behavior, focusing on preventing cross-account data exposure (e.g., a new user seeing an old user’s data, or unintended persistence of authenticated state). Add defensive checks so that UI state, cached queries, and actor bindings cannot leak data across identity changes.",
+      "featureId": "feature-apply-a-coherent-consistent-visual-theme-across-the-updated-anonymous-mode-screens-and-navigation-colors-typography-spacing-and-component-styling-aligned-with-an-industrial-service-reporting-app-aesthetic-avoiding-blue-purple-as-primary-brand-colors",
+      "featureTitle": "Apply a coherent, consistent visual theme across the updated anonymous-mode screens and navigation (colors, typography, spacing, and component styling) aligned with an industrial/service-reporting app aesthetic, avoiding blue/purple as primary brand colors.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js"
       ],
       "components": [
         "authorization@4.0.0",
@@ -74,7 +55,8 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
       ],
       "testIds": [
         "REQ-4"

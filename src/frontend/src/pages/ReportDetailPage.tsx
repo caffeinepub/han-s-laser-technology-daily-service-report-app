@@ -141,7 +141,7 @@ export function ReportDetailPage() {
                 multiline
               />
               <DetailField
-                label="Solution Applied"
+                label="Solution"
                 value={report.solution}
                 multiline
               />
@@ -150,46 +150,29 @@ export function ReportDetailPage() {
 
           <Separator />
 
-          {/* Resolution Status */}
+          {/* Additional Information */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Resolution Status</h3>
+            <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
             <div className="space-y-4">
-              <DetailField
-                label="Issue Resolved"
-                value={report.issueResolved ? 'Yes' : 'No'}
-                badge={report.issueResolved}
-                badgeVariant={report.issueResolved ? 'default' : 'destructive'}
-              />
               {!report.issueResolved && report.nextPlanOfAction && (
                 <DetailField
                   label="Next Plan of Action"
                   value={report.nextPlanOfAction}
                   multiline
-                  highlight
                 />
               )}
-              {report.sparesRequired && (
-                <DetailField
-                  label="Spares Required"
-                  value={report.sparesRequired}
-                  multiline
-                />
-              )}
+              <DetailField
+                label="Spares Required"
+                value={report.sparesRequired}
+                multiline
+              />
+              <DetailField
+                label="Customer Feedback"
+                value={report.customerFeedback}
+                multiline
+              />
             </div>
           </div>
-
-          {report.customerFeedback && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Customer Feedback</h3>
-                <DetailField
-                  value={report.customerFeedback}
-                  multiline
-                />
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
     </div>
@@ -197,30 +180,26 @@ export function ReportDetailPage() {
 }
 
 interface DetailFieldProps {
-  label?: string;
+  label: string;
   value: string;
   icon?: React.ReactNode;
   multiline?: boolean;
   badge?: boolean;
-  badgeVariant?: 'default' | 'destructive';
-  highlight?: boolean;
 }
 
-function DetailField({ label, value, icon, multiline, badge, badgeVariant = 'default', highlight }: DetailFieldProps) {
+function DetailField({ label, value, icon, multiline, badge }: DetailFieldProps) {
   return (
-    <div className={highlight ? 'bg-warning/10 p-3 rounded-md border border-warning' : ''}>
-      {label && (
-        <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
-          {icon}
-          {label}
-        </p>
-      )}
+    <div>
+      <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+        {icon}
+        {label}
+      </p>
       {badge ? (
-        <Badge variant={badgeVariant} className={badgeVariant === 'default' ? 'bg-success hover:bg-success/90' : ''}>
+        <Badge variant="default" className="bg-success hover:bg-success/90">
           {value}
         </Badge>
       ) : multiline ? (
-        <p className="text-base whitespace-pre-wrap bg-background p-3 rounded border">{value}</p>
+        <p className="text-base whitespace-pre-wrap">{value}</p>
       ) : (
         <p className="text-base font-medium">{value}</p>
       )}

@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useListReports, useIsCallerAdmin, useGetUserProfile } from '../hooks/useQueries';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { copyToClipboard } from '../utils/copyToClipboard';
 import { formatPrincipal } from '../utils/formatPrincipal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,10 +13,13 @@ import { useGetReportsForDownload } from '../hooks/useQueries';
 import { toast } from 'sonner';
 import { Principal } from '@icp-sdk/core/principal';
 
+interface HistorySearchParams {
+  userPrincipal?: string;
+}
+
 export function ReportHistoryPage() {
   const navigate = useNavigate();
-  const search = useSearch({ from: '/history' });
-  const { identity } = useInternetIdentity();
+  const search = useSearch({ from: '/history' }) as HistorySearchParams;
   const { data: reports, isLoading } = useListReports();
   const { data: isAdmin } = useIsCallerAdmin();
   const reportsForDownload = useGetReportsForDownload();
@@ -30,8 +32,6 @@ export function ReportHistoryPage() {
   const filterUserPrincipalString = search.userPrincipal;
   const filterUserPrincipal = filterUserPrincipalString ? Principal.fromText(filterUserPrincipalString) : null;
   const { data: filteredUserProfile } = useGetUserProfile(filterUserPrincipal);
-
-  const currentUserPrincipal = identity?.getPrincipal().toString();
 
   const handleClearFilter = () => {
     navigate({ to: '/history', search: {} });
@@ -116,7 +116,6 @@ export function ReportHistoryPage() {
   }
 
   const showFilterBadge = filterUserPrincipalString && filteredUserProfile;
-  const isViewingOwnReports = filterUserPrincipalString === currentUserPrincipal;
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -128,9 +127,7 @@ export function ReportHistoryPage() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {showFilterBadge
-              ? isViewingOwnReports
-                ? 'Viewing your reports'
-                : `Viewing reports by ${filteredUserProfile.name} (@${filteredUserProfile.username})`
+              ? `Viewing reports by ${filteredUserProfile.name} (@${filteredUserProfile.username})`
               : 'View and search all your service reports'}
           </p>
         </div>

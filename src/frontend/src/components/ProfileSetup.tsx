@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, User, AlertCircle, Info, ShieldCheck, Wrench } from 'lucide-react';
+import { Loader2, User, AlertCircle, Info, ShieldCheck, Wrench, CheckCircle } from 'lucide-react';
 import { Role, type UserProfile } from '../backend';
 import { validateEmail, validateMobileNumber, validateRequired } from '../utils/signupValidation';
 import { translateSignupError } from '../utils/signupErrorMessaging';
@@ -24,6 +24,7 @@ export function ProfileSetup() {
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [backendError, setBackendError] = useState<string>('');
+  const [signupSuccess, setSignupSuccess] = useState(false);
   
   const signupMutation = useSignupWithRole();
   const signupAdminMutation = useSignupAdmin();
@@ -63,6 +64,7 @@ export function ProfileSetup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBackendError('');
+    setSignupSuccess(false);
     
     if (!validateForm()) {
       return;
@@ -93,7 +95,9 @@ export function ProfileSetup() {
         });
       }
       
-      // Success - mutations will trigger profile refetch and UI will update automatically
+      // Success - show success state
+      setSignupSuccess(true);
+      // Mutations will trigger profile refetch and UI will update automatically
     } catch (error: any) {
       const errorMessage = translateSignupError(error);
       setBackendError(errorMessage);
@@ -105,6 +109,36 @@ export function ProfileSetup() {
   };
 
   const isPending = signupMutation.isPending || signupAdminMutation.isPending;
+
+  // Show success state after signup
+  if (signupSuccess) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] py-8">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-success" />
+              Signup Complete!
+            </CardTitle>
+            <CardDescription>
+              Your account has been created successfully
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <AlertDescription>
+                Your account is being activated. This usually takes just a moment. 
+                Please wait while we set up your access...
+              </AlertDescription>
+            </Alert>
+            <div className="mt-4 flex justify-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] py-8">
@@ -166,9 +200,9 @@ export function ProfileSetup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mobile">Mobile Number *</Label>
+              <Label htmlFor="mobileNumber">Mobile Number *</Label>
               <Input
-                id="mobile"
+                id="mobileNumber"
                 type="tel"
                 placeholder="Enter your mobile number"
                 value={mobileNumber}
@@ -185,11 +219,11 @@ export function ProfileSetup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email ID *</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email address"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -208,7 +242,7 @@ export function ProfileSetup() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder="Create a password (min 6 characters)"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -217,13 +251,6 @@ export function ProfileSetup() {
                 required
                 disabled={isPending}
               />
-              <div className="flex items-start gap-2 text-xs text-muted-foreground mt-1">
-                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                <p>
-                  This password is only for local validation and is not stored. 
-                  Authentication is handled securely via Internet Identity.
-                </p>
-              </div>
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
@@ -235,73 +262,61 @@ export function ProfileSetup() {
                 value={accountType}
                 onValueChange={(value) => {
                   setAccountType(value as AccountType);
-                  // Clear admin password error when switching away from admin
-                  if (value === 'engineer' && errors.adminPassword) {
-                    setErrors({ ...errors, adminPassword: '' });
-                  }
+                  setBackendError('');
+                  setErrors({});
                 }}
                 disabled={isPending}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                   <RadioGroupItem value="engineer" id="engineer" />
-                  <Label htmlFor="engineer" className="flex items-center gap-2 font-normal cursor-pointer">
-                    <Wrench className="h-4 w-4" />
-                    Engineer
+                  <Label htmlFor="engineer" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Wrench className="h-4 w-4 text-primary" />
+                    <div>
+                      <div className="font-medium">Engineer</div>
+                      <div className="text-xs text-muted-foreground">Service engineer account</div>
+                    </div>
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                   <RadioGroupItem value="admin" id="admin" />
-                  <Label htmlFor="admin" className="flex items-center gap-2 font-normal cursor-pointer">
-                    <ShieldCheck className="h-4 w-4" />
-                    Admin
+                  <Label htmlFor="admin" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <ShieldCheck className="h-4 w-4 text-warning" />
+                    <div>
+                      <div className="font-medium">Admin</div>
+                      <div className="text-xs text-muted-foreground">Administrator account (requires password)</div>
+                    </div>
                   </Label>
                 </div>
               </RadioGroup>
             </div>
 
             {accountType === 'admin' && (
-              <div className="space-y-2">
-                <Label htmlFor="adminPassword">Admin Signup Password *</Label>
-                <Input
-                  id="adminPassword"
-                  type="password"
-                  placeholder="Enter admin signup password"
-                  value={adminPassword}
-                  onChange={(e) => {
-                    setAdminPassword(e.target.value);
-                    if (errors.adminPassword) setErrors({ ...errors, adminPassword: '' });
-                  }}
-                  required
-                  disabled={isPending}
-                />
-                <div className="flex items-start gap-2 text-xs text-muted-foreground mt-1">
-                  <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                  <p>
+              <>
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
                     Admin accounts require a special signup password. Contact your system administrator if you don't have it.
-                  </p>
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2">
+                  <Label htmlFor="adminPassword">Admin Signup Password *</Label>
+                  <Input
+                    id="adminPassword"
+                    type="password"
+                    placeholder="Enter admin signup password"
+                    value={adminPassword}
+                    onChange={(e) => {
+                      setAdminPassword(e.target.value);
+                      if (errors.adminPassword) setErrors({ ...errors, adminPassword: '' });
+                    }}
+                    required
+                    disabled={isPending}
+                  />
+                  {errors.adminPassword && (
+                    <p className="text-sm text-destructive">{errors.adminPassword}</p>
+                  )}
                 </div>
-                {errors.adminPassword && (
-                  <p className="text-sm text-destructive">{errors.adminPassword}</p>
-                )}
-              </div>
-            )}
-
-            {accountType === 'engineer' && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Engineer Account:</strong> You can create and view your own service reports.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {accountType === 'admin' && (
-              <Alert>
-                <ShieldCheck className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Admin Account:</strong> Full access to view all reports, manage users, and system settings. Requires admin signup password.
-                </AlertDescription>
-              </Alert>
+              </>
             )}
 
             <Button type="submit" className="w-full" disabled={isPending}>

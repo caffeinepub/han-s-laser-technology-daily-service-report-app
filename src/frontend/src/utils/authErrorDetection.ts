@@ -28,6 +28,25 @@ export function isMissingProfileError(error: unknown): boolean {
 }
 
 /**
+ * Checks if an error indicates pending signup/activation state.
+ * This occurs when a user has signed up but their access control role
+ * hasn't been fully activated yet.
+ */
+export function isPendingAccessError(error: unknown): boolean {
+  if (!error) return false;
+  
+  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  
+  // Specific pattern for the pending access state after signup
+  const pendingAccessPatterns = [
+    /unauthorized.*only users can view profile/i,
+    /unauthorized.*only users can access/i,
+  ];
+  
+  return pendingAccessPatterns.some(pattern => pattern.test(errorMessage));
+}
+
+/**
  * Checks if an error indicates a genuine authentication/session failure.
  * Returns false for missing profile errors (which are expected for new users)
  * and non-auth initialization/runtime errors.
@@ -37,6 +56,11 @@ export function isAuthError(error: unknown): boolean {
   
   // First check if this is just a missing profile (not an auth error)
   if (isMissingProfileError(error)) {
+    return false;
+  }
+  
+  // Check if this is a pending access state (not an auth error)
+  if (isPendingAccessError(error)) {
     return false;
   }
   

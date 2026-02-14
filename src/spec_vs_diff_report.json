@@ -1,94 +1,56 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T04:29:27.579Z",
-  "summary": "Diff implements major frontend defenses against stale identity/cached data (principal-scoped React Query keys, comprehensive full logout cleanup, improved error messaging) and adjusts signup UI to remove client-side admin password checking. However, some backend-side pieces required to guarantee immediate post-signup permissions and caller-based enforcement are not fully evidenced in the provided backend diff (truncated), and several unrelated UI/product changes appear to be introduced.",
+  "generatedAt": "2026-02-14T14:44:23.291Z",
+  "summary": "Diff updates routing to allow anonymous access to core report routes, adds an AccessDenied screen and admin route guard, and applies an industrial-themed Tailwind/OKLCH palette. It also includes several unrelated feature additions (geolocation capture, admin reset/cleanup behavior, deployment docs updates) that were not requested.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Ensure engineer signup immediately grants whatever access-control permission is required to call user endpoints right after signup (no Unauthorized/session-invalid loop).",
-      "reason": "Frontend calls `actor.processPendingSignups()` after `signupWithRole`, but the backend diff snippet does not show an implementation/export of `processPendingSignups` or the logic that assigns the caller a non-guest role immediately after signup. Because the backend file is truncated, this requirement cannot be confirmed as implemented from the provided evidence.",
+      "requirement": "Remove all Internet Identity-gated signup/login flows so core app pages can be used without any signup/login, including ensuring no redirects/blocks to LoginScreen, ProfileSetup, or SignupPendingAccessScreen.",
+      "reason": "While App.tsx makes the main routes directly render report pages, the diff summary shows LoginScreen and ProfileSetup still exist (and ProfileSetup remains a signup flow). There is no concrete diff evidence that any existing redirect/blocking logic elsewhere (e.g., in layout/header/route guards) that previously forced these screens has been removed, nor any evidence that SignupPendingAccessScreen gating was addressed.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useQueries.ts (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Align admin signup password behavior between frontend and backend so admin signup can succeed when valid (as defined/checked by the backend), and incorrect passwords are rejected by the backend with a clear user-facing error.",
-      "reason": "Frontend-side removal of hardcoded validation is evidenced, but backend admin-signup password verification behavior and the admin-signup endpoint itself are not shown in the truncated `backend/main.mo` snippet (only `adminSignupPassword = \"SecurePassword123\"` is visible). Thus, end-to-end alignment/success criteria cannot be confirmed from the diff summary alone.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/components/ProfileSetup.tsx (truncated)",
-        "frontend/src/utils/signupErrorMessaging.ts (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Backend endpoints that return user-specific data enforce caller-based access correctly (non-admins cannot access other users’ profiles or reports).",
-      "reason": "While frontend adds principal-scoped caching to prevent UI leakage, the diff summary does not provide visible evidence of backend authorization checks on user-specific endpoints (e.g., `getUserProfile`, report listing/detail) beyond including authorization mixins. Due to truncation, it cannot be verified that all relevant endpoints enforce caller-based access correctly.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "frontend/src/App.tsx",
+        "frontend-file-summaries.txt (mentions frontend/src/components/LoginScreen.tsx, frontend/src/components/ProfileSetup.tsx; no mention of SignupPendingAccessScreen changes)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Industrial-themed global styling and Tailwind color-token overhaul (OKLCH palette, success/warning tokens).",
-      "reason": "Not requested by any REQ; BuildRequest explicitly focuses on auth/session correctness and avoiding unrelated product changes.",
+      "description": "Silent background geolocation capture on ReportEntryPage that attaches location data to report payload.",
+      "reason": "Not requested by any REQ; BuildRequest focuses on removing Internet Identity gating and theming/navigation changes.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/index.css, frontend/tailwind.config.js)"
+        "frontend-file-summaries.txt (frontend/src/pages/ReportEntryPage.tsx description)"
       ]
     },
     {
-      "description": "Branding/UI additions in header/layout (Hans Laser branding, UTM-tracked caffeine.ai attribution link, build version footer).",
-      "reason": "Not requested; unrelated to authentication/session correctness.",
+      "description": "Enhanced admin system reset action that clears storage/caches/service workers and reloads deterministically.",
+      "reason": "Not requested; REQs only specify admin-route protection UX (access denied) and anonymous-mode navigation.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/AppHeader.tsx, frontend/src/components/AppLayout.tsx)"
+        "frontend-file-summaries.txt (frontend/src/pages/AdminUsersPage.tsx description)"
       ]
     },
     {
-      "description": "Report entry page expanded with comprehensive form restructuring and silent background geolocation capture on page load.",
-      "reason": "Not requested and called out as non-goal ('new product features unrelated to authentication/session correctness').",
+      "description": "Deployment documentation changes requiring VITE_BUILD_VERSION per mainnet publish and service worker update troubleshooting.",
+      "reason": "Not requested by any REQ.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/ReportEntryPage.tsx)"
+        "frontend-file-summaries.txt (frontend/DEPLOYMENT.md description)"
       ]
     },
     {
-      "description": "Admin-only CSV export functionality and additional report-history filtering/UI enhancements.",
-      "reason": "Not requested; unrelated to fixing auth/signup/logout correctness.",
+      "description": "Added/modified signup validation helper utilities (email/mobile/required) unrelated to removing Internet Identity gating.",
+      "reason": "Not requested by any REQ.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/ReportHistoryPage.tsx)"
-      ]
-    },
-    {
-      "description": "Deployment documentation additions/changes (VITE_BUILD_VERSION requirements, deployment notes).",
-      "reason": "Not requested by the authentication/session correctness BuildRequest.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/DEPLOYMENT.md)"
-      ]
-    },
-    {
-      "description": "New/expanded backend ‘resetToFreshApp’ behavior and corresponding enhanced system reset UI flow.",
-      "reason": "A full system reset feature is not part of the stated requirements/non-goals; requirements focus on correct signup/login/logout and preventing stale sessions/cross-account leakage (not administrative data wipes).",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend-file-summaries.txt (frontend/src/pages/AdminUsersPage.tsx)"
+        "frontend-file-summaries.txt (frontend/src/utils/signupValidation.ts description)"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.66,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/ProfileSetup.tsx",
-    "frontend/src/hooks/useFullLogout.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/ReportDetailPage.tsx",
-    "frontend/src/pages/ReportHistoryPage.tsx",
-    "frontend/src/utils/signupErrorMessaging.ts",
+    "frontend/src/components/AccessDeniedScreen.tsx",
+    "frontend/src/index.css",
+    "frontend/tailwind.config.js",
     "project_state.json"
   ]
 }

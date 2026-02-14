@@ -7,6 +7,21 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface UserApprovalInfo {
+    status: ApprovalStatus;
+    principal: Principal;
+}
+export interface Geolocation {
+    latitude: number;
+    longitude: number;
+}
+export interface UserProfile {
+    username: string;
+    name: string;
+    role: Role;
+    mobileNumber: string;
+    email: string;
+}
 export interface DailyServiceReport {
     id: string;
     customerName: string;
@@ -27,16 +42,10 @@ export interface DailyServiceReport {
     warrantyStatus: string;
     issueDescribedByCustomer: string;
 }
-export interface Geolocation {
-    latitude: number;
-    longitude: number;
-}
-export interface UserProfile {
-    username: string;
-    name: string;
-    role: Role;
-    mobileNumber: string;
-    email: string;
+export enum ApprovalStatus {
+    pending = "pending",
+    approved = "approved",
+    rejected = "rejected"
 }
 export enum Role {
     admin = "admin",
@@ -58,11 +67,15 @@ export interface backendInterface {
     getReportsForDownload(): Promise<Array<DailyServiceReport>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    isCallerApproved(): Promise<boolean>;
+    listApprovals(): Promise<Array<UserApprovalInfo>>;
     listReports(): Promise<Array<DailyServiceReport>>;
     listUsers(): Promise<Array<[Principal, UserProfile]>>;
     processPendingSignups(): Promise<bigint>;
+    requestApproval(): Promise<void>;
     resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
     signupAdmin(profile: UserProfile, password: string): Promise<void>;
     signupWithRole(profile: UserProfile, requestedRole: Role): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;

@@ -1,104 +1,123 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix auth/signup/logout state leakage and stale cached auto-login (frontend-only)",
+  "title": "Anonymous-mode core usage (remove Internet Identity gating) + industrial theme refresh",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure post-signup the UI immediately binds to the newly authenticated principal and refreshes all user-scoped data (no reuse of previous user cache).",
+      "summary": "Make core report routes usable anonymously by removing any auth-gated redirects/blocks and ensuring report entry/history/detail render without login/signup flows.",
       "acceptanceCriteria": [
-        "With a never-before-seen Internet Identity principal, after Internet Identity authentication the app shows the Profile Setup screen, signup succeeds, and the user can access the main app without seeing an Unauthorized/session-invalid error loop.",
-        "After signup completes, fetching the caller profile succeeds and returns the newly created profile for that principal (not a previous user).",
-        "Engineer accounts can create and view their own reports immediately after completing signup (without requiring an admin-only background step)."
+        "When opening the app in a fresh browser (no stored Internet Identity session), navigating to / renders the report entry UI (not a login/signup screen).",
+        "/history and /report/:reportId render without requiring Internet Identity.",
+        "No UI flow forces the user to authenticate via Internet Identity in order to create/view reports.",
+        "No user-facing text on these anonymous flows says or implies that signing in/signing up is required."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Use the authorization component’s guidance on user-scoped caching to prevent cross-principal reuse: include the current principal (or an unauthenticated marker) in all user-specific React Query keys (e.g., currentUserProfile, isCallerAdmin, reports, report detail) and ensure signup mutations trigger refetch/invalidation of all principal-scoped queries needed for immediate app use (profile, role/admin flag, reports). Verify the component's usage instructions before implementing."
+          "description": "Refactor route composition to ensure the main routes (/, /history, /report/$reportId) are always reachable in anonymous mode (no redirect/render to LoginScreen/ProfileSetup/SignupPendingAccessScreen for these routes). Keep admin route guard behavior separate and unchanged for admin-only paths."
+        },
+        {
+          "path": "frontend/src/components/AnonymousModeGate.tsx",
+          "operation": "create",
+          "description": "Add a small routing/UI gate component that explicitly prioritizes anonymous access for core pages and only allows authenticated-only UI (e.g., profile setup / approval screens) to appear when the user is positively authenticated and the app is intentionally in an authenticated flow (never as a blocker for core report pages)."
+        },
+        {
+          "path": "frontend/src/components/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Wire AnonymousModeGate into the app shell so core content always renders for anonymous users while still allowing authenticated-only flows to be shown when relevant."
+        },
+        {
+          "path": "frontend/src/components/LoginScreen.tsx",
+          "operation": "modify",
+          "description": "Update copy so it does not imply login is required for core report usage, and ensure the component is not used as a blocker for core routes in anonymous mode."
         },
         {
           "path": "frontend/src/components/ProfileSetup.tsx",
           "operation": "modify",
-          "description": "After successful signup, force a clean post-signup data refresh for the active principal (invalidate/refetch principal-scoped profile/admin/reports queries) and prevent any UI reliance on previously cached profile data. Keep error handling user-friendly via existing translateSignupError. Verify the component's usage instructions before implementing."
+          "description": "Ensure ProfileSetup is not auto-invoked as a blocker for core report routes; keep it usable only for explicit authenticated/profile flows if still needed elsewhere."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/SignupPendingAccessScreen.tsx",
           "operation": "modify",
-          "description": "Use the authorization component’s recommended pattern to prevent profile setup flash and stale data: adjust authenticated rendering gates to rely on principal-scoped profile query state (isFetched/isLoading tied to the current identity) so the main app never renders with an old principal’s cached profile. Verify the component's usage instructions before implementing."
+          "description": "Ensure pending-access UI is not auto-invoked as a blocker for core report routes; keep it usable only for explicit authenticated/approval flows if still needed elsewhere."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Remove insecure client-side admin signup password validation and rely on backend rejection with clear UI messaging.",
+      "summary": "Update header/navigation for anonymous mode by hiding identity-dependent UI and ensuring admin navigation stays hidden unless admin is positively confirmed.",
       "acceptanceCriteria": [
-        "Admin signup can succeed when the correct admin signup password is provided (as defined/checked by the backend).",
-        "The frontend no longer contains a hardcoded admin signup password value comparison for validation; entering any non-empty value is allowed, and incorrect passwords are rejected by the backend with a user-facing error.",
-        "When admin signup is attempted with an incorrect password, the user sees a clear English error message and no privileged access is granted."
+        "In anonymous mode, the header does not show a user name/username block.",
+        "In anonymous mode, the header does not show a \"Sign Out\" button/menu item.",
+        "The \"Users\" (admin) navigation is not visible unless admin status is positively confirmed; it is never visible for anonymous users."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ProfileSetup.tsx",
+          "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Remove the hardcoded admin signup password comparison and only validate that an admin signup password is non-empty on the client; rely on backend response for correctness and display the translated error (e.g., 'Invalid admin signup password.') when rejected. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/signupErrorMessaging.ts",
-          "operation": "modify",
-          "description": "Harden admin password error messaging to ensure incorrect admin signup passwords are surfaced as a clear English message without leaking any sensitive details; keep behavior aligned with backend trap/reject patterns. Verify the component's usage instructions before implementing."
+          "description": "Adjust header rendering rules so identity-dependent UI (user name/username block, sign-out actions) only appears when a profile is available; keep admin navigation hidden unless admin status is positively confirmed and never visible to anonymous users."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Strengthen full logout so identity/session and all cached user-specific UI state are cleared across refreshes (no auto-login to a prior user).",
+      "summary": "Keep admin-only routes protected from anonymous access by showing access denied (without prompting Internet Identity login).",
       "acceptanceCriteria": [
-        "After clicking the app’s logout / switch-account action, the app reloads to an unauthenticated state and shows the Login screen (no automatic re-authentication).",
-        "After logout, previously viewed user-specific data (e.g., profile/report lists) is not shown again unless the user logs back in; switching to a different Internet Identity results in seeing only the new user’s data.",
-        "If the app detects a stale/invalid session state, the user is guided to perform a full logout and the flow results in a clean unauthenticated start state."
+        "Visiting /admin/users while anonymous shows an access denied UI (not an Internet Identity login prompt).",
+        "Admin routes remain accessible only when the existing admin-check logic positively confirms admin status."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useFullLogout.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Use the authorization component’s logout guidance to ensure full cleanup: cancel in-flight queries, clear/remove all React Query cached data, clear persisted AuthClient/II storage (existing utilities), and perform a deterministic reload that avoids restoring stale app state. Add brief in-code regression test notes for logout + account switching verification. Verify the component's usage instructions before implementing."
+          "description": "Ensure the /admin/users route remains guarded by positive admin confirmation and that anonymous users are routed to an access denied UI without any login/signup prompt."
         },
         {
-          "path": "frontend/src/components/AppHeader.tsx",
+          "path": "frontend/src/components/AccessDeniedScreen.tsx",
           "operation": "modify",
-          "description": "Ensure logout UX uses the strengthened full logout path consistently (including disabling navigation/actions during logout) so no user-specific data can render during the transition. Verify the component's usage instructions before implementing."
+          "description": "Update AccessDeniedScreen messaging to be action-oriented (return home) and explicitly avoid any Internet Identity login prompt or language implying authentication is required."
         },
         {
-          "path": "frontend/src/components/LoginScreen.tsx",
+          "path": "frontend/src/pages/AdminUsersPage.tsx",
           "operation": "modify",
-          "description": "Ensure the switch-account / stale-session cleanup flow uses the strengthened logout cleanup (skip-reload mode where appropriate) and does not allow any stale authenticated state to persist before a fresh login attempt. Verify the component's usage instructions before implementing."
+          "description": "Confirm admin-only page behavior remains consistent with anonymous-mode: if user is not positively confirmed admin, show AccessDeniedScreen without any login/signup prompt."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Add defensive UI/cache/actor-binding measures to prevent cross-account data exposure during identity transitions; document regression checks.",
+      "summary": "Apply a consistent industrial/service-reporting theme across anonymous-mode screens and navigation, avoiding blue/purple as primary brand colors.",
       "acceptanceCriteria": [
-        "It is not possible to observe another user’s cached data after switching accounts (even briefly) during login/logout transitions.",
-        "Backend endpoints that return user-specific data enforce caller-based access correctly (non-admins cannot access other users’ profiles or reports).",
-        "Regression test steps are documented (in code comments or a short internal note) describing how to verify no stale identity/session persists after logout and account switching."
+        "Anonymous-mode pages and navigation look visually consistent (shared typography, spacing, and component styling).",
+        "Primary theme does not use blue/purple as the main brand colors."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useActor.ts",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Add identity-transition defenses: when the principal changes, immediately cancel and clear/remove all non-actor cached queries to prevent any stale user data from rendering while the new actor/profile loads; keep actor recreation keyed by principal. Verify the component's usage instructions before implementing."
+          "description": "Adjust global design tokens (colors/typography/spacing defaults) to an industrial/service-reporting aesthetic (e.g., neutral grays + safety/amber accents) and ensure primary branding avoids blue/purple."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/index.css",
           "operation": "modify",
-          "description": "Ensure every user-specific query is principal-scoped (query keys include principal) and avoids leaking previous principal data via shared keys; where applicable, disable 'keep previous data' behavior for identity-changing queries to prevent brief cross-account flashes. Verify the component's usage instructions before implementing."
+          "description": "Align any non-src global Tailwind base/theme variables with the updated industrial palette to keep anonymous-mode navigation and screens visually consistent."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/tailwind.config.js",
           "operation": "modify",
-          "description": "Add additional rendering guards so the app never renders user-specific pages while the current principal’s profile state is unresolved; keep SessionInvalidScreen as the guided recovery path for genuine auth errors. Add short regression verification comments (logout -> login as different II -> confirm no stale profile/reports shown). Verify the component's usage instructions before implementing."
+          "description": "Update Tailwind theme mappings (primary/accent/success/warning tokens as applicable) to support the new industrial palette without introducing blue/purple as the primary brand colors."
+        },
+        {
+          "path": "frontend/src/components/AppHeader.tsx",
+          "operation": "modify",
+          "description": "Ensure header styling (background, borders, typography emphasis) uses the updated industrial palette consistently across anonymous and authenticated states."
+        },
+        {
+          "path": "frontend/src/components/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Ensure layout spacing and container styling remains consistent with the updated theme across anonymous-mode core pages and navigation."
         }
       ]
     }

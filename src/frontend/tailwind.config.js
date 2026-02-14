@@ -71,7 +71,8 @@ export default {
                 sm: 'calc(var(--radius) - 4px)'
             },
             boxShadow: {
-                xs: '0 1px 2px 0 rgba(0,0,0,0.05)'
+                xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
+                'industrial': '0 2px 8px -2px rgba(0,0,0,0.12), 0 1px 3px -1px rgba(0,0,0,0.08)'
             },
             keyframes: {
                 'accordion-down': {
@@ -91,4 +92,3 @@ export default {
     },
     plugins: [typography, containerQueries, animate]
 };
-
