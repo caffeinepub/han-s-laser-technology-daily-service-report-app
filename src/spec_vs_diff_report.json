@@ -1,70 +1,87 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T16:34:02.622Z",
-  "summary": "Core navigation/header appears to have been simplified and some parts of the app are described as usable anonymously, but the diff still retains an explicit Internet Identity login screen/flow. Several unrelated UI/branding, theming, deployment, geolocation, and admin reset changes were also introduced that were not requested.",
+  "generatedAt": "2026-02-14T16:48:25.425Z",
+  "summary": "REQ-2 logout/session-staleness appears addressed via new AuthGate gating, principal-scoped React Query keys, and continued use of the existing full-cleanup logout hook. REQ-1 is partially addressed (hardcoded admin recognition and a migration to force role=#admin for existing profiles/pending signups), but the diff evidence is insufficient to confirm that newly created/pending signups for username \"sayedbaquar\" are automatically stored with role #admin during normal signup/approval processing or that updateUserRole/user listing paths behave as required.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
-      "reason": "The Internet Identity login screen is still present and is explicitly described as an Internet Identity sign-in experience (including a sign-in button and login failure handling), which violates the requirement to remove II-specific screens/actions.",
+      "id": "REQ-1",
+      "requirement": "Ensure a newly-signed-up user with profile.username exactly \"sayedbaquar\" receives stored UserProfile.role = #admin during pending signup processing (and thus passes isCallerAdmin()).",
+      "reason": "The diff shows a migration that updates existing stable userProfiles/pendingSignups and a hardcoded-admin check used in AccessControl role determination, but it does not show normal-time signup/pending-signup processing logic that assigns/forces profile.role to #admin for new signups.",
       "evidence": [
-        "frontend/src/components/LoginScreen.tsx",
-        "frontend-file-summaries.txt (\"frontend/src/components/LoginScreen.tsx\": \"Internet Identity login screen with sign-in button...\")"
+        "backend/migration.mo",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Admin-only user listing shows user \"sayedbaquar\" with role \"Admin\" (Role.admin).",
+      "reason": "No user-listing implementation is shown/confirmed in the provided backend diff snippet; therefore it cannot be verified that the listing will display the stored role as Admin for this user.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Attempting to set \"sayedbaquar\" to admin via the existing updateUserRole pathway results in admin permissions being granted without silent downgrade due to allowlist checks.",
+      "reason": "The diff shows determineAccessControlRole allowing admin when profile.role == #admin and (allowlisted OR hardcoded username), but the updateUserRole pathway itself is not shown; cannot confirm it persists role=#admin for this user and updates AccessControl accordingly.",
+      "evidence": [
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Industrial-themed redesign / OKLCH color system and Tailwind token changes (including avoiding blue/purple).",
-      "reason": "The BuildRequest is focused on removing Internet Identity prompts/flows and protecting admin routes; it does not request a global theme/branding overhaul.",
+      "description": "Industrial-themed OKLCH color system / Tailwind theme overhaul and related design tokens.",
+      "reason": "Not requested by the BuildRequest; appears to be additional styling work unrelated to admin promotion or logout correctness.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/index.css, frontend/tailwind.config.js)"
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js",
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Hans Laser branding and new header layout with logo and title text changes.",
-      "reason": "Branding changes are not requested by the BuildRequest; only removal of Internet Identity UI and routing/guard behavior is requested.",
+      "description": "Comprehensive deployment documentation updates (VITE_BUILD_VERSION requirements, smoke tests, service worker troubleshooting).",
+      "reason": "Not requested; outside the scope of promoting a user to admin and fixing logout flow.",
       "evidence": [
-        "frontend/src/components/AppHeader.tsx"
+        "frontend/DEPLOYMENT.md",
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Silent background geolocation capture on report entry and attaching location to the report payload.",
-      "reason": "Geolocation capture is not part of the requested scope (removing Internet Identity prompts/flows).",
+      "description": "Report entry page changes including silent background geolocation capture on page load.",
+      "reason": "Not requested and unrelated to the specified auth/admin fixes.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/ReportEntryPage.tsx)"
+        "frontend/src/pages/ReportEntryPage.tsx",
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Admin users page: enhanced system reset action that clears storage/caches/service workers and performs deterministic reload, plus warning dialog UX.",
-      "reason": "REQ-3 only asks to show AccessDeniedScreen to anonymous users for /admin/users and keep admin navigation hidden unless admin; it does not request new reset/cleanup functionality.",
+      "description": "Admin users page enhanced system reset UX (warning dialog, cache/service worker cleanup, deterministic reload).",
+      "reason": "BuildRequest did not ask for system reset UX changes; only admin assignment and logout reliability.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/AdminUsersPage.tsx)"
+        "frontend/src/pages/AdminUsersPage.tsx",
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Deployment documentation overhaul requiring VITE_BUILD_VERSION and adding service worker smoke tests/troubleshooting guidance.",
-      "reason": "Documentation and deployment process changes are not requested by the BuildRequest.",
+      "description": "Allow anonymous mode report detail behavior (report detail page loads without identity requirements).",
+      "reason": "Not requested; the BuildRequest focuses on ensuring logout clears identity-bound data and admin assignment for one user.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/DEPLOYMENT.md)"
-      ]
-    },
-    {
-      "description": "Profile setup/signup UX changes (success state messaging, activation-in-progress flow).",
-      "reason": "The BuildRequest explicitly lists as a non-goal implementing new authentication/signup experiences; it asks to remove Internet Identity prompts/flows, not enhance signup flows.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/ProfileSetup.tsx)"
+        "frontend/src/pages/ReportDetailPage.tsx",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.62,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
     "frontend/src/components/AppHeader.tsx",
-    "frontend/src/components/LoginScreen.tsx",
-    "frontend/src/pages/ReportDetailPage.tsx",
-    "frontend/src/pages/ReportEntryPage.tsx",
+    "frontend/src/components/AuthGate.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]
 }

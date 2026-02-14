@@ -1,36 +1,20 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project aims to remove Internet Identity as a requirement for user signup/login.",
+  "summary": "Project now includes authentication/session management fixes and user role administration (assigning admins).",
   "architectural_notes": [
-    "Authentication must not require Internet Identity for signup/login."
+    "Introduce role-based access control (RBAC) to support admin assignment and permission checks."
   ],
   "known_issues": [
-    "Signup/login still requires Internet Identity; user requests removal."
+    "Logout function not working properly (session not ending or UI/state not updating)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-remove-internet-identity-as-a-required-step-for-using-the-app-by-ensuring-anonymous-users-can-access-and-use-the-core-routes-history-and-report-reportid-without-being-redirected-to-blocked-by-or-prompted-with-any-internet-identity-login-or-signup-ui",
-      "title": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-remove-all-internet-identity-login-signup-user-experiences-from-the-ui-the-app-must-not-render-or-link-to-internet-identity-specific-screens-or-actions-e-g-loginscreen-s-sign-in-with-internet-identity-button-and-related-messaging-anywhere-in-the-app-flow",
-      "title": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
+      "id": "feature-fix-the-logout-flow-so-that-logging-out-reliably-ends-the-session-and-the-ui-state-no-longer-shows-the-prior-user-as-authenticated-no-stale-profile-admin-status-reports-using-the-existing-full-cleanup-logout-approach",
+      "title": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-keep-admin-only-routes-protected-without-prompting-for-internet-identity-anonymous-users-attempting-to-access-admin-users-must-see-an-access-denied-screen-not-a-login-signup-prompt",
-      "title": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
-      "reqIds": [
-        "REQ-3"
       ],
       "version": 1
     }
@@ -38,12 +22,20 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove Internet Identity requirement from signup/login (no Internet Identity auth flow)",
+      "summary": "Assign user 'sayedbaquar' as an admin (role/permissions update).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Update backend role/permission logic so that the user whose profile.username is exactly \"sayedbaquar\" is treated as an admin (i.e., their stored UserProfile.role is #admin and AccessControl role is #admin), including when processing pending signups and when an admin attempts to update this user’s role.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Remove all Internet Identity login/signup prompts and flows",
+  "projectName": "Promote user 'sayedbaquar' to admin and fix logout flow",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

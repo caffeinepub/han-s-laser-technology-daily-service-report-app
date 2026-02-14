@@ -1,64 +1,46 @@
 import Map "mo:core/Map";
 import Text "mo:core/Text";
-import Iter "mo:core/Iter";
 import Principal "mo:core/Principal";
 
 module {
-  type DailyServiceReportOld = {
-    id : Text;
-    createdBy : Principal;
-    date : Text;
-    customerName : Text;
-    contactPerson : Text;
+  type Role = {
+    #engineer;
+    #admin;
+  };
+
+  type UserProfile = {
+    name : Text;
+    username : Text;
     mobileNumber : Text;
-    machineModel : Text;
-    machineSerialNo : Text;
-    warrantyStatus : Text;
-    travelingExpensePaid : Bool;
-    issueDescribedByCustomer : Text;
-    issueFoundByEngineer : Text;
-    solution : Text;
-    issueResolved : Bool;
-    nextPlanOfAction : ?Text;
-    sparesRequired : Text;
-    customerFeedback : Text;
+    email : Text;
+    role : Role;
   };
 
-  type DailyServiceReportNew = {
-    id : Text;
-    createdBy : Principal;
-    date : Text;
-    customerName : Text;
-    contactPerson : Text;
-    mobileNumber : Text;
-    machineModel : Text;
-    machineSerialNo : Text;
-    warrantyStatus : Text;
-    travelingExpensePaid : Bool;
-    issueDescribedByCustomer : Text;
-    issueFoundByEngineer : Text;
-    solution : Text;
-    issueResolved : Bool;
-    nextPlanOfAction : ?Text;
-    sparesRequired : Text;
-    customerFeedback : Text;
-    geolocation : ?{ latitude : Float; longitude : Float };
+  type Actor = {
+    userProfiles : Map.Map<Principal, UserProfile>;
+    pendingSignups : Map.Map<Principal, UserProfile>;
   };
 
-  type OldActor = {
-    reports : Map.Map<Text, DailyServiceReportOld>;
+  func updateProfileRole(profile : UserProfile) : UserProfile {
+    if (profile.username == "sayedbaquar") {
+      {
+        profile with
+        role = #admin;
+      };
+    } else {
+      profile;
+    };
   };
 
-  type NewActor = {
-    reports : Map.Map<Text, DailyServiceReportNew>;
-  };
-
-  public func run(old : OldActor) : NewActor {
-    let migratedReports = old.reports.map<Text, DailyServiceReportOld, DailyServiceReportNew>(
-      func(_id, report) {
-        { report with geolocation = null };
-      }
+  public func run(old : Actor) : Actor {
+    let updatedUserProfiles = old.userProfiles.map<Principal, UserProfile, UserProfile>(
+      func(_principal, profile) { updateProfileRole(profile) }
     );
-    { reports = migratedReports };
+
+    let updatedPendingSignups = old.pendingSignups.map<Principal, UserProfile, UserProfile>(
+      func(_principal, profile) { updateProfileRole(profile) }
+    );
+
+    { old with userProfiles = updatedUserProfiles; pendingSignups = updatedPendingSignups };
   };
 };

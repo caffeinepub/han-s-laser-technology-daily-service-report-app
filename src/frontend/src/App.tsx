@@ -1,6 +1,7 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
+import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppLayout } from './components/AppLayout';
+import { AuthGate } from './components/AuthGate';
 import { ReportEntryPage } from './pages/ReportEntryPage';
 import { ReportHistoryPage } from './pages/ReportHistoryPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
@@ -45,12 +46,19 @@ function AdminRouteGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const rootRoute = createRootRoute({
-  component: () => (
+// Root layout component that wraps all routes with AuthGate
+function RootLayout() {
+  return (
     <AppLayout>
-      <RouterProvider router={router} />
+      <AuthGate>
+        <Outlet />
+      </AuthGate>
     </AppLayout>
-  ),
+  );
+}
+
+const rootRoute = createRootRoute({
+  component: RootLayout,
 });
 
 const indexRoute = createRoute({

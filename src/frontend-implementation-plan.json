@@ -1,94 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove Internet Identity login/signup prompts and keep admin routes access-denied for anonymous users",
+  "title": "Fix logout to fully clear authenticated UI state and prevent stale cached data",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Ensure core routes (/, /history, /report/$reportId) remain usable for anonymous users without redirects or Internet Identity prompts.",
-      "acceptanceCriteria": [
-        "When not authenticated with Internet Identity (no identity present), the user can navigate to \"/\" and create a report without seeing any login/signup-required screen.",
-        "When not authenticated with Internet Identity, the user can navigate to \"/history\" and view the history screen without seeing any login/signup-required screen.",
-        "When not authenticated with Internet Identity, the user can navigate to a valid \"/report/$reportId\" URL and view the report detail screen without seeing any login/signup-required screen.",
-        "No UI copy on the core routes instructs the user to sign in with Internet Identity."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Audit and ensure routing/guards only restrict admin routes; confirm no global auth gate is applied to core routes, and keep anonymous access unblocked for /, /history, and /report/$reportId."
-        },
-        {
-          "path": "frontend/src/pages/ReportEntryPage.tsx",
-          "operation": "modify",
-          "description": "Ensure anonymous report creation flow does not trigger or suggest any Internet Identity login/signup UI; handle createReport errors with non-auth, non-Internet-Identity messaging on the page."
-        },
-        {
-          "path": "frontend/src/pages/ReportHistoryPage.tsx",
-          "operation": "modify",
-          "description": "Ensure anonymous users can view history without any login/signup-required UI; verify empty/loading/error states do not mention Internet Identity."
-        },
-        {
-          "path": "frontend/src/pages/ReportDetailPage.tsx",
-          "operation": "modify",
-          "description": "Ensure anonymous users can view report details without any login/signup-required UI; verify error states do not mention Internet Identity."
-        }
-      ]
-    },
-    {
       "id": "REQ-2",
-      "summary": "Remove Internet Identity login/signup UX from the UI and eliminate any triggers for useInternetIdentity().login() in normal app navigation.",
+      "summary": "Ensure logout fully clears identity-bound React Query state and the UI cannot show stale profile/admin/reports across account switches, using the existing full-cleanup logout flow without modifying immutable auth hooks.",
       "acceptanceCriteria": [
-        "There is no navigation path in the UI that leads to an Internet Identity login screen.",
-        "No visible button/CTA in the app triggers `useInternetIdentity().login()`.",
-        "All user-facing text that mentions “Internet Identity” is removed from screens reachable through normal app navigation."
+        "Triggering logout results in the app returning to an unauthenticated state (no identity-bound data visible) after the logout flow completes.",
+        "After logging out from User A and logging in as User B, User A’s cached data (profile and reports) is not shown at any point.",
+        "Logout does not depend on editing immutable auth hook files (e.g., frontend/src/hooks/useInternetIdentity.ts); fixes are implemented via other frontend components/hooks that are allowed to change."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/LoginScreen.tsx",
-          "operation": "delete",
-          "description": "Remove the Internet Identity login screen component entirely to prevent any possibility of rendering, linking, or invoking Internet Identity login from the UI."
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Harden identity-scoped queries/mutations against stale data by (1) disabling identity-bound queries when unauthenticated and (2) scoping relevant query keys by the current principal string so cached data cannot bleed between users. This aligns with the authorization component guidance to clear cached application data on logout. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Audit header navigation for any sign-in related CTAs or Internet Identity references; ensure no UI control triggers `useInternetIdentity().login()` and no visible copy mentions Internet Identity. Verify the component's usage instructions before implementing."
+          "description": "Add an explicit auth control in the header: when authenticated, provide a Logout action that calls the existing useFullLogout().performLogout() full-cleanup flow; when unauthenticated, provide a Login action that triggers useInternetIdentity().login(). Use existing shadcn-ui primitives (e.g., Button / DropdownMenu) for consistent UI. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Audit layout-level banners/containers to ensure no login/signup-required wrappers or Internet Identity references are introduced around routed content; keep core pages reachable without auth prompts."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Keep /admin/users protected for anonymous users by showing an access denied screen (not a login/signup prompt) and keep admin nav hidden unless admin status is confirmed.",
-      "acceptanceCriteria": [
-        "When not authenticated with Internet Identity, visiting \"/admin/users\" shows AccessDeniedScreen.",
-        "Anonymous users do not see any Internet Identity login prompt when attempting to access admin routes.",
-        "Admin navigation items remain hidden unless admin status is positively confirmed."
-      ],
-      "file_operations": [
+          "path": "frontend/src/components/AuthGate.tsx",
+          "operation": "create",
+          "description": "Create an authentication gate component that prevents rendering identity-bound pages when there is no identity, ensuring the UI never displays cached profile/admin/reports after logout. When unauthenticated, show a minimal login prompt (button wired to useInternetIdentity().login()); when authenticated, render children. Optionally integrate existing signup/profile completion components if already used by the app flow. Verify the component's usage instructions before implementing."
+        },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Maintain the existing AdminRouteGuard behavior: if no identity is present, render AccessDeniedScreen (never LoginScreen); if admin status is not positively confirmed, render AccessDeniedScreen."
-        },
-        {
-          "path": "frontend/src/components/AccessDeniedScreen.tsx",
-          "operation": "modify",
-          "description": "Verify AccessDeniedScreen messaging remains neutral (no sign-in/signup prompts, no Internet Identity references) and continues to provide a safe navigation option back to '/'."
-        },
-        {
-          "path": "frontend/src/components/AppHeader.tsx",
-          "operation": "modify",
-          "description": "Ensure admin navigation items remain hidden unless admin status is positively confirmed (do not infer admin from authentication alone). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/AdminUsersPage.tsx",
-          "operation": "modify",
-          "description": "Ensure any unauthorized/anonymous access results in AccessDeniedScreen and never a login/signup prompt; remove any dead/unused auth-related logic that could surface Internet Identity UI text indirectly."
+          "description": "Wire AuthGate into the app's root layout so all main routes are blocked behind authentication (or otherwise ensure routes that show identity-bound data cannot render when logged out). This wiring must ensure logout reliably returns the UI to an unauthenticated view without showing previously cached data. Verify the component's usage instructions before implementing."
         }
       ]
     }

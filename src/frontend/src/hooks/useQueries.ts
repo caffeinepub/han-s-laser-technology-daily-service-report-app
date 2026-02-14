@@ -9,14 +9,14 @@ import type { Principal } from '@icp-sdk/core/principal';
 // =========================
 
 const QUERY_KEYS = {
-  currentUserProfile: ['currentUserProfile'],
+  currentUserProfile: (principalId?: string) => principalId ? ['currentUserProfile', principalId] : ['currentUserProfile'],
   userProfile: (principal: string) => ['userProfile', principal],
-  isAdmin: ['isAdmin'],
-  reports: ['reports'],
+  isAdmin: (principalId?: string) => principalId ? ['isAdmin', principalId] : ['isAdmin'],
+  reports: (principalId?: string) => principalId ? ['reports', principalId] : ['reports'],
   report: (id: string) => ['report', id],
   users: ['users'],
   pendingSignupsCount: ['pendingSignupsCount'],
-  reportsForDownload: ['reportsForDownload'],
+  reportsForDownload: (principalId?: string) => principalId ? ['reportsForDownload', principalId] : ['reportsForDownload'],
 };
 
 // =========================
@@ -28,9 +28,10 @@ export function useGetCallerUserProfile() {
   const { identity } = useInternetIdentity();
 
   const isAuthenticated = !!identity;
+  const principalId = identity?.getPrincipal().toString();
 
   const query = useQuery<UserProfile | null>({
-    queryKey: QUERY_KEYS.currentUserProfile,
+    queryKey: QUERY_KEYS.currentUserProfile(principalId),
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getCallerUserProfile();
@@ -49,6 +50,9 @@ export function useGetCallerUserProfile() {
 
 export function useGetUserProfile(principal: Principal | null) {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
 
   return useQuery<UserProfile | null>({
     queryKey: principal ? QUERY_KEYS.userProfile(principal.toString()) : ['userProfile', 'null'],
@@ -56,15 +60,19 @@ export function useGetUserProfile(principal: Principal | null) {
       if (!actor || !principal) return null;
       return actor.getUserProfile(principal);
     },
-    enabled: !!actor && !actorFetching && !!principal,
+    enabled: !!actor && !actorFetching && !!principal && isAuthenticated,
   });
 }
 
 export function useIsCallerAdmin() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
+  const principalId = identity?.getPrincipal().toString();
 
   return useQuery<boolean>({
-    queryKey: QUERY_KEYS.isAdmin,
+    queryKey: QUERY_KEYS.isAdmin(principalId),
     queryFn: async () => {
       if (!actor) return false;
       try {
@@ -73,7 +81,7 @@ export function useIsCallerAdmin() {
         return false;
       }
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && isAuthenticated,
     staleTime: 0,
     gcTime: 0,
   });
@@ -86,6 +94,9 @@ export function useIsCallerAdmin() {
 export function useSaveCallerUserProfile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { identity } = useInternetIdentity();
+
+  const principalId = identity?.getPrincipal().toString();
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
@@ -93,7 +104,7 @@ export function useSaveCallerUserProfile() {
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId) });
     },
   });
 }
@@ -101,6 +112,9 @@ export function useSaveCallerUserProfile() {
 export function useSignupWithRole() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { identity } = useInternetIdentity();
+
+  const principalId = identity?.getPrincipal().toString();
 
   return useMutation({
     mutationFn: async ({ profile, requestedRole }: { profile: UserProfile; requestedRole: Role }) => {
@@ -108,8 +122,8 @@ export function useSignupWithRole() {
       return actor.signupWithRole(profile, requestedRole);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin(principalId) });
     },
   });
 }
@@ -117,6 +131,9 @@ export function useSignupWithRole() {
 export function useSignupAdmin() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { identity } = useInternetIdentity();
+
+  const principalId = identity?.getPrincipal().toString();
 
   return useMutation({
     mutationFn: async ({ profile, password }: { profile: UserProfile; password: string }) => {
@@ -124,8 +141,8 @@ export function useSignupAdmin() {
       return actor.signupAdmin(profile, password);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin(principalId) });
     },
   });
 }
@@ -166,19 +183,26 @@ export function useDeleteUser() {
 
 export function useListReports() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
+  const principalId = identity?.getPrincipal().toString();
 
   return useQuery<DailyServiceReport[]>({
-    queryKey: QUERY_KEYS.reports,
+    queryKey: QUERY_KEYS.reports(principalId),
     queryFn: async () => {
       if (!actor) return [];
       return actor.listReports();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && isAuthenticated,
   });
 }
 
 export function useGetReportById(id: string | undefined) {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
 
   return useQuery<DailyServiceReport | null>({
     queryKey: id ? QUERY_KEYS.report(id) : ['report', 'undefined'],
@@ -186,20 +210,24 @@ export function useGetReportById(id: string | undefined) {
       if (!actor || !id) return null;
       return actor.getReportById(id);
     },
-    enabled: !!actor && !actorFetching && !!id,
+    enabled: !!actor && !actorFetching && !!id && isAuthenticated,
   });
 }
 
 export function useGetReportsForDownload() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
+  const principalId = identity?.getPrincipal().toString();
 
   return useQuery<DailyServiceReport[]>({
-    queryKey: QUERY_KEYS.reportsForDownload,
+    queryKey: QUERY_KEYS.reportsForDownload(principalId),
     queryFn: async () => {
       if (!actor) return [];
       return actor.getReportsForDownload();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && isAuthenticated,
   });
 }
 
@@ -210,6 +238,9 @@ export function useGetReportsForDownload() {
 export function useCreateReport() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { identity } = useInternetIdentity();
+
+  const principalId = identity?.getPrincipal().toString();
 
   return useMutation({
     mutationFn: async (report: DailyServiceReport) => {
@@ -217,8 +248,8 @@ export function useCreateReport() {
       return actor.createReport(report);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reports });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reportsForDownload });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reports(principalId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reportsForDownload(principalId) });
     },
   });
 }
@@ -229,6 +260,9 @@ export function useCreateReport() {
 
 export function useListUsers() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
 
   return useQuery<Array<[Principal, UserProfile]>>({
     queryKey: QUERY_KEYS.users,
@@ -236,12 +270,15 @@ export function useListUsers() {
       if (!actor) return [];
       return actor.listUsers();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && isAuthenticated,
   });
 }
 
 export function useGetPendingSignupsCount() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
 
   return useQuery<bigint>({
     queryKey: QUERY_KEYS.pendingSignupsCount,
@@ -249,7 +286,7 @@ export function useGetPendingSignupsCount() {
       if (!actor) return BigInt(0);
       return actor.getPendingSignupsCount();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && isAuthenticated,
   });
 }
 

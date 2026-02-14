@@ -1,69 +1,52 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T16:34:02.625Z",
+  "generatedAt": "2026-02-14T16:48:25.428Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/ReportEntryPage.tsx",
-          "frontend/src/pages/ReportHistoryPage.tsx",
-          "frontend/src/pages/ReportDetailPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/ReportEntryPage.tsx",
-          "frontend/src/pages/ReportDetailPage.tsx"
-        ]
+        "summary": "Update backend role/permission logic so that the user whose profile.username is exactly \"sayedbaquar\" is treated as an admin (i.e., their stored UserProfile.role is #admin and AccessControl role is #admin), including when processing pending signups and when an admin attempts to update this user’s role.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
+        "summary": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/LoginScreen.tsx",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/AppHeader.tsx",
-          "frontend/src/components/AppLayout.tsx"
+          "frontend/src/components/AuthGate.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/LoginScreen.tsx",
-          "frontend/src/components/AppHeader.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/AccessDeniedScreen.tsx",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/AppHeader.tsx",
-          "frontend/src/pages/AdminUsersPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/AppHeader.tsx"
+          "frontend/src/components/AuthGate.tsx",
+          "frontend/src/App.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
     "frontend/src/components/AppHeader.tsx",
-    "frontend/src/components/LoginScreen.tsx",
-    "frontend/src/pages/ReportDetailPage.tsx",
-    "frontend/src/pages/ReportEntryPage.tsx",
+    "frontend/src/components/AuthGate.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

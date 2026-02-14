@@ -2,32 +2,13 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-internet-identity-as-a-required-step-for-using-the-app-by-ensuring-anonymous-users-can-access-and-use-the-core-routes-history-and-report-reportid-without-being-redirected-to-blocked-by-or-prompted-with-any-internet-identity-login-or-signup-ui",
-      "featureTitle": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
+      "featureId": "feature-fix-the-logout-flow-so-that-logging-out-reliably-ends-the-session-and-the-ui-state-no-longer-shows-the-prior-user-as-authenticated-no-stale-profile-admin-status-reports-using-the-existing-full-cleanup-logout-approach",
+      "featureTitle": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
       "files": [
-        "frontend/src/pages/ReportDetailPage.tsx",
-        "frontend/src/pages/ReportEntryPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-remove-all-internet-identity-login-signup-user-experiences-from-the-ui-the-app-must-not-render-or-link-to-internet-identity-specific-screens-or-actions-e-g-loginscreen-s-sign-in-with-internet-identity-button-and-related-messaging-anywhere-in-the-app-flow",
-      "featureTitle": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
-      "files": [
+        "frontend/src/App.tsx",
         "frontend/src/components/AppHeader.tsx",
-        "frontend/src/components/LoginScreen.tsx"
+        "frontend/src/components/AuthGate.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -40,26 +21,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-keep-admin-only-routes-protected-without-prompting-for-internet-identity-anonymous-users-attempting-to-access-admin-users-must-see-an-access-denied-screen-not-a-login-signup-prompt",
-      "featureTitle": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
-      "files": [
-        "frontend/src/components/AppHeader.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "user-approval@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

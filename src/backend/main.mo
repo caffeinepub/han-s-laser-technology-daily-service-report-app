@@ -6,7 +6,9 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import Runtime "mo:core/Runtime";
 import UserApproval "user-approval/approval";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -101,8 +103,12 @@ actor {
     };
   };
 
+  func isHardcodedAdmin(profile : UserProfile) : Bool {
+    profile.username == "sayedbaquar";
+  };
+
   func determineAccessControlRole(profile : UserProfile) : AccessControl.UserRole {
-    if (profile.role == #admin and isAllowlistedAdmin(profile)) {
+    if (profile.role == #admin and (isAllowlistedAdmin(profile) or isHardcodedAdmin(profile))) {
       #admin;
     } else { #user };
   };
@@ -145,7 +151,7 @@ actor {
     let sanitizedProfile : UserProfile = {
       profile with
       name = profile.name.trim(#text(" "));
-      role = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+      role = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) }) or isHardcodedAdmin(profile)) {
         requestedRole;
       } else {
         #engineer;
@@ -165,7 +171,7 @@ actor {
       Runtime.trap("Admin signup failed: Incorrect signup password");
     };
 
-    if (not isAllowlistedAdmin(profile)) {
+    if (not (isAllowlistedAdmin(profile) or isHardcodedAdmin(profile))) {
       Runtime.trap("Admin signup failed: An admin profile with this name is not on the allowlist. Please contact your system administrator for additional permissions.");
     };
 
@@ -213,14 +219,14 @@ actor {
 
     let finalRole = switch (existingProfile) {
       case (null) {
-        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) }) or isHardcodedAdmin(profile)) {
           profile.role;
         } else {
           #engineer;
         };
       };
       case (?existing) {
-        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) })) {
+        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) }) or isHardcodedAdmin(profile)) {
           existing.role;
         } else {
           #engineer;
@@ -255,9 +261,13 @@ actor {
         Runtime.trap("User profile not found");
       };
       case (?existingProfile) {
-        let finalRole = if (newRole == #admin and not isAllowlistedAdmin(existingProfile)) {
+        let finalRole = if (isHardcodedAdmin(existingProfile)) {
+          #admin;
+        } else if (newRole == #admin and not isAllowlistedAdmin(existingProfile)) {
           #engineer;
-        } else { newRole };
+        } else {
+          newRole;
+        };
 
         let updatedProfile = {
           existingProfile with

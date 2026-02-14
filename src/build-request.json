@@ -1,72 +1,52 @@
 {
   "kind": "build_request",
-  "title": "Remove all Internet Identity login/signup prompts and flows",
+  "title": "Promote user 'sayedbaquar' to admin and fix logout flow",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove Internet Identity as a required step for using the app by ensuring anonymous users can access and use the core routes (\"/\", \"/history\", and \"/report/$reportId\") without being redirected to, blocked by, or prompted with any Internet Identity login or signup UI.",
-      "target": "frontend",
+      "text": "Update backend role/permission logic so that the user whose profile.username is exactly \"sayedbaquar\" is treated as an admin (i.e., their stored UserProfile.role is #admin and AccessControl role is #admin), including when processing pending signups and when an admin attempts to update this user’s role.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-6"
         ],
         "quotes": [
-          "do not want internet identity login or signup"
+          "make sayedbaquar as admin"
         ]
       },
       "acceptanceCriteria": [
-        "When not authenticated with Internet Identity (no identity present), the user can navigate to \"/\" and create a report without seeing any login/signup-required screen.",
-        "When not authenticated with Internet Identity, the user can navigate to \"/history\" and view the history screen without seeing any login/signup-required screen.",
-        "When not authenticated with Internet Identity, the user can navigate to a valid \"/report/$reportId\" URL and view the report detail screen without seeing any login/signup-required screen.",
-        "No UI copy on the core routes instructs the user to sign in with Internet Identity."
+        "If a user exists with username \"sayedbaquar\", calling the admin-only user listing shows this user with role \"Admin\" (Role.admin).",
+        "After pending signups are processed, a newly-signed-up user with username \"sayedbaquar\" receives admin permissions (passes isCallerAdmin()).",
+        "Attempting to set \"sayedbaquar\" to admin via the existing updateUserRole pathway results in admin permissions being granted (no silent downgrade due to allowlist checks)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Remove all Internet Identity login/signup user experiences from the UI: the app must not render or link to Internet Identity-specific screens or actions (e.g., LoginScreen’s \"Sign In with Internet Identity\" button and related messaging) anywhere in the app flow.",
+      "text": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-5"
         ],
         "quotes": [
-          "do not want internet identity login or signup"
+          "logout function not working properly. Resolve it"
         ]
       },
       "acceptanceCriteria": [
-        "There is no navigation path in the UI that leads to an Internet Identity login screen.",
-        "No visible button/CTA in the app triggers `useInternetIdentity().login()`.",
-        "All user-facing text that mentions “Internet Identity” is removed from screens reachable through normal app navigation."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Keep admin-only routes protected without prompting for Internet Identity: anonymous users attempting to access \"/admin/users\" must see an access denied screen (not a login/signup prompt).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "do not want internet identity login or signup"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When not authenticated with Internet Identity, visiting \"/admin/users\" shows AccessDeniedScreen.",
-        "Anonymous users do not see any Internet Identity login prompt when attempting to access admin routes.",
-        "Admin navigation items remain hidden unless admin status is positively confirmed."
+        "Triggering logout results in the app returning to an unauthenticated state (no identity-bound data visible) after the logout flow completes.",
+        "After logging out from User A and logging in as User B, User A’s cached data (profile and reports) is not shown at any point.",
+        "Logout does not depend on editing immutable auth hook files (e.g., frontend/src/hooks/useInternetIdentity.ts); fixes are implemented via other frontend components/hooks that are allowed to change."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/immutablePaths (including frontend/src/main.tsx, frontend/src/hooks/useInternetIdentity.ts, and frontend/src/hooks/useActor.ts); implement changes by updating non-immutable components/pages and routing/conditional rendering.",
-    "Use English for all user-facing text."
+    "Do not edit files listed as immutable in SYSTEM_CONTEXT, including frontend/src/hooks/useInternetIdentity.ts and frontend/src/hooks/useActor.ts.",
+    "Keep all Motoko logic in the single backend actor (backend/main.mo). Add backend/migration.mo only if an upgrade must preserve and transform existing stable state."
   ],
   "nonGoals": [
-    "Implementing a new authentication provider to replace Internet Identity (e.g., email/password auth).",
-    "Adding third-party auth or external database-backed user management.",
-    "Changing backend authorization model beyond what is required to stop Internet Identity prompts in the UI."
+    "Implementing third-party authentication providers or non-Internet-Identity auth.",
+    "Adding new admin UI screens beyond what is necessary to ensure the admin assignment and logout behavior work correctly."
   ],
   "imageRequirements": {
     "required": [],

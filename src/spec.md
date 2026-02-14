@@ -1,11 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Remove all Internet Identity login/signup prompts and flows from the app so anonymous users can use core routes without being blocked or redirected.
+**Goal:** Ensure the user with username `sayedbaquar` is always treated as an admin, and make logout reliably clear session/authenticated UI state.
 
 **Planned changes:**
-- Update routing/guards/conditional rendering (outside immutable paths) so anonymous users can access and use core routes: `/`, `/history`, and `/report/$reportId` without any Internet Identity prompts or redirects.
-- Remove any UI elements, navigation paths, buttons/CTAs, and user-facing copy that reference or trigger Internet Identity login/signup flows.
-- Keep admin-only routes protected by showing an access denied screen for anonymous users on `/admin/users`, and keep admin navigation hidden unless admin status is positively confirmed.
+- Update backend role/permission handling so `profile.username === "sayedbaquar"` is assigned/treated as `admin` consistently (including pending signup processing and admin role updates via the existing pathway).
+- Fix frontend logout flow to fully clear authenticated session state and any identity-bound cached data (profile/admin status/reports) so the UI returns to an unauthenticated state after logout, without modifying immutable auth hook files.
 
-**User-visible outcome:** Users can create and view reports (home, history, and report detail pages) without seeing any Internet Identity login/signup messaging or screens, while admin pages remain inaccessible and show an access denied screen to non-admin/anonymous users.
+**User-visible outcome:** `sayedbaquar` appears as an Admin in admin-only user listings and has admin permissions after signup/role changes, and logging out reliably removes all prior user data so switching accounts does not show stale profile or reports.
