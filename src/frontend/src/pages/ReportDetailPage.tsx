@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Calendar, User, Phone, Wrench, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { SessionInvalidScreen } from '../components/SessionInvalidScreen';
+import { isAuthError } from '../utils/authErrorDetection';
 
 function DetailField({ 
   label, 
@@ -43,7 +45,12 @@ function DetailField({
 export function ReportDetailPage() {
   const navigate = useNavigate();
   const { reportId } = useParams({ from: '/report/$reportId' });
-  const { data: report, isLoading, isError } = useGetReportById(reportId);
+  const { data: report, isLoading, error } = useGetReportById(reportId);
+
+  // Check for genuine session/auth errors
+  if (error && isAuthError(error)) {
+    return <SessionInvalidScreen />;
+  }
 
   if (isLoading) {
     return (
@@ -54,7 +61,7 @@ export function ReportDetailPage() {
     );
   }
 
-  if (isError || !report) {
+  if (error || !report) {
     return (
       <div className="max-w-4xl mx-auto">
         <Alert variant="destructive">
@@ -173,51 +180,38 @@ export function ReportDetailPage() {
                 multiline
               />
               <DetailField
-                label="Solution"
+                label="Solution Provided"
                 value={report.solution}
                 multiline
               />
-            </div>
-          </div>
-
-          {!report.issueResolved && report.nextPlanOfAction && (
-            <>
-              <Separator />
-              <div>
+              {report.nextPlanOfAction && (
                 <DetailField
                   label="Next Plan of Action"
                   value={report.nextPlanOfAction}
                   multiline
                 />
-              </div>
-            </>
-          )}
+              )}
+            </div>
+          </div>
 
-          {report.sparesRequired && (
-            <>
-              <Separator />
-              <div>
-                <DetailField
-                  label="Spares Required"
-                  value={report.sparesRequired}
-                  multiline
-                />
-              </div>
-            </>
-          )}
+          <Separator />
 
-          {report.customerFeedback && (
-            <>
-              <Separator />
-              <div>
-                <DetailField
-                  label="Customer Feedback"
-                  value={report.customerFeedback}
-                  multiline
-                />
-              </div>
-            </>
-          )}
+          {/* Additional Information */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
+            <div className="space-y-4">
+              <DetailField
+                label="Spares Required"
+                value={report.sparesRequired}
+                multiline
+              />
+              <DetailField
+                label="Customer Feedback"
+                value={report.customerFeedback}
+                multiline
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

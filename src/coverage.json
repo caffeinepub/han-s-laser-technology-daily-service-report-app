@@ -1,37 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T16:48:25.428Z",
+  "generatedAt": "2026-02-17T03:00:15.432Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 1,
+    "total": 4,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update backend role/permission logic so that the user whose profile.username is exactly \"sayedbaquar\" is treated as an admin (i.e., their stored UserProfile.role is #admin and AccessControl role is #admin), including when processing pending signups and when an admin attempts to update this user’s role.",
+        "summary": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/components/AuthGate.tsx",
+          "frontend/src/components/AppHeader.tsx",
+          "frontend/src/hooks/useLocalActor.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/utils/ensureNoInternetIdentityAutoAuth.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Update backend admin provisioning logic so that the admin usernames \"sayedbaquar\" and \"bharatnikam\" are recognized as admins, and fix the current mismatch that prevents successful admin creation/approval due to the hardcoded allowlist values (\"Admin Name1\", \"Admin Name2\").",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-2",
-        "summary": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
+        "id": "REQ-3",
+        "summary": "Set the backend admin signup password to exactly \"Hans@987123\" and ensure it applies to all admin accounts (including \"sayedbaquar\" and \"bharatnikam\") wherever the admin signup password is still used.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/AppHeader.tsx",
-          "frontend/src/components/AuthGate.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/ProfileSetup.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/AppHeader.tsx",
-          "frontend/src/components/AuthGate.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/ProfileSetup.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
@@ -40,12 +59,12 @@
     "backend/main.mo",
     "backend/migration.mo",
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/AppHeader.tsx",
-    "frontend/src/components/AuthGate.tsx",
+    "frontend/src/components/ProfileSetup.tsx",
+    "frontend/src/config.ts",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",

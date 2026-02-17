@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useListReports, useIsCallerAdmin, useGetUserProfile } from '../hooks/useQueries';
 import { copyToClipboard } from '../utils/copyToClipboard';
-import { formatPrincipal } from '../utils/formatPrincipal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,8 @@ import { downloadReportsAsCSV } from '../utils/reportDownload';
 import { useGetReportsForDownload } from '../hooks/useQueries';
 import { toast } from 'sonner';
 import { Principal } from '@icp-sdk/core/principal';
+import { SessionInvalidScreen } from '../components/SessionInvalidScreen';
+import { isAuthError } from '../utils/authErrorDetection';
 
 interface HistorySearchParams {
   userPrincipal?: string;
@@ -20,7 +21,7 @@ interface HistorySearchParams {
 export function ReportHistoryPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/history' }) as HistorySearchParams;
-  const { data: reports, isLoading } = useListReports();
+  const { data: reports, isLoading, error } = useListReports();
   const { data: isAdmin } = useIsCallerAdmin();
   const reportsForDownload = useGetReportsForDownload();
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +33,34 @@ export function ReportHistoryPage() {
   const filterUserPrincipalString = search.userPrincipal;
   const filterUserPrincipal = filterUserPrincipalString ? Principal.fromText(filterUserPrincipalString) : null;
   const { data: filteredUserProfile } = useGetUserProfile(filterUserPrincipal);
+
+  const filteredReports = useMemo(() => {
+    if (!reports) return [];
+
+    return reports.filter((report) => {
+      const matchesSearch =
+        !searchTerm ||
+        report.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.machineModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.machineSerialNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.issueDescribedByCustomer.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesDateRange =
+        (!startDate || report.date >= startDate) &&
+        (!endDate || report.date <= endDate);
+
+      const matchesUserFilter =
+        !filterUserPrincipalString ||
+        report.createdBy.toString() === filterUserPrincipalString;
+
+      return matchesSearch && matchesDateRange && matchesUserFilter;
+    });
+  }, [reports, searchTerm, startDate, endDate, filterUserPrincipalString]);
+
+  // Check for genuine session/auth errors AFTER all hooks
+  if (error && isAuthError(error)) {
+    return <SessionInvalidScreen />;
+  }
 
   const handleClearFilter = () => {
     navigate({ to: '/history', search: {} });
@@ -62,29 +91,6 @@ export function ReportHistoryPage() {
       }
     }
   };
-
-  const filteredReports = useMemo(() => {
-    if (!reports) return [];
-
-    return reports.filter((report) => {
-      const matchesSearch =
-        !searchTerm ||
-        report.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.machineModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.machineSerialNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.issueDescribedByCustomer.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesDateRange =
-        (!startDate || report.date >= startDate) &&
-        (!endDate || report.date <= endDate);
-
-      const matchesUserFilter =
-        !filterUserPrincipalString ||
-        report.createdBy.toString() === filterUserPrincipalString;
-
-      return matchesSearch && matchesDateRange && matchesUserFilter;
-    });
-  }, [reports, searchTerm, startDate, endDate, filterUserPrincipalString]);
 
   const handleDownloadCSV = async () => {
     setIsDownloading(true);
@@ -200,7 +206,7 @@ export function ReportHistoryPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 flex-shrink-0"
+                  className="h-5 w-5 shrink-0"
                   onClick={handleCopyPrincipal}
                   title="Copy Principal ID"
                 >
@@ -224,7 +230,7 @@ export function ReportHistoryPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by customer, machine, or issue..."
                 value={searchTerm}
@@ -233,7 +239,7 @@ export function ReportHistoryPage() {
               />
             </div>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="date"
                 placeholder="Start Date"
@@ -243,7 +249,7 @@ export function ReportHistoryPage() {
               />
             </div>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="date"
                 placeholder="End Date"

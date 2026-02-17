@@ -20,6 +20,9 @@ actor {
   };
 
   public shared ({ caller }) func requestApproval() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can request approval");
+    };
     UserApproval.requestApproval(approvalState, caller);
   };
 
@@ -79,8 +82,8 @@ actor {
   func createAllowlist() : Map.Map<Text, ()> {
     let allowlist = Map.empty<Text, ()>();
     let names = [
-      "Admin Name1",
-      "Admin Name2",
+      "sayedbaquar",
+      "bharatnikam",
     ];
     for (name in names.values()) {
       allowlist.add(name, ());
@@ -89,28 +92,18 @@ actor {
   };
 
   let adminAllowlist = createAllowlist();
-  let adminSignupPassword = "SecurePassword123";
+  let adminSignupPassword = "Hans@987123";
   let userProfiles = Map.empty<Principal, UserProfile>();
   let reports = Map.empty<Text, DailyServiceReport>();
   let pendingSignups = Map.empty<Principal, UserProfile>();
   var reportCounter = 4;
 
   func isAllowlistedAdmin(profile : UserProfile) : Bool {
-    let trimmedName = profile.name.trim(#text(" "));
-    switch (adminAllowlist.get(trimmedName)) {
+    let trimmedUsername = profile.username.trim(#text(" "));
+    switch (adminAllowlist.get(trimmedUsername)) {
       case (null) { false };
       case (?_) { true };
     };
-  };
-
-  func isHardcodedAdmin(profile : UserProfile) : Bool {
-    profile.username == "sayedbaquar";
-  };
-
-  func determineAccessControlRole(profile : UserProfile) : AccessControl.UserRole {
-    if (profile.role == #admin and (isAllowlistedAdmin(profile) or isHardcodedAdmin(profile))) {
-      #admin;
-    } else { #user };
   };
 
   public shared ({ caller }) func resetToFreshApp() : async () {
@@ -151,7 +144,7 @@ actor {
     let sanitizedProfile : UserProfile = {
       profile with
       name = profile.name.trim(#text(" "));
-      role = if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) }) or isHardcodedAdmin(profile)) {
+      role = if (isAllowlistedAdmin(profile)) {
         requestedRole;
       } else {
         #engineer;
@@ -171,8 +164,8 @@ actor {
       Runtime.trap("Admin signup failed: Incorrect signup password");
     };
 
-    if (not (isAllowlistedAdmin(profile) or isHardcodedAdmin(profile))) {
-      Runtime.trap("Admin signup failed: An admin profile with this name is not on the allowlist. Please contact your system administrator for additional permissions.");
+    if (not isAllowlistedAdmin(profile)) {
+      Runtime.trap("Admin signup failed: An admin profile with this username is not on the allowlist. Please contact your system administrator for additional permissions.");
     };
 
     let sanitizedProfile : UserProfile = {
@@ -194,7 +187,9 @@ actor {
     let entries = pendingSignups.entries().toArray();
 
     for ((principal, profile) in entries.values()) {
-      let accessControlRole = determineAccessControlRole(profile);
+      let accessControlRole = if (isAllowlistedAdmin(profile)) { #admin } else {
+        #user;
+      };
       AccessControl.assignRole(accessControlState, caller, principal, accessControlRole);
       pendingSignups.remove(principal);
       processed += 1;
@@ -211,24 +206,29 @@ actor {
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view profiles");
+    };
     userProfiles.get(caller);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+
     let existingProfile = userProfiles.get(caller);
 
     let finalRole = switch (existingProfile) {
       case (null) {
-        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) }) or isHardcodedAdmin(profile)) {
+        if (isAllowlistedAdmin(profile)) {
           profile.role;
         } else {
           #engineer;
         };
       };
       case (?existing) {
-        if (isAllowlistedAdmin({ profile with name = profile.name.trim(#text(" ")) }) or isHardcodedAdmin(profile)) {
-          existing.role;
-        } else {
+        if (isAllowlistedAdmin(profile)) { existing.role } else {
           #engineer;
         };
       };
@@ -261,9 +261,7 @@ actor {
         Runtime.trap("User profile not found");
       };
       case (?existingProfile) {
-        let finalRole = if (isHardcodedAdmin(existingProfile)) {
-          #admin;
-        } else if (newRole == #admin and not isAllowlistedAdmin(existingProfile)) {
+        let finalRole = if (newRole == #admin and not isAllowlistedAdmin(existingProfile)) {
           #engineer;
         } else {
           newRole;
@@ -275,7 +273,11 @@ actor {
           role = finalRole;
         };
 
-        let accessControlRole = determineAccessControlRole(updatedProfile);
+        let accessControlRole = if (isAllowlistedAdmin({ existingProfile with role = finalRole })) {
+          #admin;
+        } else {
+          #user;
+        };
         AccessControl.assignRole(accessControlState, caller, user, accessControlRole);
         userProfiles.add(user, updatedProfile);
       };
@@ -321,6 +323,9 @@ actor {
   };
 
   public shared ({ caller }) func createReport(report : DailyServiceReport) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create reports");
+    };
     reportCounter += 1;
     let reportWithCaller = { report with createdBy = caller };
     reports.add(report.id, reportWithCaller);
@@ -328,16 +333,33 @@ actor {
   };
 
   public query ({ caller }) func listReports() : async [DailyServiceReport] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list reports");
+    };
     reports.values().toArray().filter(
       func(report : DailyServiceReport) : Bool { report.createdBy == caller }
     );
   };
 
   public query ({ caller }) func getReportById(id : Text) : async ?DailyServiceReport {
-    reports.get(id);
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view reports");
+    };
+    switch (reports.get(id)) {
+      case (null) { null };
+      case (?report) {
+        if (report.createdBy != caller and not AccessControl.isAdmin(accessControlState, caller)) {
+          Runtime.trap("Unauthorized: Can only view your own reports");
+        };
+        ?report;
+      };
+    };
   };
 
   public query ({ caller }) func getReportsForDownload() : async [DailyServiceReport] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can download reports");
+    };
     reports.values().toArray().filter(
       func(report : DailyServiceReport) : Bool { report.createdBy == caller }
     );

@@ -2,12 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-logout-flow-so-that-logging-out-reliably-ends-the-session-and-the-ui-state-no-longer-shows-the-prior-user-as-authenticated-no-stale-profile-admin-status-reports-using-the-existing-full-cleanup-logout-approach",
-      "featureTitle": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
+      "featureId": "feature-ensure-the-app-uses-only-local-session-authentication-in-the-user-experience-no-internet-identity-login-prompts-redirects-and-remove-any-remaining-internet-identity-dependent-auth-flow-from-non-immutable-frontend-code-paths",
+      "featureTitle": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/AppHeader.tsx",
-        "frontend/src/components/AuthGate.tsx",
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
@@ -20,7 +17,28 @@
         "user-approval@3.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-remove-the-admin-special-password-requirement-from-the-admin-signup-ux-and-backend-gate-so-that-admin-eligible-users-are-not-blocked-by-an-extra-special-password-step-during-signup",
+      "featureTitle": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
+      "files": [
+        "frontend/src/components/ProfileSetup.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "user-approval@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

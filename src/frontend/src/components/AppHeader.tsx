@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useLocalSessionAuth } from '../hooks/useLocalSessionAuth';
 import { useFullLogout } from '../hooks/useFullLogout';
 import { useGetCallerUserProfile, useIsCallerAdmin } from '../hooks/useQueries';
 import { Button } from '@/components/ui/button';
@@ -10,24 +10,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, FileText, History, LogIn, LogOut, User, ShieldCheck, Users } from 'lucide-react';
+import { Menu, FileText, History, LogIn, LogOut, User, ShieldCheck, Users, Loader2 } from 'lucide-react';
 import { formatUsername } from '../utils/formatPrincipal';
+import { toast } from 'sonner';
 
 export function AppHeader() {
   const navigate = useNavigate();
-  const { identity, login, loginStatus } = useInternetIdentity();
+  const { isAuthenticated, login, status, error } = useLocalSessionAuth();
   const { performLogout } = useFullLogout();
   const { data: userProfile } = useGetCallerUserProfile();
   const { data: isAdmin } = useIsCallerAdmin();
 
-  const isAuthenticated = !!identity;
-  const isLoggingIn = loginStatus === 'logging-in';
+  const isSigningIn = status === 'signing-in';
+  const isInitializing = status === 'initializing';
 
   const handleAuthAction = async () => {
     if (isAuthenticated) {
       await performLogout();
     } else {
-      await login();
+      try {
+        await login();
+      } catch (err) {
+        // Error is already set in auth state and shown in AuthGate
+        // Optionally show a toast for header login attempts
+        if (error) {
+          toast.error(error);
+        }
+      }
     }
   };
 
@@ -92,13 +101,18 @@ export function AppHeader() {
             <Button
               variant={isAuthenticated ? "outline" : "default"}
               onClick={handleAuthAction}
-              disabled={isLoggingIn}
+              disabled={isSigningIn || isInitializing}
               className="gap-2"
             >
-              {isLoggingIn ? (
+              {isSigningIn ? (
                 <>
-                  <LogIn className="h-4 w-4 animate-pulse" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Signing In...
+                </>
+              ) : isInitializing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
                 </>
               ) : isAuthenticated ? (
                 <>
@@ -151,11 +165,16 @@ export function AppHeader() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleAuthAction} disabled={isLoggingIn}>
-                {isLoggingIn ? (
+              <DropdownMenuItem onClick={handleAuthAction} disabled={isSigningIn || isInitializing}>
+                {isSigningIn ? (
                   <>
-                    <LogIn className="mr-2 h-4 w-4 animate-pulse" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Signing In...
+                  </>
+                ) : isInitializing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
                   </>
                 ) : isAuthenticated ? (
                   <>

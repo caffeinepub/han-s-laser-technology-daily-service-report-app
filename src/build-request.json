@@ -1,52 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Promote user 'sayedbaquar' to admin and fix logout flow",
-  "priority": "normal",
+  "title": "Remove Internet Identity flow and fix admin signup provisioning",
+  "projectName": "Service Report App",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update backend role/permission logic so that the user whose profile.username is exactly \"sayedbaquar\" is treated as an admin (i.e., their stored UserProfile.role is #admin and AccessControl role is #admin), including when processing pending signups and when an admin attempts to update this user’s role.",
-      "target": "backend",
+      "text": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "make sayedbaquar as admin"
+          "rebuild now with Internet Identity fully removed and only local session login active",
+          "apply now and build"
         ]
       },
       "acceptanceCriteria": [
-        "If a user exists with username \"sayedbaquar\", calling the admin-only user listing shows this user with role \"Admin\" (Role.admin).",
-        "After pending signups are processed, a newly-signed-up user with username \"sayedbaquar\" receives admin permissions (passes isCallerAdmin()).",
-        "Attempting to set \"sayedbaquar\" to admin via the existing updateUserRole pathway results in admin permissions being granted (no silent downgrade due to allowlist checks)."
+        "A new user can sign in using the existing local session sign-in flow (Ed25519 local identity) and can reach the app without any Internet Identity UI.",
+        "No routes or screens require Internet Identity to proceed (local-session auth is sufficient).",
+        "No frontend components/routes import or depend on the Internet Identity hooks for user sign-in/sign-out in the active flow (outside immutable platform files)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
-      "target": "frontend",
+      "text": "Update backend admin provisioning logic so that the admin usernames \"sayedbaquar\" and \"bharatnikam\" are recognized as admins, and fix the current mismatch that prevents successful admin creation/approval due to the hardcoded allowlist values (\"Admin Name1\", \"Admin Name2\").",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "logout function not working properly. Resolve it"
+          "sayedbaquar, bharatnikam",
+          "admin special password \"Hans@987123\" not accepting"
         ]
       },
       "acceptanceCriteria": [
-        "Triggering logout results in the app returning to an unauthenticated state (no identity-bound data visible) after the logout flow completes.",
-        "After logging out from User A and logging in as User B, User A’s cached data (profile and reports) is not shown at any point.",
-        "Logout does not depend on editing immutable auth hook files (e.g., frontend/src/hooks/useInternetIdentity.ts); fixes are implemented via other frontend components/hooks that are allowed to change."
+        "After signing up with username \"sayedbaquar\", the account is treated as an admin by backend role checks (e.g., admin-only queries/mutations succeed once the user is authorized as admin in access control).",
+        "After signing up with username \"bharatnikam\", the account is treated as an admin by backend role checks (e.g., admin-only queries/mutations succeed once the user is authorized as admin in access control).",
+        "Admin recognition no longer depends on the placeholder allowlist entries \"Admin Name1\" and \"Admin Name2\" causing admin signup failures."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Set the backend admin signup password to exactly \"Hans@987123\" and ensure it applies to all admin accounts (including \"sayedbaquar\" and \"bharatnikam\") wherever the admin signup password is still used.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "set admin signup password as \"Hans@987123\"",
+          "apply to all admin accounts"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Attempting admin signup with password \"Hans@987123\" succeeds for admin-eligible accounts.",
+        "Attempting admin signup with an incorrect password fails with a clear error (if password gating remains enabled)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "also remove admin special password requirement"
+        ]
+      },
+      "acceptanceCriteria": [
+        "In the signup UI, selecting \"Admin\" does not require entering an additional admin signup password field.",
+        "Backend admin signup for admin-eligible users does not fail due to a missing/incorrect special password requirement.",
+        "A user who signs up as an admin-eligible username can access the admin area (\"/admin/users\") once their admin role is established by the backend access control flow."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files listed as immutable in SYSTEM_CONTEXT, including frontend/src/hooks/useInternetIdentity.ts and frontend/src/hooks/useActor.ts.",
-    "Keep all Motoko logic in the single backend actor (backend/main.mo). Add backend/migration.mo only if an upgrade must preserve and transform existing stable state."
+    "Do not edit files under frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and anything under frontend/src/components/ui (compose instead).",
+    "Keep all Motoko backend logic in the single actor in backend/main.mo; add backend/migration.mo only if an upgrade requires state migration."
   ],
   "nonGoals": [
-    "Implementing third-party authentication providers or non-Internet-Identity auth.",
-    "Adding new admin UI screens beyond what is necessary to ensure the admin assignment and logout behavior work correctly."
+    "Adding third-party authentication providers (only local-session auth is in scope).",
+    "Introducing external databases or additional backend services."
   ],
   "imageRequirements": {
     "required": [],

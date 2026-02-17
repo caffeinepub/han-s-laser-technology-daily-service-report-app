@@ -1,20 +1,30 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project now includes authentication/session management fixes and user role administration (assigning admins).",
+  "summary": "App login/auth changes: completely remove Internet Identity and use only local-session login. Admin setup: create admin users (sayedbaquar, bharatnikam) with a shared signup password, and remove the admin special password requirement.",
   "architectural_notes": [
-    "Introduce role-based access control (RBAC) to support admin assignment and permission checks."
+    "Auth must not route to Internet Identity; only local-session login should be active.",
+    "Admin provisioning should support multiple admin usernames sharing one signup password."
   ],
   "known_issues": [
-    "Logout function not working properly (session not ending or UI/state not updating)."
+    "Admin special password Hans@987123 not currently being accepted (needs reset/provisioning update).",
+    "App still redirects to Internet Identity despite request to remove it (auth flow not fully overridden)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-logout-flow-so-that-logging-out-reliably-ends-the-session-and-the-ui-state-no-longer-shows-the-prior-user-as-authenticated-no-stale-profile-admin-status-reports-using-the-existing-full-cleanup-logout-approach",
-      "title": "Fix the logout flow so that logging out reliably ends the session and the UI/state no longer shows the prior user as authenticated (no stale profile/admin status/reports), using the existing full-cleanup logout approach.",
+      "id": "feature-ensure-the-app-uses-only-local-session-authentication-in-the-user-experience-no-internet-identity-login-prompts-redirects-and-remove-any-remaining-internet-identity-dependent-auth-flow-from-non-immutable-frontend-code-paths",
+      "title": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
       "reqIds": [
-        "REQ-2"
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-admin-special-password-requirement-from-the-admin-signup-ux-and-backend-gate-so-that-admin-eligible-users-are-not-blocked-by-an-extra-special-password-step-during-signup",
+      "title": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -22,20 +32,40 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Assign user 'sayedbaquar' as an admin (role/permissions update).",
+      "summary": "Remove Internet Identity completely and use only local-session login flow",
       "reqIds": [],
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "id": "AR-2",
-      "summary": "Update backend role/permission logic so that the user whose profile.username is exactly \"sayedbaquar\" is treated as an admin (i.e., their stored UserProfile.role is #admin and AccessControl role is #admin), including when processing pending signups and when an admin attempts to update this user’s role.",
+      "summary": "Provision admin users (sayedbaquar, bharatnikam) with shared admin signup password Hans@987123",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Remove admin special password requirement entirely",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Update backend admin provisioning logic so that the admin usernames \"sayedbaquar\" and \"bharatnikam\" are recognized as admins, and fix the current mismatch that prevents successful admin creation/approval due to the hardcoded allowlist values (\"Admin Name1\", \"Admin Name2\").",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Set the backend admin signup password to exactly \"Hans@987123\" and ensure it applies to all admin accounts (including \"sayedbaquar\" and \"bharatnikam\") wherever the admin signup password is still used.",
+      "reqIds": [
+        "REQ-3"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Promote user 'sayedbaquar' to admin and fix logout flow",
+  "projectName": "Service Report App",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

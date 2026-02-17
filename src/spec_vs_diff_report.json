@@ -1,75 +1,59 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T16:48:25.425Z",
-  "summary": "REQ-2 logout/session-staleness appears addressed via new AuthGate gating, principal-scoped React Query keys, and continued use of the existing full-cleanup logout hook. REQ-1 is partially addressed (hardcoded admin recognition and a migration to force role=#admin for existing profiles/pending signups), but the diff evidence is insufficient to confirm that newly created/pending signups for username \"sayedbaquar\" are automatically stored with role #admin during normal signup/approval processing or that updateUserRole/user listing paths behave as required.",
+  "generatedAt": "2026-02-17T03:00:15.429Z",
+  "summary": "Backend admin allowlist and password values were updated/migrated, and the signup UI appears to drop an admin special-password field; however, the diff summary still indicates an Internet Identity login screen/cleanup remains in the active frontend, which conflicts with the requirement to use only local-session auth. Several additional frontend/UI and feature changes appear unrelated to the BuildRequest.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Ensure a newly-signed-up user with profile.username exactly \"sayedbaquar\" receives stored UserProfile.role = #admin during pending signup processing (and thus passes isCallerAdmin()).",
-      "reason": "The diff shows a migration that updates existing stable userProfiles/pendingSignups and a hardcoded-admin check used in AccessControl role determination, but it does not show normal-time signup/pending-signup processing logic that assigns/forces profile.role to #admin for new signups.",
+      "requirement": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
+      "reason": "Diff summary explicitly still describes an Internet Identity login screen and Internet Identity cleanup logic in the app, indicating II UI/flow remains present rather than fully removed from the active UX.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
+        "frontend-file-summaries.txt (\"frontend/src/components/LoginScreen.tsx\": \"Internet Identity login screen...\")",
+        "frontend-file-summaries.txt (\"frontend/src/App.tsx\": \"...invoking Internet Identity cleanup on mount...\")"
       ]
     },
     {
-      "id": "REQ-1",
-      "requirement": "Admin-only user listing shows user \"sayedbaquar\" with role \"Admin\" (Role.admin).",
-      "reason": "No user-listing implementation is shown/confirmed in the provided backend diff snippet; therefore it cannot be verified that the listing will display the stored role as Admin for this user.",
+      "id": "REQ-4",
+      "requirement": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
+      "reason": "Frontend appears to remove the special-password field, but the backend portion of removing the password gate cannot be confirmed from the provided backend diff; adminSignupPassword is still present/set in backend code and migration, which suggests password gating may still exist somewhere.",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "Attempting to set \"sayedbaquar\" to admin via the existing updateUserRole pathway results in admin permissions being granted without silent downgrade due to allowlist checks.",
-      "reason": "The diff shows determineAccessControlRole allowing admin when profile.role == #admin and (allowlisted OR hardcoded username), but the updateUserRole pathway itself is not shown; cannot confirm it persists role=#admin for this user and updates AccessControl accordingly.",
-      "evidence": [
-        "backend/main.mo"
+        "backend/main.mo (shows `let adminSignupPassword = \"Hans@987123\";`)",
+        "backend/migration.mo (sets `adminSignupPassword = \"Hans@987123\";`)",
+        "frontend-file-summaries.txt (notes frontend signups use `signupWithRole` \"without password parameter\", but no backend signupWithRole gating behavior is shown)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Industrial-themed OKLCH color system / Tailwind theme overhaul and related design tokens.",
-      "reason": "Not requested by the BuildRequest; appears to be additional styling work unrelated to admin promotion or logout correctness.",
+      "description": "Added/kept an Internet Identity LoginScreen (Internet Identity login UI) despite the request to remove II from the user experience.",
+      "reason": "BuildRequest explicitly requires no Internet Identity login prompts/redirects and removal of II-dependent flow from non-immutable frontend paths.",
       "evidence": [
-        "frontend/src/index.css",
-        "frontend/tailwind.config.js",
-        "frontend-file-summaries.txt"
+        "frontend-file-summaries.txt (\"frontend/src/components/LoginScreen.tsx\": \"Internet Identity login screen...\")"
       ]
     },
     {
-      "description": "Comprehensive deployment documentation updates (VITE_BUILD_VERSION requirements, smoke tests, service worker troubleshooting).",
-      "reason": "Not requested; outside the scope of promoting a user to admin and fixing logout flow.",
+      "description": "Added silent background geolocation capture on the report entry page.",
+      "reason": "Not requested by any requirement; BuildRequest scope is auth flow changes and admin provisioning.",
       "evidence": [
-        "frontend/DEPLOYMENT.md",
-        "frontend-file-summaries.txt"
+        "frontend-file-summaries.txt (\"frontend/src/pages/ReportEntryPage.tsx\": \"silent background geolocation capture...\")"
       ]
     },
     {
-      "description": "Report entry page changes including silent background geolocation capture on page load.",
-      "reason": "Not requested and unrelated to the specified auth/admin fixes.",
+      "description": "Large-scale UI/theming changes (industrial OKLCH color system, Tailwind config updates) and deployment documentation additions.",
+      "reason": "Not requested by any requirement; BuildRequest is focused on removing Internet Identity flow and fixing admin provisioning/signup gating.",
       "evidence": [
-        "frontend/src/pages/ReportEntryPage.tsx",
-        "frontend-file-summaries.txt"
+        "frontend-file-summaries.txt (\"frontend/src/index.css\": industrial-themed OKLCH color system...)",
+        "frontend-file-summaries.txt (\"frontend/tailwind.config.js\": custom industrial color tokens...)",
+        "frontend-file-summaries.txt (\"frontend/DEPLOYMENT.md\": comprehensive deployment documentation...)"
       ]
     },
     {
-      "description": "Admin users page enhanced system reset UX (warning dialog, cache/service worker cleanup, deterministic reload).",
-      "reason": "BuildRequest did not ask for system reset UX changes; only admin assignment and logout reliability.",
+      "description": "Introduced a backend state migration module (`backend/migration.mo`).",
+      "reason": "BuildRequest allows adding `backend/migration.mo` only if an upgrade requires state migration; the diff summary doesn’t establish that a migration is required (it may be, but it’s not evidenced as necessary in the summary).",
       "evidence": [
-        "frontend/src/pages/AdminUsersPage.tsx",
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Allow anonymous mode report detail behavior (report detail page loads without identity requirements).",
-      "reason": "Not requested; the BuildRequest focuses on ensuring logout clears identity-bound data and admin assignment for one user.",
-      "evidence": [
-        "frontend/src/pages/ReportDetailPage.tsx",
-        "frontend-file-summaries.txt"
+        "backend/migration.mo",
+        "backend/main.mo (includes `(with migration = Migration.run)`)"
       ]
     }
   ],
@@ -78,9 +62,7 @@
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/AppHeader.tsx",
-    "frontend/src/components/AuthGate.tsx",
+    "frontend/src/components/ProfileSetup.tsx",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]

@@ -1,22 +1,24 @@
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useLocalSessionAuth } from '../hooks/useLocalSessionAuth';
 import { useGetCallerUserProfile } from '../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogIn } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, LogIn, AlertCircle } from 'lucide-react';
 import { ProfileSetup } from './ProfileSetup';
 import { SignupPendingAccessScreen } from './SignupPendingAccessScreen';
-import { isPendingAccessError } from '../utils/authErrorDetection';
+import { SessionInvalidScreen } from './SessionInvalidScreen';
+import { isPendingAccessError, isAuthError } from '../utils/authErrorDetection';
 
 interface AuthGateProps {
   children: React.ReactNode;
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-  const { identity, login, loginStatus } = useInternetIdentity();
-  const { data: userProfile, isLoading: profileLoading, isFetched, error } = useGetCallerUserProfile();
+  const { isAuthenticated, login, status, error: authError } = useLocalSessionAuth();
+  const { data: userProfile, isLoading: profileLoading, isFetched, error: profileError } = useGetCallerUserProfile();
 
-  const isAuthenticated = !!identity;
-  const isLoggingIn = loginStatus === 'logging-in';
+  const isSigningIn = status === 'signing-in';
+  const isInitializing = status === 'initializing';
 
   // Show login screen when not authenticated
   if (!isAuthenticated) {
@@ -32,16 +34,27 @@ export function AuthGate({ children }: AuthGateProps) {
               Please sign in to access the application
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {authError && status === 'error' && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{authError}</AlertDescription>
+              </Alert>
+            )}
             <Button
               onClick={login}
-              disabled={isLoggingIn}
+              disabled={isSigningIn || isInitializing}
               className="w-full"
             >
-              {isLoggingIn ? (
+              {isSigningIn ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing In...
+                </>
+              ) : isInitializing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
                 </>
               ) : (
                 <>
@@ -56,8 +69,18 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
+  // Check for genuine session/auth errors from profile query
+  if (profileError && isAuthError(profileError)) {
+    return <SessionInvalidScreen />;
+  }
+
+  // Check for pending access error (expected post-signup state)
+  if (profileError && isPendingAccessError(profileError)) {
+    return <SignupPendingAccessScreen />;
+  }
+
   // Show loading while fetching profile
-  if (profileLoading) {
+  if (profileLoading || !isFetched) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
@@ -65,13 +88,8 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
-  // Check for pending access error (expected post-signup state)
-  if (error && isPendingAccessError(error)) {
-    return <SignupPendingAccessScreen />;
-  }
-
   // Show profile setup if no profile exists
-  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
+  const showProfileSetup = isAuthenticated && isFetched && userProfile === null;
   if (showProfileSetup) {
     return <ProfileSetup />;
   }

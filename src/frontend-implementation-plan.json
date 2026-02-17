@@ -1,36 +1,67 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix logout to fully clear authenticated UI state and prevent stale cached data",
+  "title": "Remove Internet Identity UX flow; remove admin special-password field from signup",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Ensure logout fully clears identity-bound React Query state and the UI cannot show stale profile/admin/reports across account switches, using the existing full-cleanup logout flow without modifying immutable auth hooks.",
+      "id": "REQ-1",
+      "summary": "Ensure the active UX/auth flow is local-session only and remove non-immutable Internet Identity dependencies from reachable frontend code paths.",
       "acceptanceCriteria": [
-        "Triggering logout results in the app returning to an unauthenticated state (no identity-bound data visible) after the logout flow completes.",
-        "After logging out from User A and logging in as User B, User A’s cached data (profile and reports) is not shown at any point.",
-        "Logout does not depend on editing immutable auth hook files (e.g., frontend/src/hooks/useInternetIdentity.ts); fixes are implemented via other frontend components/hooks that are allowed to change."
+        "A new user can sign in using the existing local session sign-in flow (Ed25519 local identity) and can reach the app without any Internet Identity UI.",
+        "No routes or screens require Internet Identity to proceed (local-session auth is sufficient).",
+        "No frontend components/routes import or depend on the Internet Identity hooks for user sign-in/sign-out in the active flow (outside immutable platform files)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Harden identity-scoped queries/mutations against stale data by (1) disabling identity-bound queries when unauthenticated and (2) scoping relevant query keys by the current principal string so cached data cannot bleed between users. This aligns with the authorization component guidance to clear cached application data on logout. Verify the component's usage instructions before implementing."
+          "description": "Make App rely on the immutable root providers (frontend/src/main.tsx) for React Query, and keep LocalSessionAuthProvider as the only app-level auth provider used by reachable routes; ensure the app boot sequence does not trigger any Internet Identity login UI/redirects (continue calling ensureNoInternetIdentityAutoAuth on mount)."
+        },
+        {
+          "path": "frontend/src/components/AuthGate.tsx",
+          "operation": "modify",
+          "description": "Confirm AuthGate exclusively uses useLocalSessionAuth for sign-in and gating, and that all unauthenticated states present only the local-session sign-in UI (no Internet Identity messaging, prompts, or calls)."
         },
         {
           "path": "frontend/src/components/AppHeader.tsx",
           "operation": "modify",
-          "description": "Add an explicit auth control in the header: when authenticated, provide a Logout action that calls the existing useFullLogout().performLogout() full-cleanup flow; when unauthenticated, provide a Login action that triggers useInternetIdentity().login(). Use existing shadcn-ui primitives (e.g., Button / DropdownMenu) for consistent UI. Verify the component's usage instructions before implementing."
+          "description": "Ensure header sign-in/sign-out actions exclusively use useLocalSessionAuth + useFullLogout and do not import/use Internet Identity hooks; keep wording and actions aligned with local-session authentication."
         },
         {
-          "path": "frontend/src/components/AuthGate.tsx",
-          "operation": "create",
-          "description": "Create an authentication gate component that prevents rendering identity-bound pages when there is no identity, ensuring the UI never displays cached profile/admin/reports after logout. When unauthenticated, show a minimal login prompt (button wired to useInternetIdentity().login()); when authenticated, render children. Optionally integrate existing signup/profile completion components if already used by the app flow. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/hooks/useLocalActor.ts",
           "operation": "modify",
-          "description": "Wire AuthGate into the app's root layout so all main routes are blocked behind authentication (or otherwise ensure routes that show identity-bound data cannot render when logged out). This wiring must ensure logout reliably returns the UI to an unauthenticated view without showing previously cached data. Verify the component's usage instructions before implementing."
+          "description": "Harden local-session actor initialization so it never falls back to Internet Identity-based actor creation logic; keep identity-based actor creation tied strictly to the local Ed25519 identity and ensure anonymous mode remains supported."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Audit and adjust all query/mutation hooks to ensure they only depend on useLocalActor/useLocalSessionAuth and do not reference useActor/useInternetIdentity; keep query keys scoped by local principalId to prevent cross-session data leakage."
+        },
+        {
+          "path": "frontend/src/utils/ensureNoInternetIdentityAutoAuth.ts",
+          "operation": "modify",
+          "description": "Keep the best-effort Internet Identity persistence cleanup, and ensure it is safe/idempotent so the app never re-enters an Internet Identity flow due to residual AuthClient state."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Remove the admin special-password step from the signup UI so admin-eligible users are not blocked by an extra password field.",
+      "acceptanceCriteria": [
+        "In the signup UI, selecting \"Admin\" does not require entering an additional admin signup password field.",
+        "Backend admin signup for admin-eligible users does not fail due to a missing/incorrect special password requirement.",
+        "A user who signs up as an admin-eligible username can access the admin area (\"/admin/users\") once their admin role is established by the backend access control flow."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ProfileSetup.tsx",
+          "operation": "modify",
+          "description": "Remove the admin signup password input, validation, and related helper text; when \"Admin\" is selected, submit via the non-password signup path (signupWithRole) using the admin role selection. Use existing shadcn/ui form components (Button/Input/Label/Card/Alert/RadioGroup). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update signup hooks usage to support admin selection without an extra password parameter (prefer signupWithRole for both engineer/admin as per UI change); keep cache invalidation behavior consistent after signup."
         }
       ]
     }

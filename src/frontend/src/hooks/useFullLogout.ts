@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useInternetIdentity } from './useInternetIdentity';
+import { useLocalSessionAuth } from './useLocalSessionAuth';
 import { clearAuthSessionStorage } from '../utils/authSessionCleanup';
 import { clearPWACaches } from '../utils/pwaCacheCleanup';
 import { clearAuthClientIndexedDB } from '../utils/authClientIndexedDbCleanup';
@@ -21,7 +21,7 @@ import { clearAuthClientPersistentSession } from '../utils/authClientPersistentL
  * 4. Verify no stale profile/username shown during account switch
  */
 export function useFullLogout() {
-  const { clear } = useInternetIdentity();
+  const { logout } = useLocalSessionAuth();
   const queryClient = useQueryClient();
 
   const performLogout = async (options?: { isReset?: boolean; skipReload?: boolean }) => {
@@ -35,8 +35,8 @@ export function useFullLogout() {
       // This removes ALL cached data including principal-scoped queries
       queryClient.clear();
       
-      // Step 3: Clear Internet Identity session (in-memory)
-      await clear();
+      // Step 3: Clear local session auth
+      await logout();
       
       // Step 4: Clear persisted AuthClient session (creates fresh AuthClient and calls logout)
       await clearAuthClientPersistentSession();

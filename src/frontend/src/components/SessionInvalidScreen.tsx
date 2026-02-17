@@ -1,10 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { useFullLogout } from '../hooks/useFullLogout';
 
 export function SessionInvalidScreen() {
-  const handleRefresh = () => {
-    window.location.reload();
+  const { performLogout } = useFullLogout();
+
+  const handleRecovery = async () => {
+    // Clear local session and cached data, then return to signed-out state
+    await performLogout();
   };
 
   return (
@@ -16,15 +20,15 @@ export function SessionInvalidScreen() {
             Session Error
           </CardTitle>
           <CardDescription>
-            An error occurred with your session. Please refresh the page to continue.
+            Your session has expired or is no longer valid. Please sign in again to continue.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button
-            onClick={handleRefresh}
+            onClick={handleRecovery}
             className="w-full"
           >
-            Refresh Page
+            Return to Sign In
           </Button>
         </CardContent>
       </Card>

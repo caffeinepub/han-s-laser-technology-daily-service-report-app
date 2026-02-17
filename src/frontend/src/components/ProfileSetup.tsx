@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useSignupWithRole, useSignupAdmin } from '../hooks/useQueries';
+import { useSignupWithRole } from '../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, User, AlertCircle, Info, ShieldCheck, Wrench, CheckCircle } from 'lucide-react';
+import { Loader2, User, AlertCircle, ShieldCheck, Wrench, CheckCircle } from 'lucide-react';
 import { Role, type UserProfile } from '../backend';
 import { validateEmail, validateMobileNumber, validateRequired } from '../utils/signupValidation';
 import { translateSignupError } from '../utils/signupErrorMessaging';
@@ -20,14 +20,12 @@ export function ProfileSetup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [accountType, setAccountType] = useState<AccountType>('engineer');
-  const [adminPassword, setAdminPassword] = useState('');
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [backendError, setBackendError] = useState<string>('');
   const [signupSuccess, setSignupSuccess] = useState(false);
   
   const signupMutation = useSignupWithRole();
-  const signupAdminMutation = useSignupAdmin();
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -48,13 +46,6 @@ export function ProfileSetup() {
     if (passwordError) newErrors.password = passwordError;
     else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    // Validate admin password if admin account type is selected (only check non-empty)
-    if (accountType === 'admin') {
-      if (!adminPassword || adminPassword.trim() === '') {
-        newErrors.adminPassword = 'Admin signup password is required';
-      }
     }
     
     setErrors(newErrors);
@@ -79,36 +70,22 @@ export function ProfileSetup() {
         role: accountType === 'admin' ? Role.admin : Role.engineer,
       };
 
-      if (accountType === 'admin') {
-        // Use admin signup mutation with password (backend validates correctness)
-        await signupAdminMutation.mutateAsync({
-          profile,
-          password: adminPassword,
-        });
-        // Clear admin password after successful signup
-        setAdminPassword('');
-      } else {
-        // Use regular signup mutation
-        await signupMutation.mutateAsync({
-          profile,
-          requestedRole: Role.engineer,
-        });
-      }
+      // Use signupWithRole for both engineer and admin
+      await signupMutation.mutateAsync({
+        profile,
+        requestedRole: accountType === 'admin' ? Role.admin : Role.engineer,
+      });
       
       // Success - show success state
       setSignupSuccess(true);
-      // Mutations will trigger profile refetch and UI will update automatically
+      // Mutation will trigger profile refetch and UI will update automatically
     } catch (error: any) {
       const errorMessage = translateSignupError(error);
       setBackendError(errorMessage);
-      // Clear admin password on error to prevent resubmission with stale password
-      if (accountType === 'admin') {
-        setAdminPassword('');
-      }
     }
   };
 
-  const isPending = signupMutation.isPending || signupAdminMutation.isPending;
+  const isPending = signupMutation.isPending;
 
   // Show success state after signup
   if (signupSuccess) {
@@ -283,41 +260,12 @@ export function ProfileSetup() {
                     <ShieldCheck className="h-4 w-4 text-warning" />
                     <div>
                       <div className="font-medium">Admin</div>
-                      <div className="text-xs text-muted-foreground">Administrator account (requires password)</div>
+                      <div className="text-xs text-muted-foreground">Administrator account</div>
                     </div>
                   </Label>
                 </div>
               </RadioGroup>
             </div>
-
-            {accountType === 'admin' && (
-              <>
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    Admin accounts require a special signup password. Contact your system administrator if you don't have it.
-                  </AlertDescription>
-                </Alert>
-                <div className="space-y-2">
-                  <Label htmlFor="adminPassword">Admin Signup Password *</Label>
-                  <Input
-                    id="adminPassword"
-                    type="password"
-                    placeholder="Enter admin signup password"
-                    value={adminPassword}
-                    onChange={(e) => {
-                      setAdminPassword(e.target.value);
-                      if (errors.adminPassword) setErrors({ ...errors, adminPassword: '' });
-                    }}
-                    required
-                    disabled={isPending}
-                  />
-                  {errors.adminPassword && (
-                    <p className="text-sm text-destructive">{errors.adminPassword}</p>
-                  )}
-                </div>
-              </>
-            )}
 
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useListUsers, useDeleteUser, useIsCallerAdmin, useResetToFreshApp } from '../hooks/useQueries';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useLocalSessionAuth } from '../hooks/useLocalSessionAuth';
 import { useFullLogout } from '../hooks/useFullLogout';
 import { copyToClipboard } from '../utils/copyToClipboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,24 +18,31 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Trash2, Users, ShieldCheck, Wrench, XCircle, FileText, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Loader2, Trash2, Users, ShieldCheck, Wrench, XCircle, FileText, Copy, Check, AlertTriangle, AlertCircle } from 'lucide-react';
 import { AccessDeniedScreen } from '../components/AccessDeniedScreen';
+import { SessionInvalidScreen } from '../components/SessionInvalidScreen';
 import { Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
 import { toast } from 'sonner';
+import { isAuthError } from '../utils/authErrorDetection';
 
 export function AdminUsersPage() {
   const navigate = useNavigate();
+  const { principalId } = useLocalSessionAuth();
   const { data: isAdmin, isLoading: adminCheckLoading, isFetched: adminCheckFetched } = useIsCallerAdmin();
   const { data: users, isLoading: usersLoading, error } = useListUsers();
   const deleteUser = useDeleteUser();
   const resetToFreshApp = useResetToFreshApp();
-  const { identity } = useInternetIdentity();
   const { performLogout } = useFullLogout();
   const [userToDelete, setUserToDelete] = useState<Principal | null>(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
+
+  // Check for genuine session/auth errors
+  if (error && isAuthError(error)) {
+    return <SessionInvalidScreen />;
+  }
 
   // Show loading while checking admin status
   if (adminCheckLoading || !adminCheckFetched) {
@@ -131,7 +138,7 @@ export function AdminUsersPage() {
     }
   };
 
-  const currentUserPrincipal = identity?.getPrincipal().toString();
+  const currentUserPrincipal = principalId;
   const adminCount = users?.filter(([_, profile]) => profile.role === Role.admin).length || 0;
   const engineerCount = users?.filter(([_, profile]) => profile.role === Role.engineer).length || 0;
 
@@ -237,7 +244,7 @@ export function AdminUsersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-5 w-5 flex-shrink-0"
+                          className="h-5 w-5 shrink-0"
                           onClick={() => handleCopyUsername(profile.username)}
                           title="Copy username"
                         >
@@ -262,7 +269,7 @@ export function AdminUsersPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-5 w-5 flex-shrink-0"
+                            className="h-5 w-5 shrink-0"
                             onClick={() => handleCopyPrincipal(principal)}
                             title="Copy Principal ID"
                           >
@@ -392,20 +399,18 @@ export function AdminUsersPage() {
                 <li>All application data</li>
               </ul>
               <p className="font-semibold text-destructive">
-                This action cannot be undone. The application will restart with a fresh state.
+                This action cannot be undone. Are you absolutely sure?
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           {resetError && (
             <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{resetError}</AlertDescription>
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetToFreshApp.isPending}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={resetToFreshApp.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleResetConfirm}
               disabled={resetToFreshApp.isPending}

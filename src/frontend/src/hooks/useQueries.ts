@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import { useInternetIdentity } from './useInternetIdentity';
+import { useLocalActor } from './useLocalActor';
+import { useLocalSessionAuth } from './useLocalSessionAuth';
 import type { DailyServiceReport, UserProfile, Role } from '../backend';
 import type { Principal } from '@icp-sdk/core/principal';
 
@@ -24,14 +24,11 @@ const QUERY_KEYS = {
 // =========================
 
 export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
-  const principalId = identity?.getPrincipal().toString();
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated, principalId } = useLocalSessionAuth();
 
   const query = useQuery<UserProfile | null>({
-    queryKey: QUERY_KEYS.currentUserProfile(principalId),
+    queryKey: QUERY_KEYS.currentUserProfile(principalId ?? undefined),
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.getCallerUserProfile();
@@ -49,10 +46,8 @@ export function useGetCallerUserProfile() {
 }
 
 export function useGetUserProfile(principal: Principal | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated } = useLocalSessionAuth();
 
   return useQuery<UserProfile | null>({
     queryKey: principal ? QUERY_KEYS.userProfile(principal.toString()) : ['userProfile', 'null'],
@@ -65,14 +60,11 @@ export function useGetUserProfile(principal: Principal | null) {
 }
 
 export function useIsCallerAdmin() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
-  const principalId = identity?.getPrincipal().toString();
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated, principalId } = useLocalSessionAuth();
 
   return useQuery<boolean>({
-    queryKey: QUERY_KEYS.isAdmin(principalId),
+    queryKey: QUERY_KEYS.isAdmin(principalId ?? undefined),
     queryFn: async () => {
       if (!actor) return false;
       try {
@@ -92,11 +84,9 @@ export function useIsCallerAdmin() {
 // =========================
 
 export function useSaveCallerUserProfile() {
-  const { actor } = useActor();
+  const { actor } = useLocalActor();
   const queryClient = useQueryClient();
-  const { identity } = useInternetIdentity();
-
-  const principalId = identity?.getPrincipal().toString();
+  const { principalId } = useLocalSessionAuth();
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
@@ -104,17 +94,15 @@ export function useSaveCallerUserProfile() {
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId ?? undefined) });
     },
   });
 }
 
 export function useSignupWithRole() {
-  const { actor } = useActor();
+  const { actor } = useLocalActor();
   const queryClient = useQueryClient();
-  const { identity } = useInternetIdentity();
-
-  const principalId = identity?.getPrincipal().toString();
+  const { principalId } = useLocalSessionAuth();
 
   return useMutation({
     mutationFn: async ({ profile, requestedRole }: { profile: UserProfile; requestedRole: Role }) => {
@@ -122,33 +110,14 @@ export function useSignupWithRole() {
       return actor.signupWithRole(profile, requestedRole);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin(principalId) });
-    },
-  });
-}
-
-export function useSignupAdmin() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-  const { identity } = useInternetIdentity();
-
-  const principalId = identity?.getPrincipal().toString();
-
-  return useMutation({
-    mutationFn: async ({ profile, password }: { profile: UserProfile; password: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.signupAdmin(profile, password);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin(principalId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.currentUserProfile(principalId ?? undefined) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isAdmin(principalId ?? undefined) });
     },
   });
 }
 
 export function useUpdateUserRole() {
-  const { actor } = useActor();
+  const { actor } = useLocalActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -163,7 +132,7 @@ export function useUpdateUserRole() {
 }
 
 export function useDeleteUser() {
-  const { actor } = useActor();
+  const { actor } = useLocalActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -182,14 +151,11 @@ export function useDeleteUser() {
 // =========================
 
 export function useListReports() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
-  const principalId = identity?.getPrincipal().toString();
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated, principalId } = useLocalSessionAuth();
 
   return useQuery<DailyServiceReport[]>({
-    queryKey: QUERY_KEYS.reports(principalId),
+    queryKey: QUERY_KEYS.reports(principalId ?? undefined),
     queryFn: async () => {
       if (!actor) return [];
       return actor.listReports();
@@ -198,49 +164,24 @@ export function useListReports() {
   });
 }
 
-export function useGetReportById(id: string | undefined) {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
+export function useGetReportById(id: string) {
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated } = useLocalSessionAuth();
 
   return useQuery<DailyServiceReport | null>({
-    queryKey: id ? QUERY_KEYS.report(id) : ['report', 'undefined'],
+    queryKey: QUERY_KEYS.report(id),
     queryFn: async () => {
-      if (!actor || !id) return null;
+      if (!actor) return null;
       return actor.getReportById(id);
     },
     enabled: !!actor && !actorFetching && !!id && isAuthenticated,
   });
 }
 
-export function useGetReportsForDownload() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
-  const principalId = identity?.getPrincipal().toString();
-
-  return useQuery<DailyServiceReport[]>({
-    queryKey: QUERY_KEYS.reportsForDownload(principalId),
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getReportsForDownload();
-    },
-    enabled: !!actor && !actorFetching && isAuthenticated,
-  });
-}
-
-// =========================
-// Report Mutations
-// =========================
-
 export function useCreateReport() {
-  const { actor } = useActor();
+  const { actor } = useLocalActor();
   const queryClient = useQueryClient();
-  const { identity } = useInternetIdentity();
-
-  const principalId = identity?.getPrincipal().toString();
+  const { principalId } = useLocalSessionAuth();
 
   return useMutation({
     mutationFn: async (report: DailyServiceReport) => {
@@ -248,8 +189,8 @@ export function useCreateReport() {
       return actor.createReport(report);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reports(principalId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reportsForDownload(principalId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reports(principalId ?? undefined) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.reportsForDownload(principalId ?? undefined) });
     },
   });
 }
@@ -259,10 +200,8 @@ export function useCreateReport() {
 // =========================
 
 export function useListUsers() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated } = useLocalSessionAuth();
 
   return useQuery<Array<[Principal, UserProfile]>>({
     queryKey: QUERY_KEYS.users,
@@ -275,10 +214,8 @@ export function useListUsers() {
 }
 
 export function useGetPendingSignupsCount() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  const isAuthenticated = !!identity;
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated } = useLocalSessionAuth();
 
   return useQuery<bigint>({
     queryKey: QUERY_KEYS.pendingSignupsCount,
@@ -290,12 +227,8 @@ export function useGetPendingSignupsCount() {
   });
 }
 
-// =========================
-// Admin Mutations
-// =========================
-
 export function useProcessPendingSignups() {
-  const { actor } = useActor();
+  const { actor } = useLocalActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -311,16 +244,26 @@ export function useProcessPendingSignups() {
 }
 
 export function useResetToFreshApp() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
+  const { actor } = useLocalActor();
 
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.resetToFreshApp();
     },
-    onSuccess: () => {
-      queryClient.clear();
+  });
+}
+
+export function useGetReportsForDownload() {
+  const { actor, isFetching: actorFetching } = useLocalActor();
+  const { isAuthenticated, principalId } = useLocalSessionAuth();
+
+  return useQuery<DailyServiceReport[]>({
+    queryKey: QUERY_KEYS.reportsForDownload(principalId ?? undefined),
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getReportsForDownload();
     },
+    enabled: !!actor && !actorFetching && isAuthenticated,
   });
 }

@@ -8,9 +8,11 @@ import { ReportDetailPage } from './pages/ReportDetailPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AccessDeniedScreen } from './components/AccessDeniedScreen';
 import { useIsCallerAdmin } from './hooks/useQueries';
-import { useInternetIdentity } from './hooks/useInternetIdentity';
+import { useLocalSessionAuth, LocalSessionAuthProvider } from './hooks/useLocalSessionAuth';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
+import { useEffect } from 'react';
+import { ensureNoInternetIdentityAutoAuth } from './utils/ensureNoInternetIdentityAutoAuth';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,11 +24,11 @@ const queryClient = new QueryClient({
 });
 
 function AdminRouteGuard({ children }: { children: React.ReactNode }) {
-  const { identity } = useInternetIdentity();
+  const { isAuthenticated } = useLocalSessionAuth();
   const { data: isAdmin, isLoading, isFetched } = useIsCallerAdmin();
 
   // Anonymous users cannot access admin routes - show access denied without login prompt
-  if (!identity) {
+  if (!isAuthenticated) {
     return <AccessDeniedScreen />;
   }
 
@@ -104,11 +106,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+function AppContent() {
+  // Clean up any Internet Identity persistence on mount
+  useEffect(() => {
+    ensureNoInternetIdentityAutoAuth();
+  }, []);
+
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Toaster />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
+      <LocalSessionAuthProvider>
+        <AppContent />
+      </LocalSessionAuthProvider>
     </QueryClientProvider>
   );
 }
