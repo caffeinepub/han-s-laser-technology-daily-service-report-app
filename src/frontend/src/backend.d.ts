@@ -57,6 +57,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    adminSignup(profile: UserProfile): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createReport(report: DailyServiceReport): Promise<string>;
     deleteUser(user: Principal): Promise<void>;
@@ -76,7 +77,6 @@ export interface backendInterface {
     resetToFreshApp(): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setApproval(user: Principal, status: ApprovalStatus): Promise<void>;
-    signupAdmin(profile: UserProfile, password: string): Promise<void>;
     signupWithRole(profile: UserProfile, requestedRole: Role): Promise<void>;
     updateUserRole(user: Principal, newRole: Role): Promise<void>;
 }

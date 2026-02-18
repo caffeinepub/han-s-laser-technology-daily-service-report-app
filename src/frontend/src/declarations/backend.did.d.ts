@@ -52,6 +52,7 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'adminSignup' : ActorMethod<[UserProfile], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createReport' : ActorMethod<[DailyServiceReport], string>,
   'deleteUser' : ActorMethod<[Principal], undefined>,
@@ -71,7 +72,6 @@ export interface _SERVICE {
   'resetToFreshApp' : ActorMethod<[], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setApproval' : ActorMethod<[Principal, ApprovalStatus], undefined>,
-  'signupAdmin' : ActorMethod<[UserProfile, string], undefined>,
   'signupWithRole' : ActorMethod<[UserProfile, Role], undefined>,
   'updateUserRole' : ActorMethod<[Principal, Role], undefined>,
 }

@@ -1,56 +1,33 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T03:00:15.432Z",
+  "generatedAt": "2026-02-17T03:14:10.803Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 2,
+    "total": 2,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/AuthGate.tsx",
-          "frontend/src/components/AppHeader.tsx",
-          "frontend/src/hooks/useLocalActor.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/ensureNoInternetIdentityAutoAuth.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts"
-        ]
+        "summary": "Remove the special admin signup password requirement from the backend so that creating an admin account no longer requires providing a separate admin signup password.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Update backend admin provisioning logic so that the admin usernames \"sayedbaquar\" and \"bharatnikam\" are recognized as admins, and fix the current mismatch that prevents successful admin creation/approval due to the hardcoded allowlist values (\"Admin Name1\", \"Admin Name2\").",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Set the backend admin signup password to exactly \"Hans@987123\" and ensure it applies to all admin accounts (including \"sayedbaquar\" and \"bharatnikam\") wherever the admin signup password is still used.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
+        "summary": "Remove any user-facing UI text and error messaging that states or implies admins require a special signup password (including: \"Admin accounts require a special signup password. Contact your system administrator if you don't have it.\").",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/utils/signupErrorMessaging.ts",
+          "frontend/src/components/ProfileSetup.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/utils/signupErrorMessaging.ts",
+          "frontend/src/components/ProfileSetup.tsx"
         ]
       }
     ]
@@ -59,13 +36,15 @@
     "backend/main.mo",
     "backend/migration.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
     "frontend/src/components/ProfileSetup.tsx",
-    "frontend/src/config.ts",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/utils/signupErrorMessaging.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

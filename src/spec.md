@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Remove any Internet Identity login flow from the app experience and fix admin signup/provisioning so specified usernames are recognized as admins without a special-password step.
+**Goal:** Remove the special admin signup password requirement and eliminate related UI messaging.
 
 **Planned changes:**
-- Update frontend authentication UX to use only the existing local-session (Ed25519) sign-in flow, removing Internet Identity prompts/redirects and any non-immutable code-path dependencies on Internet Identity hooks.
-- Update backend admin provisioning to recognize usernames `sayedbaquar` and `bharatnikam` as admins instead of placeholder allowlist values.
-- Set the backend admin signup password to exactly `Hans@987123` wherever it is still used.
-- Remove the “admin special password” requirement from both the signup UI and backend gating so admin-eligible users are not blocked by an extra password step.
+- Update backend admin signup logic to no longer enforce any separate/hardcoded “admin signup password” check.
+- Remove any admin signup UI field/step that asks for a special admin signup password.
+- Remove or update any frontend helper text, banners, toasts, and translation/error mapping that states or implies admins require a special signup password.
 
-**User-visible outcome:** Users can sign in using local-session authentication without any Internet Identity UI, and admin-eligible usernames (`sayedbaquar`, `bharatnikam`) can sign up and access admin functionality (e.g., `/admin/users`) without a special-password field blocking them.
+**User-visible outcome:** Users can create an admin account (per existing eligibility rules) without providing an extra admin signup password, and the app no longer shows messages about needing a special admin signup password.

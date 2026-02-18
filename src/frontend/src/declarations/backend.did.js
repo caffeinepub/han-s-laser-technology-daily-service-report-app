@@ -8,6 +8,14 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const Role = IDL.Variant({ 'admin' : IDL.Null, 'engineer' : IDL.Null });
+export const UserProfile = IDL.Record({
+  'username' : IDL.Text,
+  'name' : IDL.Text,
+  'role' : Role,
+  'mobileNumber' : IDL.Text,
+  'email' : IDL.Text,
+});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -37,14 +45,6 @@ export const DailyServiceReport = IDL.Record({
   'warrantyStatus' : IDL.Text,
   'issueDescribedByCustomer' : IDL.Text,
 });
-export const Role = IDL.Variant({ 'admin' : IDL.Null, 'engineer' : IDL.Null });
-export const UserProfile = IDL.Record({
-  'username' : IDL.Text,
-  'name' : IDL.Text,
-  'role' : Role,
-  'mobileNumber' : IDL.Text,
-  'email' : IDL.Text,
-});
 export const ApprovalStatus = IDL.Variant({
   'pending' : IDL.Null,
   'approved' : IDL.Null,
@@ -57,6 +57,7 @@ export const UserApprovalInfo = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'adminSignup' : IDL.Func([UserProfile], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createReport' : IDL.Func([DailyServiceReport], [IDL.Text], []),
   'deleteUser' : IDL.Func([IDL.Principal], [], []),
@@ -92,7 +93,6 @@ export const idlService = IDL.Service({
   'resetToFreshApp' : IDL.Func([], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
-  'signupAdmin' : IDL.Func([UserProfile, IDL.Text], [], []),
   'signupWithRole' : IDL.Func([UserProfile, Role], [], []),
   'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
 });
@@ -100,6 +100,14 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const Role = IDL.Variant({ 'admin' : IDL.Null, 'engineer' : IDL.Null });
+  const UserProfile = IDL.Record({
+    'username' : IDL.Text,
+    'name' : IDL.Text,
+    'role' : Role,
+    'mobileNumber' : IDL.Text,
+    'email' : IDL.Text,
+  });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
@@ -129,14 +137,6 @@ export const idlFactory = ({ IDL }) => {
     'warrantyStatus' : IDL.Text,
     'issueDescribedByCustomer' : IDL.Text,
   });
-  const Role = IDL.Variant({ 'admin' : IDL.Null, 'engineer' : IDL.Null });
-  const UserProfile = IDL.Record({
-    'username' : IDL.Text,
-    'name' : IDL.Text,
-    'role' : Role,
-    'mobileNumber' : IDL.Text,
-    'email' : IDL.Text,
-  });
   const ApprovalStatus = IDL.Variant({
     'pending' : IDL.Null,
     'approved' : IDL.Null,
@@ -149,6 +149,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'adminSignup' : IDL.Func([UserProfile], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createReport' : IDL.Func([DailyServiceReport], [IDL.Text], []),
     'deleteUser' : IDL.Func([IDL.Principal], [], []),
@@ -184,7 +185,6 @@ export const idlFactory = ({ IDL }) => {
     'resetToFreshApp' : IDL.Func([], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setApproval' : IDL.Func([IDL.Principal, ApprovalStatus], [], []),
-    'signupAdmin' : IDL.Func([UserProfile, IDL.Text], [], []),
     'signupWithRole' : IDL.Func([UserProfile, Role], [], []),
     'updateUserRole' : IDL.Func([IDL.Principal, Role], [], []),
   });

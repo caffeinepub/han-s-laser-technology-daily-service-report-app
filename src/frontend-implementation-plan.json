@@ -1,67 +1,26 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove Internet Identity UX flow; remove admin special-password field from signup",
+  "title": "Remove admin special signup password messaging from frontend",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Ensure the active UX/auth flow is local-session only and remove non-immutable Internet Identity dependencies from reachable frontend code paths.",
+      "id": "REQ-2",
+      "summary": "Remove UI copy and error translations implying admins need a special signup password; ensure admin signup has no extra password field/step.",
       "acceptanceCriteria": [
-        "A new user can sign in using the existing local session sign-in flow (Ed25519 local identity) and can reach the app without any Internet Identity UI.",
-        "No routes or screens require Internet Identity to proceed (local-session auth is sufficient).",
-        "No frontend components/routes import or depend on the Internet Identity hooks for user sign-in/sign-out in the active flow (outside immutable platform files)."
+        "No screen, banner, form helper text, or error toast displays messaging that admins require a special signup password.",
+        "The signup error translation logic no longer returns a message indicating an \"admin signup password is incorrect\" (or equivalent), since the backend should not enforce that condition anymore.",
+        "Admin signup UX does not request a separate admin signup password field/step."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/utils/signupErrorMessaging.ts",
           "operation": "modify",
-          "description": "Make App rely on the immutable root providers (frontend/src/main.tsx) for React Query, and keep LocalSessionAuthProvider as the only app-level auth provider used by reachable routes; ensure the app boot sequence does not trigger any Internet Identity login UI/redirects (continue calling ensureNoInternetIdentityAutoAuth on mount)."
+          "description": "Remove the special-case translation for \"incorrect signup password\" that tells users an admin signup password is required; replace with a neutral, non-password-specific message (e.g., generic signup failure or admin authorization guidance) while keeping other sanitization behavior intact."
         },
-        {
-          "path": "frontend/src/components/AuthGate.tsx",
-          "operation": "modify",
-          "description": "Confirm AuthGate exclusively uses useLocalSessionAuth for sign-in and gating, and that all unauthenticated states present only the local-session sign-in UI (no Internet Identity messaging, prompts, or calls)."
-        },
-        {
-          "path": "frontend/src/components/AppHeader.tsx",
-          "operation": "modify",
-          "description": "Ensure header sign-in/sign-out actions exclusively use useLocalSessionAuth + useFullLogout and do not import/use Internet Identity hooks; keep wording and actions aligned with local-session authentication."
-        },
-        {
-          "path": "frontend/src/hooks/useLocalActor.ts",
-          "operation": "modify",
-          "description": "Harden local-session actor initialization so it never falls back to Internet Identity-based actor creation logic; keep identity-based actor creation tied strictly to the local Ed25519 identity and ensure anonymous mode remains supported."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Audit and adjust all query/mutation hooks to ensure they only depend on useLocalActor/useLocalSessionAuth and do not reference useActor/useInternetIdentity; keep query keys scoped by local principalId to prevent cross-session data leakage."
-        },
-        {
-          "path": "frontend/src/utils/ensureNoInternetIdentityAutoAuth.ts",
-          "operation": "modify",
-          "description": "Keep the best-effort Internet Identity persistence cleanup, and ensure it is safe/idempotent so the app never re-enters an Internet Identity flow due to residual AuthClient state."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Remove the admin special-password step from the signup UI so admin-eligible users are not blocked by an extra password field.",
-      "acceptanceCriteria": [
-        "In the signup UI, selecting \"Admin\" does not require entering an additional admin signup password field.",
-        "Backend admin signup for admin-eligible users does not fail due to a missing/incorrect special password requirement.",
-        "A user who signs up as an admin-eligible username can access the admin area (\"/admin/users\") once their admin role is established by the backend access control flow."
-      ],
-      "file_operations": [
         {
           "path": "frontend/src/components/ProfileSetup.tsx",
           "operation": "modify",
-          "description": "Remove the admin signup password input, validation, and related helper text; when \"Admin\" is selected, submit via the non-password signup path (signupWithRole) using the admin role selection. Use existing shadcn/ui form components (Button/Input/Label/Card/Alert/RadioGroup). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Update signup hooks usage to support admin selection without an extra password parameter (prefer signupWithRole for both engineer/admin as per UI change); keep cache invalidation behavior consistent after signup."
+          "description": "Audit and remove any user-facing helper text, inline errors, or conditional UI related to an admin-only special signup password; confirm the admin path uses the same fields/flow as other roles (no extra admin password field/step) and that any displayed errors rely on the updated translateSignupError behavior."
         }
       ]
     }

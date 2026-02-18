@@ -1,59 +1,40 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T03:00:15.429Z",
-  "summary": "Backend admin allowlist and password values were updated/migrated, and the signup UI appears to drop an admin special-password field; however, the diff summary still indicates an Internet Identity login screen/cleanup remains in the active frontend, which conflicts with the requirement to use only local-session auth. Several additional frontend/UI and feature changes appear unrelated to the BuildRequest.",
+  "generatedAt": "2026-02-17T03:14:10.800Z",
+  "summary": "Frontend changes clearly remove the admin-signup-password UI field and related error messaging. Backend changes are truncated; while a migration stub suggests removal of an `adminSignupPassword` field, the diff summary does not provide sufficient evidence that the backend no longer enforces an \"incorrect signup password\" gate in admin signup logic.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
-      "reason": "Diff summary explicitly still describes an Internet Identity login screen and Internet Identity cleanup logic in the app, indicating II UI/flow remains present rather than fully removed from the active UX.",
+      "requirement": "Remove the special admin signup password requirement from the backend so that creating an admin account no longer requires providing a separate admin signup password.",
+      "reason": "The backend file diff is truncated and does not show the admin signup method(s) (e.g., `signupAdmin`) or any prior hardcoded `adminSignupPassword` comparison being removed/disabled. The added migration removes a field but does not prove runtime checks were removed.",
       "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/components/LoginScreen.tsx\": \"Internet Identity login screen...\")",
-        "frontend-file-summaries.txt (\"frontend/src/App.tsx\": \"...invoking Internet Identity cleanup on mount...\")"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
-      "reason": "Frontend appears to remove the special-password field, but the backend portion of removing the password gate cannot be confirmed from the provided backend diff; adminSignupPassword is still present/set in backend code and migration, which suggests password gating may still exist somewhere.",
-      "evidence": [
-        "backend/main.mo (shows `let adminSignupPassword = \"Hans@987123\";`)",
-        "backend/migration.mo (sets `adminSignupPassword = \"Hans@987123\";`)",
-        "frontend-file-summaries.txt (notes frontend signups use `signupWithRole` \"without password parameter\", but no backend signupWithRole gating behavior is shown)"
+        "backend/main.mo (truncated)",
+        "backend/migration.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added/kept an Internet Identity LoginScreen (Internet Identity login UI) despite the request to remove II from the user experience.",
-      "reason": "BuildRequest explicitly requires no Internet Identity login prompts/redirects and removal of II-dependent flow from non-immutable frontend paths.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/components/LoginScreen.tsx\": \"Internet Identity login screen...\")"
-      ]
-    },
-    {
-      "description": "Added silent background geolocation capture on the report entry page.",
-      "reason": "Not requested by any requirement; BuildRequest scope is auth flow changes and admin provisioning.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/pages/ReportEntryPage.tsx\": \"silent background geolocation capture...\")"
-      ]
-    },
-    {
-      "description": "Large-scale UI/theming changes (industrial OKLCH color system, Tailwind config updates) and deployment documentation additions.",
-      "reason": "Not requested by any requirement; BuildRequest is focused on removing Internet Identity flow and fixing admin provisioning/signup gating.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/index.css\": industrial-themed OKLCH color system...)",
-        "frontend-file-summaries.txt (\"frontend/tailwind.config.js\": custom industrial color tokens...)",
-        "frontend-file-summaries.txt (\"frontend/DEPLOYMENT.md\": comprehensive deployment documentation...)"
-      ]
-    },
-    {
-      "description": "Introduced a backend state migration module (`backend/migration.mo`).",
-      "reason": "BuildRequest allows adding `backend/migration.mo` only if an upgrade requires state migration; the diff summary doesn’t establish that a migration is required (it may be, but it’s not evidenced as necessary in the summary).",
+      "description": "Added backend migration module that references an old `adminSignupPassword` field.",
+      "reason": "The BuildRequest did not ask for a migration framework/module; it only required removing the password requirement/check.",
       "evidence": [
         "backend/migration.mo",
-        "backend/main.mo (includes `(with migration = Migration.run)`)"
+        "backend/main.mo (with migration = Migration.run)"
+      ]
+    },
+    {
+      "description": "Added/expanded generalized signup error sanitization/translation logic beyond removing the admin-signup-password error message.",
+      "reason": "REQ-2 only requires removing messaging about a special admin signup password; additional broad sanitization and multiple new mappings are not requested.",
+      "evidence": [
+        "frontend/src/utils/signupErrorMessaging.ts"
+      ]
+    },
+    {
+      "description": "Introduced/changed multiple unrelated frontend features and pages (service worker update banner/offline banner, geolocation capture for reports, router/auth guard behavior, UI/branding/theme changes, deployment documentation updates).",
+      "reason": "The BuildRequest is narrowly scoped to removing the admin special signup password requirement and related messaging, and explicitly calls out non-goals about not changing auth behavior beyond what is required.",
+      "evidence": [
+        "frontend-file-summaries.txt (entries for AppLayout.tsx, ReportEntryPage.tsx, App.tsx, index.css, tailwind.config.js, DEPLOYMENT.md, etc.)"
       ]
     }
   ],
@@ -63,7 +44,7 @@
     "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/ProfileSetup.tsx",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/signupErrorMessaging.ts",
     "project_state.json"
   ]
 }

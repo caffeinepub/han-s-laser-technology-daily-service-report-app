@@ -18,7 +18,6 @@ export function ProfileSetup() {
   const [username, setUsername] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [accountType, setAccountType] = useState<AccountType>('engineer');
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,12 +40,6 @@ export function ProfileSetup() {
     
     const emailError = validateEmail(email);
     if (emailError) newErrors.email = emailError;
-    
-    const passwordError = validateRequired(password, 'Password');
-    if (passwordError) newErrors.password = passwordError;
-    else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -211,25 +204,6 @@ export function ProfileSetup() {
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a password (min 6 characters)"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (errors.password) setErrors({ ...errors, password: '' });
-                }}
-                required
-                disabled={isPending}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
 

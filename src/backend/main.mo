@@ -1,10 +1,10 @@
-import Map "mo:core/Map";
 import Text "mo:core/Text";
+import Map "mo:core/Map";
 import Iter "mo:core/Iter";
 import Principal "mo:core/Principal";
+import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Runtime "mo:core/Runtime";
 import UserApproval "user-approval/approval";
 import Migration "migration";
 
@@ -92,7 +92,6 @@ actor {
   };
 
   let adminAllowlist = createAllowlist();
-  let adminSignupPassword = "Hans@987123";
   let userProfiles = Map.empty<Principal, UserProfile>();
   let reports = Map.empty<Text, DailyServiceReport>();
   let pendingSignups = Map.empty<Principal, UserProfile>();
@@ -155,13 +154,9 @@ actor {
     pendingSignups.add(caller, sanitizedProfile);
   };
 
-  public shared ({ caller }) func signupAdmin(profile : UserProfile, password : Text) : async () {
+  public shared ({ caller }) func adminSignup(profile : UserProfile) : async () {
     if (userProfiles.containsKey(caller)) {
       Runtime.trap("Profile already exists. Use \"update profile\" instead.");
-    };
-
-    if (password != adminSignupPassword) {
-      Runtime.trap("Admin signup failed: Incorrect signup password");
     };
 
     if (not isAllowlistedAdmin(profile)) {

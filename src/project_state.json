@@ -1,30 +1,20 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App login/auth changes: completely remove Internet Identity and use only local-session login. Admin setup: create admin users (sayedbaquar, bharatnikam) with a shared signup password, and remove the admin special password requirement.",
+  "summary": "App should allow admin account signup/login without requiring a special admin signup password.",
   "architectural_notes": [
-    "Auth must not route to Internet Identity; only local-session login should be active.",
-    "Admin provisioning should support multiple admin usernames sharing one signup password."
+    "Admin account creation should not require a separate \"special signup password\" gate; remove any related validation and UI messaging."
   ],
   "known_issues": [
-    "Admin special password Hans@987123 not currently being accepted (needs reset/provisioning update).",
-    "App still redirects to Internet Identity despite request to remove it (auth flow not fully overridden)."
+    "Admin special signup password requirement/message is still present; user requested it be removed and rebuilt."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-ensure-the-app-uses-only-local-session-authentication-in-the-user-experience-no-internet-identity-login-prompts-redirects-and-remove-any-remaining-internet-identity-dependent-auth-flow-from-non-immutable-frontend-code-paths",
-      "title": "Ensure the app uses only local-session authentication in the user experience (no Internet Identity login prompts/redirects), and remove any remaining Internet Identity-dependent auth flow from non-immutable frontend code paths.",
+      "id": "feature-remove-any-user-facing-ui-text-and-error-messaging-that-states-or-implies-admins-require-a-special-signup-password-including-admin-accounts-require-a-special-signup-password-contact-your-system-administrator-if-you-don-t-have-it",
+      "title": "Remove any user-facing UI text and error messaging that states or implies admins require a special signup password (including: \"Admin accounts require a special signup password. Contact your system administrator if you don't have it.\").",
       "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-remove-the-admin-special-password-requirement-from-the-admin-signup-ux-and-backend-gate-so-that-admin-eligible-users-are-not-blocked-by-an-extra-special-password-step-during-signup",
-      "title": "Remove the \"admin special password\" requirement from the admin signup UX and backend gate so that admin-eligible users are not blocked by an extra special-password step during signup.",
-      "reqIds": [
-        "REQ-4"
+        "REQ-2"
       ],
       "version": 1
     }
@@ -32,35 +22,15 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove Internet Identity completely and use only local-session login flow",
+      "summary": "Remove the special admin signup password requirement/check for admin accounts (and remove related UI message).",
       "reqIds": [],
       "status": "in_progress"
     },
     {
       "id": "AR-2",
-      "summary": "Provision admin users (sayedbaquar, bharatnikam) with shared admin signup password Hans@987123",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Remove admin special password requirement entirely",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Update backend admin provisioning logic so that the admin usernames \"sayedbaquar\" and \"bharatnikam\" are recognized as admins, and fix the current mismatch that prevents successful admin creation/approval due to the hardcoded allowlist values (\"Admin Name1\", \"Admin Name2\").",
+      "summary": "Remove the special admin signup password requirement from the backend so that creating an admin account no longer requires providing a separate admin signup password.",
       "reqIds": [
-        "REQ-2"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Set the backend admin signup password to exactly \"Hans@987123\" and ensure it applies to all admin accounts (including \"sayedbaquar\" and \"bharatnikam\") wherever the admin signup password is still used.",
-      "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "status": "pending"
     }
